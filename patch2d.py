@@ -9,6 +9,8 @@ class Patch2d:
     def __init__(self, point1, point2):
         self.point1 = point1
         self.point2 = point2
+        self.midpoint = (point1 + point2) / 2
+        self.max_x = max(point1[0], point2[0])
         self.area = np.prod(np.abs(np.array(self.point1) - np.array(self.point2)))
 
     def split(self, point):

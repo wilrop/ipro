@@ -10,7 +10,9 @@ def inner_loop(momdp, target):
 
 
 def get_target_vec(patch):
-    target = 0
+    slope = patch.midpoint[1] / patch.midpoint[1]
+    y = slope * patch.max_x
+    target = np.array([patch.max_x, y])
     return target
 
 
