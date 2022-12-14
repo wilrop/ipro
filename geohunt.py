@@ -9,13 +9,6 @@ def inner_loop(momdp, target):
     return vec
 
 
-def get_target_vec(patch):
-    slope = patch.midpoint[1] / patch.midpoint[1]
-    y = slope * patch.max_x
-    target = np.array([patch.max_x, y])
-    return target
-
-
 def get_edge_points():
     return np.array([5, 1]), np.array([1, 5])
 
@@ -30,7 +23,7 @@ def geohunt2d(momdp, tolerance=0.1):
     while patches_queue:
         patch = patches_queue.pop()
 
-        target = get_target_vec(patch)
+        target = patch.get_intersection_point()
         pareto_optimal_vec = inner_loop(momdp, target)
         if pareto_optimal_vec not in [patch.point1, patch.point2]:  # Check that a new Pareto optimal point was found.
             new_patch1, new_patch2 = patch.split(pareto_optimal_vec)
