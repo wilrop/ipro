@@ -8,11 +8,19 @@ class Patch2d:
 
     def __init__(self, point1, point2):
         self.top_left, self.top_right, self.bot_left, self.bot_right = None, None, None, None
+        self.width = None
+        self.height = None
         self.init_rectangle(point1, point2)
         self.midpoint = (point1 + point2) / 2
         self.area = np.prod(np.abs(np.array(point1) - np.array(point2)))
 
     def init_rectangle(self, point1, point2):
+        """Initialise the rectangle.
+
+        Args:
+            point1 (ndarray): A point on the rectangle. Either the top left or bottom right.
+            point2 (ndarray): A point on the rectangle. Either the top left or bottom right.
+        """
         if point1[0] > point2[0]:
             self.bot_right = point1
             self.top_left = point2
@@ -22,6 +30,21 @@ class Patch2d:
 
         self.top_right = np.array([self.bot_right[0], self.top_left[1]])
         self.bot_left = np.array([self.top_left[0], self.bot_right[1]])
+
+        self.width = self.top_right[0] - self.top_left[0]
+        self.height = self.top_right[1] - self.bot_right[1]
+
+    def on_rectangle(self, point):
+        """Check if a point is on the rectangle.
+
+        Args:
+            point (ndarray): A point.
+
+        Returns:
+            bool: Whether the point is on the rectangle.
+        """
+        borders = np.array([self.top_left, self.top_right, self.bot_right, self.bot_left])
+        return any([np.all(point == border) for border in borders])
 
     def split(self, point):
         """Split a patch in two.
