@@ -61,36 +61,3 @@ def vector_u(vector, target):
     success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
     c = problem.objective.value()  # Get the objective value.
     return c
-
-
-vector = np.array([1., 2.])
-target = np.array([2., 4.])
-utility = vector_u(vector, target)
-utilit2 = vector_u_strict(vector, target)
-print(utility)
-print(utilit2)
-print('----------------')
-
-vector = np.array([1., 3.])
-target = np.array([2., 4.])
-utility = vector_u(vector, target)
-utilit2 = vector_u_strict(vector, target)
-print(utility)
-print(utilit2)
-print('----------------')
-
-vector = np.array([2, 2.])
-target = np.array([2., 4.])
-utility = vector_u(vector, target)
-utilit2 = vector_u_strict(vector, target)
-print(utility)
-print(utilit2)
-print('----------------')
-
-vector = np.array([2, 4.])
-target = np.array([2., 4.])
-utility = vector_u(vector, target)
-utilit2 = vector_u_strict(vector, target)
-print(utility)
-print(utilit2)
-print('----------------')
