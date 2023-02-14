@@ -4,7 +4,7 @@ import numpy as np
 
 from geohunt import outer_loop
 from pareto import p_prune
-from vector_u import vector_u_strict
+from vector_u import rectangle_u
 
 
 def parse_args():
@@ -56,7 +56,7 @@ def inner_loop(problem, target):
     best_vec = np.zeros(problem.shape[1])
     best_u = -np.inf
     for vec in problem:
-        u = vector_u_strict(vec, target)
+        u = rectangle_u(vec, target)
         if u > best_u:
             best_u = u
             best_vec = vec
@@ -70,6 +70,7 @@ def verify(pf, problem):
     print(f'Pareto front: {pf}')
     correct_pf = p_prune(candidates)
     print(f'Correct Pareto front: {correct_pf}')
+    print(f'Correct: {pf == correct_pf}')
 
 
 if __name__ == '__main__':
