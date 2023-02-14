@@ -29,11 +29,8 @@ def linear_solver(problem, weights):
     Returns:
         np.ndarray: The utility maximising point.
     """
-    utilities = problem @ weights
-    max_utility = np.max(utilities)
-    best_vecs = problem[utilities == max_utility]
-    best_vec = np.array(p_prune({tuple(vec) for vec in best_vecs}).pop())
-    return best_vec
+    max_utility_index = np.argmax(np.dot(problem, weights))
+    return problem[max_utility_index]
 
 
 def generate_problem(objectives=2, vecs=10, low=0, high=10, rng=None):
@@ -43,7 +40,7 @@ def generate_problem(objectives=2, vecs=10, low=0, high=10, rng=None):
     return rng.integers(low=low, high=high, size=(vecs, objectives))
 
 
-def inner_loop(problem, target):
+def inner_loop(problem, target, nadir):
     """The inner loop solver for the basic setting.
 
     Args:
@@ -56,7 +53,7 @@ def inner_loop(problem, target):
     best_vec = np.zeros(problem.shape[1])
     best_u = -np.inf
     for vec in problem:
-        u = rectangle_u(vec, target)
+        u = rectangle_u(vec, target, nadir)
         if u > best_u:
             best_u = u
             best_vec = vec
