@@ -43,6 +43,11 @@ def vector_u(vector, target):
     Note:
         This utility function is monotonically increasing in the positive orthant.
 
+    Note:
+        For this utility function, you can guarantee that the utility is greater everywhere inside the rectangle than
+        on the already discovered edges given an appropriate target vector. Specifically, the target vector needs to
+        ensure that the line goes through the bottom left corner of the rectangle.
+
     Args:
         vector (ndarray): The obtained vector.
         target (ndarray): The target vector.
@@ -54,8 +59,38 @@ def vector_u(vector, target):
 
     c = LpVariable('c', lowBound=0.)
     c_term = target / np.linalg.norm(target)
-    for ri, c_termi in zip(vector, c_term):
-        problem += ri - c * c_termi >= 0
+    for vi, c_termi in zip(vector, c_term):
+        problem += vi - c * c_termi >= 0
+
+    problem += c  # Maximise the utility.
+    success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
+    c = problem.objective.value()  # Get the objective value.
+    return c
+
+
+def rectangle_u(vector, target, nadir):
+    """Compute the utility from a vector given a specific target vector.
+
+    Note:
+        This utility function is monotonically increasing in the positive orthant.
+
+    Note:
+        For this utility function, any point outside the rectangle or on the already discovered edges will have a
+        lower utility than inside the rectangle for any given target vector.
+
+    Args:
+        vector (ndarray): The obtained vector.
+        target (ndarray): The target vector.
+
+    Returns:
+        float: The obtained utility.
+    """
+    problem = LpProblem('vectorUtility', LpMaximize)
+
+    c = LpVariable('c', lowBound=0.)
+    c_term = target / np.linalg.norm(target - nadir)
+    for vi, c_termi in zip(vector, c_term):
+        problem += vi - c * c_termi >= 0
 
     problem += c  # Maximise the utility.
     success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
