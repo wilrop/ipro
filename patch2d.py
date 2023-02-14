@@ -74,10 +74,10 @@ class Patch2d:
         b = start[1] - slope * start[0]
 
         y_at_bot_left = slope * self.bot_left[0] + b
-        if y_at_bot_left >= self.bot_left[0]:
+        if y_at_bot_left >= self.bot_left[1]:
             intersect_y = slope * self.bot_right[0] + b
             target = np.array([self.bot_right[0], intersect_y])
         else:
             intersect_x = (self.top_right[1] - b) / slope
-            target = np.array([self.top_right[1], intersect_x])
+            target = np.array([intersect_x, self.top_right[1]])
         return target
