@@ -1,7 +1,7 @@
 import numpy as np
 from sortedcontainers import SortedKeyList
 
-from pareto import pareto_dominates
+from pareto import pareto_dominates, p_prune
 from patch2d import Patch2d
 from vis import plot_patches, create_gif
 
@@ -21,20 +21,13 @@ def outer_loop(problem, inner_loop, linear_solver, num_objectives=2, tolerance=1
     Returns:
         list: The Pareto front.
     """
-    pf = []
+    # Initialise the extremities.
+    outer_points = [linear_solver(problem, np.array([1., 0.])), linear_solver(problem, np.array([0., 1.]))]
+    print(f'Outer points: {outer_points}')
 
-    for obj in range(num_objectives):
-        weights = np.zeros(num_objectives)
-        weights[obj] = 1
-        point = linear_solver(problem, weights)
-        pf.append(point)
-
-    if pareto_dominates(pf[0], pf[1]):
-        pf = [pf[0], pf[0]]
-    elif pareto_dominates(pf[1], pf[0]):
-        pf = [pf[1], pf[1]]
-
-    start_patch = Patch2d(*pf)
+    # Initialise the patches.
+    start_patch = Patch2d(*outer_points)
+    pf = {tuple(vec) for vec in outer_points}
     patches_queue = SortedKeyList([start_patch], key=lambda x: x.area)
     step = 0
 
@@ -44,9 +37,11 @@ def outer_loop(problem, inner_loop, linear_solver, num_objectives=2, tolerance=1
         patch = patches_queue.pop()
 
         target = patch.get_intersection_point()
-        pareto_optimal_vec = inner_loop(problem, target)
+        local_nadir = patch.bot_left
+        pareto_optimal_vec = inner_loop(problem, target, local_nadir)
+
         if not patch.on_rectangle(pareto_optimal_vec):  # Check that a new Pareto optimal point was found.
-            pf.append(pareto_optimal_vec)
+            pf.add(tuple(pareto_optimal_vec))
             new_patch1, new_patch2 = patch.split(pareto_optimal_vec)
 
             if new_patch1.area > tolerance:
@@ -55,6 +50,7 @@ def outer_loop(problem, inner_loop, linear_solver, num_objectives=2, tolerance=1
             if new_patch2.area > tolerance:
                 patches_queue.add(new_patch2)
 
+        pf = p_prune({tuple(vec) for vec in pf})
         step += 1
 
     if save_figs:
