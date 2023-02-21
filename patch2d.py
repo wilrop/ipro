@@ -81,3 +81,36 @@ class Patch2d:
             intersect_x = (self.top_right[1] - b) / slope
             target = np.array([intersect_x, self.top_right[1]])
         return target
+
+    def get_target(self, method='ideal', start=(0, 0)):
+        """Get the target point of the patch.
+
+        Args:
+            method (str, optional): The method to use. Either 'ideal' or 'nadir'. Defaults to 'ideal'.
+            start (array_like, optional): The start point for the line. By default, this is the origin.
+
+        Returns:
+            ndarray: The target point.
+        """
+        if method == 'ideal':
+            return self.get_ideal()
+        elif method == 'intersection':
+            return self.get_intersection_point(start=start)
+        else:
+            raise ValueError(f'Invalid method: {method}')
+
+    def get_nadir(self):
+        """Get the nadir point of the patch.
+
+        Returns:
+            ndarray: The nadir point.
+        """
+        return self.bot_left
+
+    def get_ideal(self):
+        """Get the ideal point of the patch.
+
+        Returns:
+            ndarray: The ideal point.
+        """
+        return self.top_right

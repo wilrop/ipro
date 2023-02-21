@@ -36,8 +36,8 @@ def outer_loop(problem, inner_loop, linear_solver, num_objectives=2, tolerance=1
             plot_patches(patches_queue, pf, problem, log_dir, f'patches_{step}')
         patch = patches_queue.pop()
 
-        target = patch.get_intersection_point()
-        local_nadir = patch.bot_left
+        target = patch.get_target()
+        local_nadir = patch.get_nadir()
         pareto_optimal_vec = inner_loop(problem, target, local_nadir)
 
         if not patch.on_rectangle(pareto_optimal_vec):  # Check that a new Pareto optimal point was found.
