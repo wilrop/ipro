@@ -81,6 +81,7 @@ def rectangle_u(vector, target, nadir):
     Args:
         vector (ndarray): The obtained vector.
         target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
 
     Returns:
         float: The obtained utility.
@@ -96,3 +97,17 @@ def rectangle_u(vector, target, nadir):
     success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
     c = problem.objective.value()  # Get the objective value.
     return c
+
+
+def updated_rectangle_u(vector, target, nadir):
+    """Compute the utility as rectangle_u but in a smarter way.
+
+    Args:
+        vector (ndarray): The obtained vector.
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+
+    Returns:
+        float: The obtained utility.
+    """
+    return np.min(vector * np.linalg.norm(target - nadir) / target)
