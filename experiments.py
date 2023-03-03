@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument("--wandb-project-name", type=str, default="cones", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
     parser.add_argument("--algorithm", type=str, default="MO-DQN", help="The algorithm to use.")
-    parser.add_argument("--env", type=str, default="MO-Mountaincarcontinuous", help="The game to use.")
+    parser.add_argument("--env", type=str, default="DeepSeaTreasure-v0", help="The game to use.")
     parser.add_argument("--learning_rate", type=float, default=3e-3, help="The learning rate.")
     parser.add_argument("--learning_start", type=int, default=1000, help="The number of steps before starting the training.")
     parser.add_argument("--train_freq", type=int, default=1, help="The number of steps between two training steps.")
@@ -59,9 +59,19 @@ def init_inner_loop(args):
     return inner_loop
 
 
+def setup_env(env_name):
+    if env_name == 'DeepSeaTreasure-v0':
+        env = gym.make('DeepSeaTreasure-v0', float_state=True)
+    elif env_name == 'mo-mountaincar-v0':
+        env = mo_gym.make('mo-mountaincar-v0')
+    else:
+        raise ValueError("Unknown environment: {}".format(env_name))
+    return env
+
+
 if __name__ == '__main__':
     args = parse_args()
-    env = mo_gym.make(args.env)  # Ensure positive rewards
+    env = setup_env(args.env)
     inner_loop = init_inner_loop(args)
     linear_solver = lambda x: np.array([1, 0]) if x[0] == 1 else np.array([0, 1])
     pf = outer_loop(env,
