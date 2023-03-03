@@ -36,6 +36,8 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
         patch = patches_queue.pop()
 
         target = patch.get_target()
+        print(f'New target: {target}')
+
         local_nadir = patch.get_nadir()
         pareto_optimal_vec = inner_loop.solve(target, local_nadir)
 
