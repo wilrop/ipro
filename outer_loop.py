@@ -6,7 +6,7 @@ from patch2d import Patch2d
 from vis import plot_patches, create_gif
 
 
-def outer_loop(problem, inner_loop, linear_solver, num_objectives=2, tolerance=1e-6, save_figs=False, log_dir=None):
+def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=False, log_dir=None):
     """Implement the outer loop for the algorithm.
 
     Args:
