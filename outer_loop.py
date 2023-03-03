@@ -1,7 +1,7 @@
 import numpy as np
 from sortedcontainers import SortedKeyList
 
-from pareto import pareto_dominates, p_prune
+from pareto import p_prune
 from patch2d import Patch2d
 from vis import plot_patches, create_gif
 
@@ -11,9 +11,8 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
 
     Args:
         problem (Problem): A problem instance.
-        inner_loop (function): The inner loop function.
+        inner_loop (Class): The inner loop class.
         linear_solver (function): The linear solver function for the extremities.
-        num_objectives (int, optional): The number of objectives. Defaults to 2.
         tolerance (float, optional): The tolerance for outer loop to exit. Defaults to 1e-6.
         save_figs (bool, optional): Whether to save the figures. Defaults to False.
         log_dir: The directory to save the figures. Defaults to None.
@@ -38,7 +37,7 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
 
         target = patch.get_target()
         local_nadir = patch.get_nadir()
-        pareto_optimal_vec = inner_loop(problem, target, local_nadir)
+        pareto_optimal_vec = inner_loop.solve(target, local_nadir)
 
         if not patch.on_rectangle(pareto_optimal_vec):  # Check that a new Pareto optimal point was found.
             pf.add(tuple(pareto_optimal_vec))
@@ -50,8 +49,9 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
             if new_patch2.area > tolerance:
                 patches_queue.add(new_patch2)
 
-        pf = p_prune({tuple(vec) for vec in pf})
         step += 1
+
+    pf = p_prune({tuple(vec) for vec in pf})
 
     if save_figs:
         plot_patches(patches_queue, pf, problem, log_dir, f'patches_{step}')
