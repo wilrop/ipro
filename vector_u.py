@@ -99,7 +99,7 @@ def rectangle_u(vector, target, nadir):
     return c
 
 
-def updated_rectangle_u(vector, target, nadir):
+def fast_rectangle_u(vector, target, nadir):
     """Compute the utility as rectangle_u but in a smarter way.
 
     Args:
@@ -111,3 +111,32 @@ def updated_rectangle_u(vector, target, nadir):
         float: The obtained utility.
     """
     return np.min(vector * np.linalg.norm(target - nadir) / target)
+
+
+def create_fast_rectangle_u(target, nadir):
+    """Create a fast utility function for a specific target and nadir vector.
+
+    Args:
+        vector (ndarray): The obtained vector.
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+
+    Returns:
+        function: The fast utility function.
+    """
+    constant = np.linalg.norm(target - nadir) / target
+    return lambda vec: np.min(vec * constant)
+
+
+def fast_rectangle_u_minimisation(vector, target, nadir):
+    """Compute the utility for a minimisation problem.
+
+    Args:
+        vector (ndarray): The obtained vector.
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+
+    Returns:
+        float: The obtained utility.
+    """
+    return np.max(vector * np.linalg.norm(target - nadir) / nadir)
