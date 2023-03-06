@@ -114,3 +114,6 @@ class Patch2d:
             ndarray: The ideal point.
         """
         return self.top_right
+
+    def __repr__(self):
+        return f'(BL: {self.bot_left}, BR: {self.bot_right}, TL: {self.top_left}, TR: {self.top_right})'
