@@ -90,6 +90,13 @@ class MODQN:
         self.u_func = None
         self.epsilon = self.init_epsilon
 
+    def select_greedy_action(self, state, accrued_reward):
+        augmented_state = torch.Tensor(np.concatenate((state, accrued_reward)))
+        q_values = self.q_network(augmented_state).detach().numpy().reshape(self.num_actions, self.num_objectives)
+        expected_returns = accrued_reward + self.gamma * q_values
+        utilities = self.u_func(expected_returns)
+        return np.argmax(utilities)
+
     def select_action(self, state, accrued_reward):
         """Select an action using epsilon-greedy exploration.
 
@@ -103,11 +110,7 @@ class MODQN:
         if self.rng.uniform() < self.epsilon:
             return self.rng.integers(self.num_actions)
         else:
-            augmented_state = torch.Tensor(np.concatenate((state, accrued_reward)))
-            q_values = self.q_network(augmented_state).detach().numpy().reshape(self.num_actions, self.num_objectives)
-            expected_returns = accrued_reward + self.gamma * q_values
-            utilities = self.u_func(expected_returns)
-            return np.argmax(utilities)
+            return self.select_greedy_action(state, accrued_reward)
 
     def train_network(self):
         """Train the Q-network using the replay buffer."""
@@ -123,10 +126,10 @@ class MODQN:
             td_target = torch.Tensor(rewards + self.gamma * q_maxs * (1 - dones))
 
         augmented_states = torch.Tensor(np.concatenate((obs, accrued_rewards), axis=1))
-        old_val = torch.reshape(self.q_network(augmented_states), (-1, self.num_actions, self.num_objectives))
+        old_vals = self.q_network(augmented_states).view(-1, self.num_actions, self.num_objectives)
         actions_idx = torch.LongTensor(actions)
-        old_val = old_val[torch.arange(self.batch_size), actions_idx]
-        loss = F.mse_loss(td_target, old_val)
+        old_vals = old_vals[torch.arange(self.batch_size), actions_idx]
+        loss = F.mse_loss(td_target, old_vals)
 
         # optimize the model
         self.optimizer.zero_grad()
@@ -182,7 +185,7 @@ class MODQN:
             timestep = 0
 
             while not (terminated or truncated):
-                action = self.select_action(state, accrued_reward)
+                action = self.select_greedy_action(state, accrued_reward)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
                 accrued_reward += self.gamma ** timestep * reward
                 state = next_state
@@ -198,5 +201,4 @@ class MODQN:
         self.u_func = create_batched_fast_rectangle_u(target, local_nadir, backend='numpy')
         self.train()
         pareto_point = self.evaluate()
-        print(f"Pareto point: {pareto_point}")
         return pareto_point
