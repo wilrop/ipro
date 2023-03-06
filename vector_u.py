@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 from pulp import *
 
 
@@ -141,10 +141,10 @@ def create_batched_fast_rectangle_u(target, nadir, backend='numpy'):
     """
     constant = np.linalg.norm(target - nadir) / target
     if backend == 'numpy':
-        return lambda vec: np.min(vec * constant, axis=1)
+        return lambda vec: np.min(vec * constant, axis=-1)
     elif backend == 'torch':
         constant = torch.Tensor(constant)
-        return lambda vec: torch.min(vec * constant, dim=1)[0]
+        return lambda vec: torch.min(vec * constant, dim=-1)[0]
     else:
         raise NotImplementedError
 
