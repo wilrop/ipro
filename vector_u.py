@@ -114,6 +114,20 @@ def fast_rectangle_u(vector, target, nadir):
     return np.min(vector * np.linalg.norm(target - nadir) / target)
 
 
+def fast_translated_rectangle_u_(vector, target, nadir):
+    """Compute the utility as rectangle_u but in a smarter way.
+
+    Args:
+        vector (ndarray): The obtained vector.
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+
+    Returns:
+        float: The obtained utility.
+    """
+    return np.min((vector - nadir) * np.linalg.norm(target - nadir))
+
+
 def create_fast_rectangle_u(target, nadir):
     """Create a fast utility function for a specific target and nadir vector.
 
@@ -126,6 +140,20 @@ def create_fast_rectangle_u(target, nadir):
     """
     constant = np.linalg.norm(target - nadir) / target
     return lambda vec: np.min(vec * constant)
+
+
+def create_fast_translated_rectangle_u(target, nadir):
+    """Create a fast utility function for a specific target and nadir vector.
+
+    Args:
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+
+    Returns:
+        function: The fast utility function.
+    """
+    constant = np.linalg.norm(target - nadir)
+    return lambda vec: np.min((vec - nadir) * constant)
 
 
 def create_batched_fast_rectangle_u(target, nadir, backend='numpy'):
@@ -145,6 +173,27 @@ def create_batched_fast_rectangle_u(target, nadir, backend='numpy'):
     elif backend == 'torch':
         constant = torch.Tensor(constant)
         return lambda vec: torch.min(vec * constant, dim=-1)[0]
+    else:
+        raise NotImplementedError
+
+
+def create_batched_fast_translated_rectangle_u(target, nadir, backend='numpy'):
+    """Create a fast utility function for a specific target and nadir vector.
+
+    Args:
+        target (ndarray): The target vector.
+        nadir (ndarray): The nadir vector.
+        backend (str): The backend to use for the computation.
+
+    Returns:
+        function: The fast utility function.
+    """
+    constant = np.linalg.norm(target - nadir)
+    if backend == 'numpy':
+        return lambda vec: np.min((vec - nadir) * constant, axis=-1)
+    elif backend == 'torch':
+        constant = torch.Tensor(constant)  # TODO: Can be made float and probably used instead of numpy now in code.
+        return lambda vec: torch.min((vec - nadir) * constant, dim=-1)[0]
     else:
         raise NotImplementedError
 
