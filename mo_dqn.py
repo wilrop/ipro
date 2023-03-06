@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from replay_buffer import AccruedRewardReplayBuffer
-from vector_u import create_batched_fast_rectangle_u
+from vector_u import create_batched_fast_translated_rectangle_u
 
 
 class QNetwork(nn.Module):
@@ -91,6 +91,15 @@ class MODQN:
         self.epsilon = self.init_epsilon
 
     def select_greedy_action(self, state, accrued_reward):
+        """Select the greedy action.
+
+        Args:
+            state (np.ndarray): The current state of the environment.
+            accrued_reward (np.ndarray): The accrued reward so far.
+
+        Returns:
+            action (int): The action to take.
+        """
         augmented_state = torch.Tensor(np.concatenate((state, accrued_reward)))
         q_values = self.q_network(augmented_state).detach().numpy().reshape(self.num_actions, self.num_objectives)
         expected_returns = accrued_reward + self.gamma * q_values
@@ -118,7 +127,8 @@ class MODQN:
         with torch.no_grad():
             next_accr_rews = accrued_rewards + rewards
             augmented_states = torch.Tensor(np.concatenate((next_obs, next_accr_rews), axis=1))
-            target_pred = self.target_network(augmented_states).detach().numpy().reshape(-1, self.num_actions, self.num_objectives)
+            target_pred = self.target_network(augmented_states).detach().numpy().reshape(-1, self.num_actions,
+                                                                                         self.num_objectives)
             total_rewards = np.expand_dims(next_accr_rews, axis=1) + self.gamma * target_pred
             utilities = self.u_func(total_rewards)
             best_actions = np.argmax(utilities, axis=1)
@@ -153,12 +163,11 @@ class MODQN:
             while not (terminated or truncated):
                 action = self.select_action(state, accrued_reward)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
-                accrued_reward += (self.gamma ** timestep) * reward
                 self.replay_buffer.add(state, accrued_reward, action, reward, next_state, truncated or terminated)
+                accrued_reward += (self.gamma ** timestep) * reward
                 state = next_state
 
                 if global_step > self.learning_start:
-                    self.epsilon = max(self.final_epsilon, self.epsilon_decay * self.epsilon)
                     if global_step % self.train_freq == 0:
                         self.train_network()
                     if global_step % self.target_update_interval == 0:
@@ -169,6 +178,9 @@ class MODQN:
 
                 timestep += 1
                 global_step += 1
+
+            if global_step > self.learning_start:
+                self.epsilon = max(self.epsilon * self.epsilon_decay, self.final_epsilon)
 
     def evaluate(self):
         """Evaluate MODQN on the given environment."""
@@ -187,7 +199,7 @@ class MODQN:
             while not (terminated or truncated):
                 action = self.select_greedy_action(state, accrued_reward)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
-                accrued_reward += self.gamma ** timestep * reward
+                accrued_reward += (self.gamma ** timestep) * reward
                 state = next_state
                 timestep += 1
 
@@ -198,7 +210,7 @@ class MODQN:
     def solve(self, target, local_nadir):
         """Run the inner loop of the outer loop."""
         self.reset()
-        self.u_func = create_batched_fast_rectangle_u(target, local_nadir, backend='numpy')
+        self.u_func = create_batched_fast_translated_rectangle_u(target, local_nadir, backend='numpy')
         self.train()
         pareto_point = self.evaluate()
         return pareto_point
