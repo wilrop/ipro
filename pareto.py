@@ -45,3 +45,19 @@ def p_prune(candidates):
         candidates -= to_remove
         pcs.add(vector)
     return pcs
+
+
+def is_dominated(vec, pcs):
+    """Check if a vector is dominated by a Pareto coverage set.
+
+    Args:
+        vec (ndarray): A vector.
+        pcs (Set[Tuple]): A Pareto coverage set.
+
+    Returns:
+        bool: Whether the vector is dominated by the Pareto coverage set.
+    """
+    for alternative in pcs:
+        if pareto_dominates(alternative, vec):
+            return True
+    return False
