@@ -1,7 +1,7 @@
 import numpy as np
 from sortedcontainers import SortedKeyList
 
-from pareto import p_prune
+from pareto import p_prune, is_dominated
 from patch2d import Patch2d
 from vis import plot_patches, create_gif
 
@@ -34,17 +34,18 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
         if save_figs:
             plot_patches(patches_queue, pf, problem, log_dir, f'patches_{step}')
         patch = patches_queue.pop()
+        print(f'Patch: {patch}')
 
         target = patch.get_target()
-        print(f'New target: {target}')
+        print(f'Target: {target}')
 
         local_nadir = patch.get_nadir()
-        pareto_optimal_vec = inner_loop.solve(target, local_nadir)
-        print(f'Pareto optimal vector: {pareto_optimal_vec}')
+        found_vec = inner_loop.solve(target, local_nadir)
 
-        if not patch.on_rectangle(pareto_optimal_vec):  # Check that a new Pareto optimal point was found.
-            pf.add(tuple(pareto_optimal_vec))
-            new_patch1, new_patch2 = patch.split(pareto_optimal_vec)
+        if not (is_dominated(found_vec, pf) or patch.on_rectangle(found_vec)):  # Check that new point is valid.
+            print(f'New point: {found_vec}')
+            pf.add(tuple(found_vec))
+            new_patch1, new_patch2 = patch.split(found_vec)
 
             if new_patch1.area > tolerance:
                 patches_queue.add(new_patch1)
