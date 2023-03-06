@@ -40,6 +40,7 @@ def outer_loop(problem, inner_loop, linear_solver, tolerance=1e-6, save_figs=Fal
 
         local_nadir = patch.get_nadir()
         pareto_optimal_vec = inner_loop.solve(target, local_nadir)
+        print(f'Pareto optimal vector: {pareto_optimal_vec}')
 
         if not patch.on_rectangle(pareto_optimal_vec):  # Check that a new Pareto optimal point was found.
             pf.add(tuple(pareto_optimal_vec))
