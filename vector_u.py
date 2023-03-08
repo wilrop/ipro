@@ -114,7 +114,7 @@ def fast_rectangle_u(vector, target, nadir):
     return np.min(vector * np.linalg.norm(target - nadir) / target)
 
 
-def fast_translated_rectangle_u_(vector, target, nadir):
+def fast_translated_rectangle_u(vector, target, nadir):
     """Compute the utility as rectangle_u but in a smarter way.
 
     Args:
