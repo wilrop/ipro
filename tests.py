@@ -1,7 +1,7 @@
 import numpy as np
 
 import vector_u
-
+import maximum_empty_box as meb
 
 def test_func_on_vectors(target, nadir, vectors, func):
     for vector in vectors:
@@ -29,5 +29,17 @@ def test_utility_funcs():
         print(f'---------------------')
 
 
+def test_maximum_emtpy_box():
+    points = np.array([[0.25, 0.25, 0.25], [0.75, 0.75, 0.75]])
+    nadir = np.array([0, 0, 0])
+    ideal = np.array([1, 1, 1])
+    print(f'Rectangle: {nadir} - {ideal}')
+    print(f'Points: {points}')
+
+    new_nadir, new_ideal = meb.dumitrescu_jiang(points, nadir, ideal)
+    print(f'New Rectangle: {new_nadir} - {new_ideal}')
+
+
 if __name__ == '__main__':
     test_utility_funcs()
+    test_maximum_emtpy_box()
