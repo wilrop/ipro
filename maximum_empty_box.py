@@ -6,10 +6,13 @@ import numpy as np
 def dumitrescu_jiang(points, nadir, ideal):
     """The Dimutrescu-Jiang algorithm for computing a large empty box amidst n points in [0, 1]^d.
 
-    Note:
-        The volume of the largest empty box is guaranteed to be larger than or equal to log(d)/(4 * (n + log(d)))
-        The algorithm is guaranteed to produce an empty box of volume at least this value.
-        The complexity is O(n + d log(d)). As such, for constant d, the algorithm runs in linear time.
+    Notes:
+        The volume of the largest empty box is guaranteed to be larger than or equal to log(d)/(4 * (n + log(d))).
+        The algorithm is guaranteed to produce an empty box of volume at least this value and has a runtime complexity
+        of O(n + d log(d)). As such, for constant d, the algorithm runs in linear time.
+
+        To ensure that the start box is [0, 1]^d the points are normalised, which is always possible to do from the
+        nadir and ideal vectors.
 
         This is executed on the Pareto front.
 
