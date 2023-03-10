@@ -75,23 +75,23 @@ class PrioritizedAccruedRewardReplayBuffer:
     def __init__(
             self,
             obs_shape,
-            action_dim,
+            action_shape,
             rew_dim=1,
             max_size=100000,
             obs_dtype=np.float32,
             action_dtype=np.float32,
-            min_priority=1e-5,
+            max_priority=1e-5,
     ):
         """Initialize the Replay Buffer.
 
         Args:
             obs_shape: Shape of the observations
-            action_dim: Dimension of the actions
+            action_shape: Shape of the actions
             rew_dim: Dimension of the rewards
             max_size: Maximum size of the buffer
             obs_dtype: Data type of the observations
             action_dtype: Data type of the actions
-            min_priority: Minimum priority of the buffer
+            max_priority: Minimum priority of the buffer
         """
         self.max_size = max_size
         self.ptr, self.size = 0, 0
@@ -103,13 +103,13 @@ class PrioritizedAccruedRewardReplayBuffer:
         self.dones = np.zeros((max_size, 1), dtype=np.float32)
 
         self.tree = SumTree(max_size)
-        self.min_priority = min_priority
-        self.start_min_priority = min_priority
+        self.max_priority = max_priority
+        self.start_max_priority = max_priority
 
     def reset(self):
         """Reset the buffer."""
         self.ptr, self.size = 0, 0
-        self.min_priority = self.start_min_priority
+        self.max_priority = self.start_max_priority
         self.tree = SumTree(self.max_size)
 
     def add(self, obs, accrued_reward, action, reward, next_obs, done, priority=None):
@@ -131,17 +131,16 @@ class PrioritizedAccruedRewardReplayBuffer:
         self.accrued_rewards[self.ptr] = np.array(accrued_reward).copy()
         self.dones[self.ptr] = np.array(done).copy()
 
-        self.tree.set(self.ptr, self.min_priority if priority is None else priority)
+        self.tree.set(self.ptr, self.max_priority if priority is None else priority)
 
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def sample(self, batch_size, replace=True, to_tensor=False, device=None):
+    def sample(self, batch_size, to_tensor=False, device=None):
         """Sample a batch of experiences.
 
         Args:
             batch_size: Number of elements to sample
-            replace: Whether to sample with replacement or not
             to_tensor: Whether to convert the data to tensors or not
             device: Device to use for the tensors
 
@@ -159,11 +158,11 @@ class PrioritizedAccruedRewardReplayBuffer:
             self.dones[idxes],
         )
         if to_tensor:
-            return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)  # , weights)
+            return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)
         else:
             return experience_tuples + (idxes,)
 
-    def sample_obs(self, batch_size, to_tensor=False, device=None):
+    def sample_obs_acc_rews(self, batch_size, to_tensor=False, device=None):
         """Sample a batch of observations from the buffer.
         Args:
             batch_size: Number of observations to sample
@@ -173,10 +172,14 @@ class PrioritizedAccruedRewardReplayBuffer:
             batch: Batch of observations
         """
         idxes = self.tree.sample(batch_size)
+        experience_tuples = (
+            self.obs[idxes],
+            self.accrued_rewards[idxes]
+        )
         if to_tensor:
-            return th.tensor(self.obs[idxes]).to(device)
+            return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)
         else:
-            return self.obs[idxes]
+            return experience_tuples + (idxes,)
 
     def update_priorities(self, idxes, priorities):
         """Update the priorities of the experiences at idxes.
@@ -184,7 +187,7 @@ class PrioritizedAccruedRewardReplayBuffer:
             idxes: Indexes of the experiences to update
             priorities: New priorities of the experiences
         """
-        self.min_priority = max(self.min_priority, priorities.max())
+        self.max_priority = max(self.max_priority, priorities.max())
         self.tree.batch_set(idxes, priorities)
 
     def get_all_data(self, max_samples=None, to_tensor=False, device=None):
@@ -303,6 +306,12 @@ class AccruedRewardReplayBuffer:
     def reset(self):
         """Cleanup the buffer."""
         self.size, self.ptr = 0, 0
+
+    def update_priorities(self, idxes, priorities):
+        pass
+
+    def sample_obs_acc_rews(self, batch_size, to_tensor=False, device=None):
+        pass
 
     def get_all_data(self, max_samples=None, to_tensor=False, device=None):
         """Returns the whole buffer (with a specified maximum number of samples).
