@@ -192,7 +192,7 @@ def create_batched_fast_translated_rectangle_u(target, nadir, backend='numpy'):
     if backend == 'numpy':
         return lambda vec: np.min((vec - nadir) * constant, axis=-1)
     elif backend == 'torch':
-        constant = torch.Tensor(constant)  # TODO: Can be made float and probably used instead of numpy now in code.
+        constant = float(constant)
         return lambda vec: torch.min((vec - nadir) * constant, dim=-1)[0]
     else:
         raise NotImplementedError
