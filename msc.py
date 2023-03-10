@@ -45,12 +45,10 @@ def construct_universe(dimensions):
 
 def brute_force_minal_cover(dimensions, universe, sets, overlap_allowed=False):
     prev_size = 0
-    for subsets in chain.from_iterable(combinations(sets, r) for r in range(len(sets) + 1)):
+    for subsets in chain.from_iterable(combinations(sets, r) for r in range(dimensions, len(sets) + 1)):
         if len(subsets) > prev_size:
             print(f'Starting size: {len(subsets)}')
             prev_size = len(subsets)
-        if len(subsets) < dimensions + 1:
-            continue
         cover = set().union(*subsets)
         if universe == cover:
             if overlap_allowed:
