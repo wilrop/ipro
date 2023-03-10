@@ -60,6 +60,8 @@ class MODQN:
                  pe_size=5,
                  buffer_size=100000,
                  per=False,
+                 alpha_per: float = 0.6,
+                 min_priority: float = 1.0,
                  batch_size=32,
                  init_real_frac=0.8,
                  final_real_frac=0.1,
@@ -108,6 +110,8 @@ class MODQN:
 
         self.buffer_size = buffer_size
         self.per = per
+        self.alpha_per = alpha_per
+        self.min_priority = min_priority
         if self.per:
             self.real_buffer = PrioritizedAccruedRewardReplayBuffer(env.observation_space.shape,
                                                                     env.action_space.shape,
@@ -172,6 +176,8 @@ class MODQN:
             'pe_size': self.pe_size,
             'buffer_size': self.buffer_size,
             'per': self.per,
+            'alpha_per': self.alpha_per,
+            'min_priority': self.min_priority,
             'batch_size': self.batch_size,
             'init_real_frac': self.init_real_frac,
             'final_real_frac': self.final_real_frac,
@@ -258,6 +264,25 @@ class MODQN:
             batch = self.real_buffer.sample(self.batch_size)
             return batch + (None,)
 
+    def compute_priority(self, state, accrued_reward, action, reward, next_state):
+        next_accrued_reward = accrued_reward + reward
+        next_q_pred = self.q_network(torch.Tensor(np.concatenate((next_state, next_accrued_reward))))
+        u_target = self.u_func(next_accrued_reward + self.gamma * next_q_pred)
+
+        q_pred = self.q_network(torch.Tensor(np.concatenate((state, accrued_reward))))
+        u_pred = self.u_func(accrued_reward + self.gamma * q_pred)
+        td_error = torch.abs(u_target - u_pred).detach().numpy()
+        priority = max(td_error ** self.alpha_per, self.min_priority)
+        return priority
+
+    def add_to_real_buffer(self, state, accrued_reward, action, reward, next_state, truncated, terminated):
+        if self.per:
+            priority = self.compute_priority(state, accrued_reward, action, reward, next_state)
+            self.real_buffer.add(state, accrued_reward, action, reward, next_state, truncated or terminated,
+                                 priority=priority)
+        else:
+            self.real_buffer.add(state, accrued_reward, action, reward, next_state, truncated or terminated)
+
     def update_priorities(self, target_u, q_preds, accrued_rewards, indices):
         """Update the priorities of the transitions in the replay buffer.
 
@@ -268,15 +293,16 @@ class MODQN:
             indices (np.ndarray): The indices of the transitions in the replay buffer.
         """
         total_rewards = accrued_rewards.unsqueeze(1) + self.gamma * q_preds
-        td_errors = torch.abs(self.u_func(total_rewards) - target_u).detach().numpy()
+        td_errors = torch.abs(target_u - self.u_func(total_rewards)).detach().numpy()
+        priorities = np.maximum(td_errors ** self.alpha_per, self.min_priority)
 
         real_batch_size, _ = self.get_batch_sizes()
         real_indices = indices[:real_batch_size]
-        real_priorities = td_errors[:real_batch_size]
+        real_priorities = priorities[:real_batch_size]
         self.real_buffer.update_priorities(real_indices, real_priorities)
 
         model_indices = indices[real_batch_size:]
-        model_priorities = td_errors[real_batch_size:]
+        model_priorities = priorities[real_batch_size:]
         self.model_buffer.update_priorities(model_indices, model_priorities)
 
     def train_network(self):
@@ -285,7 +311,7 @@ class MODQN:
             obs, accrued_rewards, actions, rewards, next_obs, dones, indices = self.collect_train_batch()
 
             with torch.no_grad():
-                next_accr_rews = accrued_rewards + rewards
+                next_accr_rews = accrued_rewards + rewards  # Wrong
                 augmented_states = torch.Tensor(np.concatenate((next_obs, next_accr_rews), axis=1))
                 target_pred = self.target_network(augmented_states).view(-1, self.num_actions, self.num_objectives)
                 total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred
@@ -332,7 +358,7 @@ class MODQN:
             epsilon = linear_schedule(self.epsilon_start, self.epsilon_end, self.exploration_steps, global_step)
             action = self.select_action(state, accrued_reward, epsilon)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
-            self.real_buffer.add(state, accrued_reward, action, reward, next_state, truncated or terminated)
+            self.add_to_real_buffer(state, accrued_reward, action, reward, next_state, terminated, truncated)
             accrued_reward += (self.gamma ** timestep) * reward
             state = next_state
             timestep += 1
