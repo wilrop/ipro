@@ -73,8 +73,8 @@ class OuterLoop2D:
             outer_points.append(self.linear_solver(self.problem, weight_vec))
         return np.array(outer_points)
 
-    def init_fase(self):
-        """The initial fase in solving the problem."""
+    def init_phase(self):
+        """The initial phase in solving the problem."""
         outer_points = self.get_outer_points()
         self.bounding_box = Box(np.min(outer_points, axis=0), np.max(outer_points, axis=0))
         self.pf.update([tuple(vec) for vec in outer_points])
@@ -107,7 +107,7 @@ class OuterLoop2D:
 
     def solve(self):
         """Solve the problem."""
-        self.init_fase()
+        self.init_phase()
         step = 0
 
         while not self.is_done():
