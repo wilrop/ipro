@@ -114,7 +114,7 @@ class OuterLoop2D:
             box = self.get_next_box()
             target = box.ideal
             local_nadir = box.nadir
-            found_vec = self.inner_loop.solve(target, local_nadir)
+            found_vec, utility = self.inner_loop.solve(target, local_nadir)
 
             if self.accept_point(found_vec):  # Check that new point is valid.
                 self.update(box, found_vec)
