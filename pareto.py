@@ -47,17 +47,20 @@ def p_prune(candidates):
     return pcs
 
 
-def is_dominated(vec, pcs):
-    """Check if a vector is dominated by a Pareto coverage set.
+def verify_pcs(point_set, pareto_set):
+    """Verify that the Pareto coverage set is correct.
 
     Args:
-        vec (ndarray): A vector.
-        pcs (Set[Tuple]): A Pareto coverage set.
+        point_set (Set[Tuple]): A set of vectors.
+        pareto_set (Set[Tuple]): A set of vectors.
 
     Returns:
-        bool: Whether the vector is dominated by the Pareto coverage set.
+        bool: Whether the Pareto coverage set is correct.
     """
-    for alternative in pcs:
-        if pareto_dominates(alternative, vec):
-            return True
-    return False
+    if type(pareto_set) != set:
+        pareto_set = {tuple(vec) for vec in pareto_set}
+    if type(point_set) != set:
+        point_set = {tuple(vec) for vec in point_set}
+
+    correct_pf = p_prune(point_set)
+    return correct_pf, correct_pf == pareto_set
