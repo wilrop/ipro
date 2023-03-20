@@ -35,7 +35,8 @@ class OuterLoop:
         self.bounding_box = None
         self.removed_boxes = []
         self.pf = set()
-        self.options = np.array(list(product([1, -1], repeat=dimensions))[1:-1]) * self.tolerance
+        self.points_to_check = None
+        self.options = np.array(list(product([1, -1], repeat=dimensions))) * self.tolerance
 
         self.structured_grid = structured_grid
         self.grid_points = None
@@ -66,6 +67,7 @@ class OuterLoop:
         self.bounding_box = None
         self.removed_boxes = []
         self.pf = set()
+        self.points_to_check = None
 
         self.grid_points = None
         self.total_grid_points = None
@@ -76,7 +78,6 @@ class OuterLoop:
         if self.structured_grid:
             valid_samples = [p for p in self.grid_points if not new_box.contains(p)]
             sample_size = len(self.total_grid_points)
-
         else:
             samples = self.rng.uniform(self.bounding_box.nadir, self.bounding_box.ideal,
                                        size=(self.sample_size, self.dimensions))
@@ -85,23 +86,35 @@ class OuterLoop:
 
         self.covered_volume = 1 - len(valid_samples) / sample_size
 
+    def remove_box(self, box):
+        """Remove a box from the bounding box."""
+        self.update_volume(box)
+        self.removed_boxes.append(box)
+        new_points = [v + self.options for v in box.vertices()]
+        self.points_to_check = np.vstack((self.points_to_check, *new_points))
+
+    def split_search_space(self, point):
+        """Split the search space at a given point.
+
+        Args:
+            point (np.ndarray): The point to split the search space at.
+        """
+        box1 = Box(np.copy(self.bounding_box.nadir), np.copy(point))
+        box2 = Box(np.copy(point), np.copy(self.bounding_box.ideal))
+        self.remove_box(box1)
+        self.remove_box(box2)
+        return box1, box2
+
     def update(self, point):
         """Update the algorithm after accepting a new point.
 
         Args:
             point (np.ndarray): A new point to add to the Pareto front and to split the box at.
         """
-        box1, box2 = Box(np.copy(self.bounding_box.nadir), np.copy(point)), Box(np.copy(point),
-                                                                                np.copy(self.bounding_box.ideal))
-        self.update_volume(box1)
-        self.update_volume(box2)
-        self.removed_boxes.extend([box1, box2])
+        box1, box2 = self.split_search_space(point)
+        new_points = [v + self.options for v in box1.vertices() + box2.vertices()]
+        self.points_to_check = np.vstack((self.points_to_check, *new_points))
         self.pf.add(tuple(point))
-
-    def reject_box(self, box):
-        """Reject a box from the bounding box."""
-        self.update_volume(box)
-        self.removed_boxes.append(box)
 
     def accept_point(self, point):
         """Check whether to accept a new point."""
@@ -222,23 +235,26 @@ class OuterLoop:
                 return True
         return False
 
-    def get_start_guess(self):
+    def get_start_point(self):
         """Get a starting point for the algorithm.
-
-        A starting point is selected by randomly sampling a point which may still contain empty area around it, checking
-        whether it is still in open area.
 
         Returns:
             np.ndarray: A starting point for the algorithm.
         """
-        shuffled_points = self.rng.permutation(list(self.pf))
-        for selected_point in shuffled_points:
-            random_indices = self.rng.permutation(len(self.options))
-            start_points = selected_point + self.options[random_indices]
-            for start_point in start_points:
-                if self.bounding_box.contains(start_points) and not self.in_removed_boxes(start_point):
-                    return start_point
-        return None
+        point_indices = self.rng.permutation(len(self.points_to_check))
+        points_to_remove = []
+        start_point = None
+
+        for pid in point_indices:
+            point = self.points_to_check[pid]
+            if self.bounding_box.contains(point) and not self.in_removed_boxes(point):
+                start_point = point
+                break
+            else:
+                points_to_remove.append(pid)
+
+        self.points_to_check = np.delete(self.points_to_check, points_to_remove, axis=0)
+        return start_point
 
     def get_next_box(self):
         """Get the next box to consider.
@@ -246,7 +262,7 @@ class OuterLoop:
         Returns:
             Box: The next box to consider.
         """
-        x0 = self.get_start_guess()
+        x0 = self.get_start_point()
         if x0 is None:
             return None
         greedy_box = self.greedy_max_box_from_point(x0)
@@ -290,20 +306,23 @@ class OuterLoop:
             self.grid_points = list(product(*coord_spaces))
             self.total_grid_points = len(self.grid_points)
 
+        self.points_to_check = np.vstack([point + self.options for point in self.bounding_box.vertices()])
+
         for point in max_points:
             self.update(point)
 
-    def solve(self):
+    def solve(self, log_freq=10):
         """Solve the problem."""
         self.init_phase()
         step = 0
 
         while not self.is_done() and step < self.max_steps:
-            print(f'Step {step} - Covered volume: {self.covered_volume:.5f}%')
+            if step % log_freq == 0:
+                print(f'Step {step} - Covered volume: {self.covered_volume:.5f}%')
 
             box = self.get_next_box()
             if box is None:
-                print(f'No box found in step {step}')
+                print(f'No more boxes to check. Stopping at step {step}. This should not happen.')
                 break
 
             target = np.copy(box.ideal)
@@ -313,9 +332,9 @@ class OuterLoop:
             if self.accept_point(found_vec):  # Check that new point is valid.
                 self.update(found_vec)
             else:
-                self.reject_box(box)
+                self.remove_box(box)
 
             step += 1
 
-        pf = p_prune({tuple(vec) for vec in self.pf})
+        pf = p_prune(self.pf.copy())
         return pf
