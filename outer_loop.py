@@ -318,7 +318,7 @@ class OuterLoop:
 
         while not self.is_done() and step < self.max_steps:
             if step % log_freq == 0:
-                print(f'Step {step} - Covered volume: {self.covered_volume:.5f}%')
+                print(f'Step {step} - Covered volume: {self.covered_volume * 100:.5f}%')
 
             box = self.get_next_box()
             if box is None:
