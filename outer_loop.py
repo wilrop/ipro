@@ -17,7 +17,7 @@ class OuterLoop:
                  structured_grid=False,
                  sample_size=10000,
                  tolerance=1e-1,
-                 max_steps=50,
+                 max_steps=500,
                  rng=None,
                  seed=None,
                  save_figs=False,
@@ -93,27 +93,15 @@ class OuterLoop:
         new_points = [v + self.options for v in box.vertices()]
         self.points_to_check = np.vstack((self.points_to_check, *new_points))
 
-    def split_search_space(self, point):
-        """Split the search space at a given point.
-
-        Args:
-            point (np.ndarray): The point to split the search space at.
-        """
-        box1 = Box(np.copy(self.bounding_box.nadir), np.copy(point))
-        box2 = Box(np.copy(point), np.copy(self.bounding_box.ideal))
-        self.remove_box(box1)
-        self.remove_box(box2)
-        return box1, box2
-
     def update(self, point):
         """Update the algorithm after accepting a new point.
 
         Args:
             point (np.ndarray): A new point to add to the Pareto front and to split the box at.
         """
-        box1, box2 = self.split_search_space(point)
-        new_points = [v + self.options for v in box1.vertices() + box2.vertices()]
-        self.points_to_check = np.vstack((self.points_to_check, *new_points))
+        self.remove_box(Box(np.copy(self.bounding_box.nadir), np.copy(point)))
+        self.remove_box(Box(np.copy(point), np.copy(self.bounding_box.ideal)))
+        self.points_to_check = np.vstack((self.points_to_check, point + self.options))
         self.pf.add(tuple(point))
 
     def accept_point(self, point):
