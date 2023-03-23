@@ -57,12 +57,22 @@ class OnlineMirrorDescent:
             policy (ndarray): A policy matrix.
 
         Returns:
-            int: The next state.
-            float: The reward.
-            bool: Whether the episode is terminated.
-            bool: Whether the episode is truncated.
+            int: The next action.
         """
         return self.rng.choice(self.num_actions, p=policy[state, :])
+
+    def select_exploratory_action(self, state):
+        """Select an action according to the given policy.
+
+        Args:
+            state (int): The current state.
+
+        Returns:
+            int: The next action.
+        """
+        action_counters = np.sum(self.transition_matrix[state, :, :], axis=-1)
+        explore_actions = np.argwhere(action_counters == min(action_counters)).flatten()
+        return self.rng.choice(explore_actions)
 
     def estimate_mdp(self):
         """Learn a model of the MDP from the environment."""
@@ -74,7 +84,7 @@ class OnlineMirrorDescent:
         state, _ = self.env.reset()
         state = format_state(state)
         for i in range(self.measure_iters):
-            action = self.select_action(state, self.init_policy)
+            action = self.select_exploratory_action(state)
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             next_state = format_state(next_state)
             self.transition_matrix[state, action, next_state] += 1
@@ -125,7 +135,7 @@ class OnlineMirrorDescent:
         occupancy = torch.tensor(occupancy, requires_grad=True)
         rewards = torch.tensor(self.reward_matrix, requires_grad=True)
         exp_rew = torch.unsqueeze(occupancy, -1) * rewards
-        exp_vec = exp_rew.sum(dim=0)
+        exp_vec = exp_rew.sum(dim=(0, 1))
         utility = utility_func(exp_vec)
         utility.backward()
         return occupancy.grad.numpy()
@@ -182,7 +192,8 @@ class OnlineMirrorDescent:
             reward_table = self.compute_reward_table(u_func, occupancy)
             q_func = self.compute_q_table(reward_table, policy_kernel)
             composite_q += self.q_alpha * q_func
-            policy = np.exp(composite_q) / np.sum(np.exp(composite_q), axis=-1, keepdims=True)
+            policy_q = composite_q - np.max(composite_q, axis=-1, keepdims=True)
+            policy = np.exp(policy_q) / np.sum(np.exp(policy_q), axis=-1, keepdims=True)
 
         vec = self.evaluate(policy)
         utility = u_func(torch.tensor(vec))
