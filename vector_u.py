@@ -125,7 +125,7 @@ def fast_translated_rectangle_u(vector, target, nadir):
     Returns:
         float: The obtained utility.
     """
-    return np.min((vector - nadir) * np.linalg.norm(target - nadir))
+    return np.min((vector - nadir) / np.linalg.norm(target - nadir))
 
 
 def create_fast_rectangle_u(target, nadir):
@@ -158,8 +158,8 @@ def create_fast_translated_rectangle_u(target, nadir, backend='numpy'):
         return lambda vec: np.min((vec - nadir) * constant)
     elif backend == 'torch':
         constant = float(constant)
-        nadir = torch.tensor(nadir)
-        return lambda vec: torch.min((vec - nadir) * constant)
+        nadir = torch.tensor(nadir, requires_grad=False)
+        return lambda vec: torch.min((vec - nadir) / constant)
     else:
         raise NotImplementedError
 
@@ -198,11 +198,11 @@ def create_batched_fast_translated_rectangle_u(target, nadir, backend='numpy'):
     """
     constant = np.linalg.norm(target - nadir)
     if backend == 'numpy':
-        return lambda vec: np.min((vec - nadir) * constant, axis=-1)
+        return lambda vec: np.min((vec - nadir) / constant, axis=-1)
     elif backend == 'torch':
         constant = float(constant)
         nadir = torch.tensor(nadir)
-        return lambda vec: torch.min((vec - nadir) * constant, dim=-1)[0]
+        return lambda vec: torch.min((vec - nadir) / constant, dim=-1)[0]
     else:
         raise NotImplementedError
 
