@@ -15,7 +15,8 @@ class OnlineMirrorDescent:
                  measure_iters=100000,
                  train_iters=500,
                  q_iters=50000,
-                 eval_episodes=20,
+                 eval_iters=5000,
+                 mc_iters=100,
                  gamma=0.9,
                  q_alpha=0.1,
                  model=None,
@@ -33,7 +34,8 @@ class OnlineMirrorDescent:
         self.measure_iters = measure_iters
         self.train_iters = train_iters
         self.q_iters = q_iters
-        self.eval_episodes = eval_episodes
+        self.eval_iters = eval_iters
+        self.mc_iters = mc_iters
 
         self.gamma = gamma
         self.q_alpha = q_alpha
@@ -128,18 +130,36 @@ class OnlineMirrorDescent:
                     state_f = np.unravel_index(state, self.env_shape)
                     print(f'Reward for state {state_f} and action {action}: {reward}')
 
-    def compute_occupancy(self, policy):
+    def print_greedy_policy(self, policy):
+        """Print the greedy policy in the model.
+
+        Args:
+            policy (ndarray): A policy matrix.
+        """
+        actions = {0: 'up',
+                   1: 'down',
+                   2: 'left',
+                   3: 'right'}
+        for state in range(self.num_states):
+            action = int(np.argmax(policy[state]))
+            state_f = np.unravel_index(state, self.env_shape)
+            print(f'State {state_f} takes action {actions[action]} with prob {policy[state, action]}')
+
+    def compute_occupancy(self, policy, normalise=False):
         """Compute the occupancy measure for the given policy.
 
         Args:
             policy (ndarray): A policy matrix.
+            normalise (bool, optional): Whether to normalise the occupancy measure. Defaults to False.
 
         Returns:
             ndarray, ndarray: The occupancy measure and the policy kernel.
         """
-        s0_measure = self.init_state_dist[:, np.newaxis] * policy
         pol_kern = self.compute_policy_kernel(policy)
-        dom = (1. - self.gamma) * np.linalg.pinv(np.identity(self.num_states) - self.gamma * pol_kern.T) @ s0_measure
+        dom = np.linalg.pinv(np.identity(self.num_states) - self.gamma * pol_kern.T) @ self.init_state_dist[:,
+                                                                                       np.newaxis] * policy
+        if normalise:
+            dom *= (1 - self.gamma)
         return dom, pol_kern
 
     def compute_policy_kernel(self, policy):
@@ -153,6 +173,26 @@ class OnlineMirrorDescent:
         """
         return np.sum(policy[:, :, np.newaxis] * self.transition_matrix, axis=1)
 
+    def compute_utility(self, utility_func, occupancy, verbose=False):
+        """Compute the utility for the given occupancy measure.
+
+        Args:
+            utility_func (function): A utility function.
+            occupancy (ndarray): An occupancy measure.
+            verbose (bool): Whether to print the expected reward and utility.
+
+        Returns:
+            tensor: The utility.
+        """
+        occupancy = torch.tensor(occupancy, requires_grad=True)
+        rewards = torch.tensor(self.reward_matrix, requires_grad=False)
+        exp_vecs = torch.unsqueeze(occupancy, -1) * rewards
+        exp_rew = exp_vecs.sum(dim=(0, 1))
+        utility = utility_func(exp_rew)
+        if verbose:
+            print(f'Expected reward: {exp_rew} with utility {utility}')
+        return utility, occupancy
+
     def compute_reward_table(self, utility_func, occupancy):
         """Compute the reward table for the given utility function and occupancy measure.
 
@@ -163,13 +203,9 @@ class OnlineMirrorDescent:
         Returns:
             ndarray: The reward table.
         """
-        occupancy = torch.tensor(occupancy, requires_grad=True)
-        rewards = torch.tensor(self.reward_matrix, requires_grad=False)
-        exp_vecs = torch.unsqueeze(occupancy, -1) * rewards
-        exp_rew = exp_vecs.sum(dim=(0, 1))
-        utility = utility_func(exp_rew)
+        utility, occupancy_tensor = self.compute_utility(utility_func, occupancy)
         utility.backward()
-        return occupancy.grad.numpy()
+        return occupancy_tensor.grad.numpy()
 
     def compute_q_table(self, reward_table, policy_kernel):
         """Compute the Q-table for the given reward table and policy kernel.
@@ -183,95 +219,47 @@ class OnlineMirrorDescent:
         """
         return np.linalg.pinv(np.identity(self.num_states) - self.gamma * policy_kernel) @ reward_table
 
-    def policy_evaluation(self, reward_table, policy):
+    def q_iteration(self, reward_table, policy_kernel):
         """Estimate the Q-table for the given reward table and policy.
 
         Args:
             reward_table (ndarray): A reward table.
-            policy (ndarray): A policy matrix.
+            policy_kernel (ndarray): The policy kernel.
 
         Returns:
             ndarray: The Q-table.
         """
-        q_table = np.zeros((self.num_states, self.num_actions))
-        state = 0
+        q_table = reward_table
 
         for i in range(self.q_iters):
-            action = self.select_action(state, policy)
-            next_state = self.rng.choice(self.num_states, p=self.transition_matrix[state, action])
-            reward = reward_table[state, action]
-            q_table[state, action] += self.q_alpha * (
-                    reward + self.gamma * np.dot(policy[next_state], q_table[next_state]) - q_table[state, action])
-            if next_state in self.terminal_states:  # If the episode is done, reset the environment.
-                state = 0
-            else:
-                state = next_state
+            q_table = reward_table + self.gamma * policy_kernel @ q_table
 
         return q_table
 
-    def evaluate_in_model(self, policy):
-        """Evaluate the learned policy on the model.
+    def evaluate_infinite(self, policy):
+        """Evaluate the learned policy on the model assuming an infinite horizon.
 
         Args:
             policy (ndarray): A policy matrix.
 
         Returns:
-            ndarray: The Pareto point.
+            ndarray: The expected reward.
         """
-        pareto_point = np.zeros(self.num_objectives)
+        expected_reward = np.zeros(self.num_objectives)
 
-        for episode in range(self.eval_episodes):
+        for j in range(self.mc_iters):
             state = 0
             accrued_reward = np.zeros(self.num_objectives)
-            timestep = 0
 
-            while state not in self.terminal_states:
+            for i in range(self.eval_iters):
                 action = self.select_action(state, policy)
                 next_state = self.rng.choice(self.num_states, p=self.transition_matrix[state, action])
                 reward = self.reward_matrix[state, action]
-                accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
+                accrued_reward = accrued_reward + reward * (self.gamma ** i)
                 state = next_state
-                timestep += 1
+            expected_reward = expected_reward + accrued_reward
 
-            pareto_point += accrued_reward
-
-        return pareto_point / self.eval_episodes
-
-    def evaluate(self, policy):
-        """Evaluate the learned policy on the environment.
-
-        Args:
-            policy (ndarray): A policy matrix.
-
-        Returns:
-            ndarray: The Pareto point.
-        """
-        pareto_point = np.zeros(self.num_objectives)
-
-        if self.box:
-            format_state = lambda s: int(np.ravel_multi_index(s, self.env_shape))
-        else:
-            format_state = lambda s: s
-
-        for episode in range(self.eval_episodes):
-            state, _ = self.env.reset()
-            state = format_state(state)
-            terminated = False
-            truncated = False
-            accrued_reward = np.zeros(self.num_objectives)
-            timestep = 0
-
-            while not (terminated or truncated):
-                action = self.select_action(state, policy)
-                next_state, reward, terminated, truncated, _ = self.env.step(action)
-                next_state = format_state(next_state)
-                accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
-                state = next_state
-                timestep += 1
-
-            pareto_point += accrued_reward
-
-        return pareto_point / self.eval_episodes
+        return expected_reward / self.mc_iters
 
     def create_occupancy_policy(self, occupancy):
         """Create a policy that maximizes the occupancy measure.
@@ -292,7 +280,7 @@ class OnlineMirrorDescent:
         Returns:
             ndarray: A policy matrix.
         """
-        policy = np.zeros((self.num_states, self.num_actions))
+        policy = np.full((self.num_states, self.num_actions), 1. / self.num_actions)
         actions = [3] * 8 + [1] * 9
         states = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (1, 8), (2, 8), (3, 8),
                   (4, 8), (5, 8), (6, 8), (7, 8), (8, 8)]
@@ -319,11 +307,11 @@ class OnlineMirrorDescent:
         for i in range(self.train_iters):
             occupancy, policy_kernel = self.compute_occupancy(policy)
             reward_table = self.compute_reward_table(u_func, occupancy)
-            q_table = self.policy_evaluation(reward_table, policy)
+            q_table = self.compute_q_table(reward_table, policy_kernel)
             composite_q += self.q_alpha * q_table
             policy_q = composite_q - np.max(composite_q, axis=-1, keepdims=True)
             policy = np.exp(policy_q) / np.sum(np.exp(policy_q), axis=-1, keepdims=True)
 
-        vec = self.evaluate(policy)
+        vec = self.evaluate_infinite(policy)
         utility = u_func(torch.tensor(vec))
         return vec, utility
