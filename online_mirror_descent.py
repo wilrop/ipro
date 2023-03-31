@@ -80,8 +80,14 @@ class OnlineMirrorDescent:
         explore_actions = np.argwhere(action_counters == min(action_counters)).flatten()
         return self.rng.choice(explore_actions)
 
-    def estimate_mdp(self):
-        """Learn a model of the MDP from the environment."""
+    def estimate_mdp(self, loop=True):
+        """Learn a model of the MDP from the environment.
+
+        Args:
+            loop (bool): Whether to loop the environment when encountering a terminal state.
+                If False, the terminal states are absorbing.
+
+        """
         if self.box:
             format_state = lambda s: int(np.ravel_multi_index(s, self.env_shape))
         else:
@@ -103,11 +109,17 @@ class OnlineMirrorDescent:
 
         self.reward_matrix /= np.sum(self.transition_matrix, axis=-1, keepdims=True)  # Average rewards.
         self.reward_matrix = np.nan_to_num(self.reward_matrix, nan=0)  # Replace NaNs.
-        for state in range(self.num_states):
-            if np.sum(self.transition_matrix[state]) == 0:
-                self.terminal_states.append(state)
-                for action in range(self.num_actions):
-                    self.transition_matrix[state, action] = np.copy(self.init_state_dist)
+        if loop:
+            for state in range(self.num_states):
+                if np.sum(self.transition_matrix[state]) == 0:
+                    self.terminal_states.append(state)
+                    for action in range(self.num_actions):
+                        self.transition_matrix[state, action] = np.copy(self.init_state_dist)
+        else:
+            for state in range(self.num_states):
+                if np.sum(self.transition_matrix[state]) == 0:
+                    self.terminal_states.append(state)
+                    self.transition_matrix[state, :, state] = 1
         self.transition_matrix = self.transition_matrix / np.sum(self.transition_matrix, axis=-1, keepdims=True)
 
     def print_model(self):
@@ -130,20 +142,23 @@ class OnlineMirrorDescent:
                     state_f = np.unravel_index(state, self.env_shape)
                     print(f'Reward for state {state_f} and action {action}: {reward}')
 
-    def print_greedy_policy(self, policy):
+    def print_greedy_policy(self, policy, top_k=2):
         """Print the greedy policy in the model.
 
         Args:
             policy (ndarray): A policy matrix.
+            top_k (int, optional): The number of top actions to print. Defaults to 2.
         """
         actions = {0: 'up',
                    1: 'down',
                    2: 'left',
                    3: 'right'}
         for state in range(self.num_states):
-            action = int(np.argmax(policy[state]))
+            actions_sorted = np.argsort(policy[state])[::-1]
             state_f = np.unravel_index(state, self.env_shape)
-            print(f'State {state_f} takes action {actions[action]} with prob {policy[state, action]}')
+            for a in actions_sorted[:top_k]:
+                a_f = actions[a]
+                print(f'State {state_f} takes action {a_f} with prob {policy[state, a]}')
 
     def compute_occupancy(self, policy, normalise=False):
         """Compute the occupancy measure for the given policy.
@@ -207,17 +222,21 @@ class OnlineMirrorDescent:
         utility.backward()
         return occupancy_tensor.grad.numpy()
 
-    def compute_q_table(self, reward_table, policy_kernel):
+    def compute_q_table(self, reward_table, policy_kernel, policy):
         """Compute the Q-table for the given reward table and policy kernel.
 
         Args:
             reward_table (ndarray): A reward table.
             policy_kernel (ndarray): A policy kernel.
+            policy (ndarray): A policy matrix.
 
         Returns:
             ndarray: The Q-table.
         """
-        return np.linalg.pinv(np.identity(self.num_states) - self.gamma * policy_kernel) @ reward_table
+        r = np.sum(reward_table * policy, axis=1)
+        v = np.linalg.pinv(np.identity(self.num_states) - self.gamma * policy_kernel) @ r
+        q = reward_table + self.gamma * np.dot(self.transition_matrix, v)
+        return q
 
     def q_iteration(self, reward_table, policy_kernel):
         """Estimate the Q-table for the given reward table and policy.
@@ -248,7 +267,7 @@ class OnlineMirrorDescent:
         expected_reward = np.zeros(self.num_objectives)
 
         for j in range(self.mc_iters):
-            state = 0
+            state = self.rng.choice(self.num_states, p=self.init_state_dist)
             accrued_reward = np.zeros(self.num_objectives)
 
             for i in range(self.eval_iters):
@@ -290,6 +309,21 @@ class OnlineMirrorDescent:
             policy[flat_state, action] = 1.
         return policy
 
+    def value_iteration(self, reward_table):
+        """Perform value iteration to find the optimal policy.
+
+        Args:
+            reward_table (ndarray): A reward table.
+
+        Returns:
+            ndarray: A policy matrix.
+        """
+        value_f = np.zeros(self.num_states)
+        for i in range(self.q_iters):
+            for s in range(self.num_states):
+                value_f[s] = np.max(reward_table[s] + self.gamma * self.transition_matrix[s] @ value_f)
+        return value_f
+
     def solve(self, target, nadir):
         """Solve the convex MDP using the online mirror descent algorithm.
 
@@ -307,7 +341,7 @@ class OnlineMirrorDescent:
         for i in range(self.train_iters):
             occupancy, policy_kernel = self.compute_occupancy(policy)
             reward_table = self.compute_reward_table(u_func, occupancy)
-            q_table = self.compute_q_table(reward_table, policy_kernel)
+            q_table = self.compute_q_table(reward_table, policy_kernel, policy)
             composite_q += self.q_alpha * q_table
             policy_q = composite_q - np.max(composite_q, axis=-1, keepdims=True)
             policy = np.exp(policy_q) / np.sum(np.exp(policy_q), axis=-1, keepdims=True)
