@@ -32,7 +32,7 @@ class Box:
             Box: The intersecting box.
         """
         if not self.is_intersecting(box):
-            return Box(self.nadir, self.ideal)
+            return None
         return Box(np.max([self.nadir, box.nadir], axis=0), np.min([self.ideal, box.ideal], axis=0))
 
     def is_intersecting(self, box):
