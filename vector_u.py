@@ -1,221 +1,117 @@
 import numpy as np
 import torch
-from pulp import *
 
 
-def vector_u_strict(vector, target, w=0.5):
-    """Compute the utility from a vector given a specific target vector.
-
-    Note:
-        This utility function is strictly monotonically increasing in the positive orthant when the return vector never
-        is undominated by the target vector.
+def constrained_sum(vector, referent, nadir, ideal):
+    """Compute the constrained utility from a vector.
 
     Args:
         vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
-        w (float): A tradeoff hyperparameter that determines how to weight the utility from the original utility
-            function with the added term.
+        referent (ndarray): The referent vector.
+        nadir (ndarray): The nadir vector.
+        ideal (ndarray): The ideal vector.
 
     Returns:
-        float: The obtained utility.
+        float: The constrained utility.
     """
-    c = vector_u(vector, target)
-    utility = w * c + (1 - w) * np.linalg.norm(vector)
-    return utility
+    min_val = min((vector - referent) / (ideal - nadir))
+    if min_val > 0:
+        return sum(vector)
+    else:
+        return min_val
 
 
-def c_eval(vector, target, c):
-    """Evaluate the conditions of the linear program for a given c.
+def create_cs(referent, nadir, ideal):
+    """Create a constrained sum function.
 
     Args:
-        vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
-        c (float): A utility.
+        referent (ndarray): The referent vector.
+        nadir (ndarray): The nadir vector.
+        ideal (ndarray): The ideal vector.
 
     Returns:
-        ndarray: The evaluation of a c variable into the utility function.
+        function: The constrained sum function.
     """
-    return vector - c * target / np.linalg.norm(target)
+    return lambda vec: constrained_sum(vec, referent, nadir, ideal)
 
 
-def vector_u(vector, target):
-    """Compute the utility from a vector given a specific target vector.
-
-    Note:
-        This utility function is monotonically increasing in the positive orthant.
-
-    Note:
-        For this utility function, you can guarantee that the utility is greater everywhere inside the rectangle than
-        on the already discovered edges given an appropriate target vector. Specifically, the target vector needs to
-        ensure that the line goes through the bottom left corner of the rectangle.
+def create_batched_cs(referent, nadir, ideal, backend='numpy'):
+    """Create a batched constrained sum function.
 
     Args:
-        vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
+        referent (ndarray): The referent vector.
+        nadir (ndarray): The nadir vector.
+        ideal: The ideal vector.
+        backend (str, optional): The backend to use. Defaults to 'numpy'.
 
     Returns:
-        float: The obtained utility.
+        function: The batched constrained sum function.
     """
-    problem = LpProblem('vectorUtility', LpMaximize)
+    if backend == 'numpy':
+        return lambda vecs: np.apply_along_axis(create_cs(referent, nadir, ideal), -1, vecs)
+    elif backend == 'torch':
+        def apply_along_axis(function, axis, x):
+            return torch.stack([
+                function(x_i) for x_i in torch.unbind(x, dim=axis)
+            ], dim=axis)
 
-    c = LpVariable('c', lowBound=0.)
-    c_term = target / np.linalg.norm(target)
-    for vi, c_termi in zip(vector, c_term):
-        problem += vi - c * c_termi >= 0
-
-    problem += c  # Maximise the utility.
-    success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
-    c = problem.objective.value()  # Get the objective value.
-    return c
+        return lambda vecs: apply_along_axis(create_cs(referent, nadir, ideal), -1, vecs)
+    else:
+        raise NotImplementedError
 
 
-def rectangle_u(vector, target, nadir):
+def aasf(vector, referent, nadir, ideal, aug=0.):
     """Compute the utility from a vector given a specific target vector.
 
     Note:
         This utility function is monotonically increasing in the positive orthant.
 
-    Note:
-        For this utility function, any point outside the rectangle or on the already discovered edges will have a
-        lower utility than inside the rectangle for any given target vector.
-
     Args:
         vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
+        referent (ndarray): The referent vector.
         nadir (ndarray): The nadir vector.
+        ideal (ndarray): The ideal vector.
+        aug (float): The augmentation factor. Defaults to 0.
 
     Returns:
         float: The obtained utility.
     """
-    problem = LpProblem('vectorUtility', LpMaximize)
-
-    c = LpVariable('c', lowBound=0.)
-    c_term = target / np.linalg.norm(target - nadir)
-    for vi, c_termi in zip(vector, c_term):
-        problem += vi - c * c_termi >= 0
-
-    problem += c  # Maximise the utility.
-    success = problem.solve(solver=PULP_CBC_CMD(msg=False))  # Solve the problem.
-    c = problem.objective.value()  # Get the objective value.
-    return c
+    pos_vec = (ideal - nadir)
+    return min((vector - referent) / pos_vec) + aug * sum(vector / pos_vec)
 
 
-def fast_rectangle_u(vector, target, nadir):
-    """Compute the utility as rectangle_u but in a smarter way.
+def create_aasf(referent, nadir, ideal, aug=0.):
+    """Create a non-batched augmented achievement scalarizing function.
 
     Args:
-        vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
+        referent (ndarray): The referent vector.
         nadir (ndarray): The nadir vector.
+        ideal (ndarray): The ideal vector.
+        aug (float): The augmentation factor. Defaults to 0.
 
     Returns:
-        float: The obtained utility.
+        function: The non-batched augmented achievement scalarizing function.
     """
-    return np.min(vector * np.linalg.norm(target - nadir) / target)
+    return lambda vec: aasf(vec, referent, nadir, ideal, aug=aug)
 
 
-def fast_translated_rectangle_u(vector, target, nadir):
-    """Compute the utility as rectangle_u but in a smarter way.
+def create_batched_aasf(referent, nadir, ideal, aug=0., backend='numpy'):
+    """Create a batched augmented achievement scalarizing function.
 
     Args:
-        vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
+        referent (ndarray): The referent vector.
         nadir (ndarray): The nadir vector.
-
-    Returns:
-        float: The obtained utility.
-    """
-    return np.min((vector - nadir) / np.linalg.norm(target - nadir))
-
-
-def create_fast_rectangle_u(target, nadir):
-    """Create a fast utility function for a specific target and nadir vector.
-
-    Args:
-        target (ndarray): The target vector.
-        nadir (ndarray): The nadir vector.
-
-    Returns:
-        function: The fast utility function.
-    """
-    constant = np.linalg.norm(target - nadir) / target
-    return lambda vec: np.min(vec * constant)
-
-
-def create_fast_translated_rectangle_u(target, nadir, backend='numpy'):
-    """Create a fast utility function for a specific target and nadir vector.
-
-    Args:
-        target (ndarray): The target vector.
-        nadir (ndarray): The nadir vector.
+        ideal (ndarray): The ideal vector.
+        aug (float): The augmentation factor. Defaults to 0.
         backend (str): The backend to use for the computation.
 
     Returns:
-        function: The fast utility function.
+        function: The batched augmented achievement scalarizing function.
     """
-    constant = np.linalg.norm(target - nadir)
+    pos_vec = (ideal - nadir)
     if backend == 'numpy':
-        return lambda vec: np.min((vec - nadir) * constant)
+        return lambda vec: np.min((vec - referent) / pos_vec, axis=-1) + aug * np.sum(vec / pos_vec, axis=-1)
     elif backend == 'torch':
-        constant = float(constant)
-        nadir = torch.tensor(nadir, requires_grad=False)
-        return lambda vec: torch.min((vec - nadir) / constant)
+        return lambda vec: torch.min((vec - referent) / pos_vec, dim=-1)[0] + aug * torch.sum(vec / pos_vec, dim=-1)
     else:
         raise NotImplementedError
-
-
-def create_batched_fast_rectangle_u(target, nadir, backend='numpy'):
-    """Create a fast utility function for a specific target and nadir vector.
-
-    Args:
-        target (ndarray): The target vector.
-        nadir (ndarray): The nadir vector.
-        backend (str): The backend to use for the computation.
-
-    Returns:
-        function: The fast utility function.
-    """
-    constant = np.linalg.norm(target - nadir) / target
-    if backend == 'numpy':
-        return lambda vec: np.min(vec * constant, axis=-1)
-    elif backend == 'torch':
-        constant = torch.Tensor(constant)
-        return lambda vec: torch.min(vec * constant, dim=-1)[0]
-    else:
-        raise NotImplementedError
-
-
-def create_batched_fast_translated_rectangle_u(target, nadir, backend='numpy'):
-    """Create a fast utility function for a specific target and nadir vector.
-
-    Args:
-        target (ndarray): The target vector.
-        nadir (ndarray): The nadir vector.
-        backend (str): The backend to use for the computation.
-
-    Returns:
-        function: The fast utility function.
-    """
-    constant = np.linalg.norm(target - nadir)
-    if backend == 'numpy':
-        return lambda vec: np.min((vec - nadir) / constant, axis=-1)
-    elif backend == 'torch':
-        constant = float(constant)
-        nadir = torch.tensor(nadir)
-        return lambda vec: torch.min((vec - nadir) / constant, dim=-1)[0]
-    else:
-        raise NotImplementedError
-
-
-def fast_rectangle_u_minimisation(vector, target, nadir):
-    """Compute the utility for a minimisation problem.
-
-    Args:
-        vector (ndarray): The obtained vector.
-        target (ndarray): The target vector.
-        nadir (ndarray): The nadir vector.
-
-    Returns:
-        float: The obtained utility.
-    """
-    return np.max(vector * np.linalg.norm(target - nadir) / nadir)
