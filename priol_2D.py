@@ -5,7 +5,7 @@ from box import Box
 from pareto import p_prune, pareto_dominates
 
 
-class OuterLoop2D:
+class Priol2D:
     """An inner-outer loop method for solving 2D multi-objective problems."""
 
     def __init__(self, problem, inner_loop, linear_solver, tolerance=1e-6, log_dir=None):
