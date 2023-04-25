@@ -101,6 +101,7 @@ class PrioritizedAccruedRewardReplayBuffer:
         self.rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
         self.accrued_rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
         self.dones = np.zeros((max_size, 1), dtype=np.float32)
+        self.timesteps = np.zeros((max_size, 1), dtype=np.float32)
 
         self.tree = SumTree(max_size)
         self.max_priority = max_priority
@@ -112,7 +113,7 @@ class PrioritizedAccruedRewardReplayBuffer:
         self.max_priority = self.start_max_priority
         self.tree = SumTree(self.max_size)
 
-    def add(self, obs, accrued_reward, action, reward, next_obs, done, priority=None):
+    def add(self, obs, accrued_reward, action, reward, next_obs, done, timestep, priority=None):
         """Add a new experience to memory.
 
         Args:
@@ -130,6 +131,7 @@ class PrioritizedAccruedRewardReplayBuffer:
         self.rewards[self.ptr] = np.array(reward).copy()
         self.accrued_rewards[self.ptr] = np.array(accrued_reward).copy()
         self.dones[self.ptr] = np.array(done).copy()
+        self.timesteps[self.ptr] = np.array(self.ptr).copy()
 
         self.tree.set(self.ptr, self.max_priority if priority is None else priority)
 
@@ -156,6 +158,7 @@ class PrioritizedAccruedRewardReplayBuffer:
             self.rewards[idxes],
             self.next_obs[idxes],
             self.dones[idxes],
+            self.timesteps[idxes]
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)
@@ -174,7 +177,8 @@ class PrioritizedAccruedRewardReplayBuffer:
         idxes = self.tree.sample(batch_size)
         experience_tuples = (
             self.obs[idxes],
-            self.accrued_rewards[idxes]
+            self.accrued_rewards[idxes],
+            self.timesteps[idxes],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)
@@ -212,6 +216,7 @@ class PrioritizedAccruedRewardReplayBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
+            self.timesteps[inds]
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
@@ -253,8 +258,9 @@ class AccruedRewardReplayBuffer:
         self.rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
         self.accrued_rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
         self.dones = np.zeros((max_size, 1), dtype=np.float32)
+        self.timesteps = np.zeros((max_size, 1), dtype=obs_dtype)
 
-    def add(self, obs, accrued_reward, action, reward, next_obs, done):
+    def add(self, obs, accrued_reward, action, reward, next_obs, done, timestep):
         """Add a new experience to memory.
 
         Args:
@@ -271,6 +277,8 @@ class AccruedRewardReplayBuffer:
         self.rewards[self.ptr] = np.array(reward).copy()
         self.accrued_rewards[self.ptr] = np.array(accrued_reward).copy()
         self.dones[self.ptr] = np.array(done).copy()
+        self.timesteps[self.ptr] = timestep
+
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
@@ -297,6 +305,7 @@ class AccruedRewardReplayBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
+            self.timesteps[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
@@ -335,6 +344,7 @@ class AccruedRewardReplayBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
+            self.timesteps[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
