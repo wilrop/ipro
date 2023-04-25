@@ -2,15 +2,15 @@ import numpy as np
 from sortedcontainers import SortedKeyList
 
 from box import Box
-from pareto import p_prune, pareto_dominates
+from pareto import p_prune, strict_pareto_dominates
 
 
 class Priol2D:
     """An inner-outer loop method for solving 2D multi-objective problems."""
 
-    def __init__(self, problem, inner_loop, linear_solver, tolerance=1e-6, log_dir=None):
+    def __init__(self, problem, oracle, linear_solver, tolerance=1e-6, log_dir=None):
         self.problem = problem
-        self.inner_loop = inner_loop
+        self.oracle = oracle
         self.linear_solver = linear_solver
         self.tolerance = tolerance
         self.log_dir = log_dir
@@ -19,7 +19,7 @@ class Priol2D:
         self.removed_boxes = []
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
         self.pf = set()
-
+        self.error_estimates = []
         self.covered_volume = 0
 
     def reset(self):
@@ -28,6 +28,7 @@ class Priol2D:
         self.removed_boxes = []
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
         self.pf = set()
+        self.error_estimates = []
         self.covered_volume = 0
 
     def percentage_covered(self):
@@ -37,6 +38,14 @@ class Priol2D:
             float: The percentage of the bounding box that is covered.
         """
         return self.covered_volume / self.bounding_box.volume * 100
+
+    def estimate_error(self):
+        """Estimate the error of the algorithm."""
+        if len(self.box_queue) == 0:
+            self.error_estimates.append(0)
+        else:
+            largest_box = self.box_queue[-1]
+            self.error_estimates.append(np.max(largest_box.ideal - largest_box.nadir))
 
     def remove_box(self, box):
         """Remove a box from the algorithm.
@@ -105,6 +114,7 @@ class Priol2D:
         self.bounding_box = Box(np.min(outer_points, axis=0), np.max(outer_points, axis=0))
         self.pf.update([tuple(vec) for vec in outer_points])
         self.box_queue.add(self.bounding_box)
+        self.estimate_error()
 
     def get_next_box(self):
         """Get the next box to search."""
@@ -115,30 +125,9 @@ class Priol2D:
 
     def is_done(self):
         """Check if the algorithm is done."""
-        return not self.box_queue
+        return not self.box_queue or self.error_estimates[-1] <= self.tolerance
 
-    def accept_point(self, point, utility, fast=True):
-        """Check if a point is valid.
-
-        Note:
-            Preferable, this should use the utility but it does not work yet.
-
-        Args:
-            point (np.array): The point to check.
-            utility (float): The utility of the point.
-
-        Returns:
-            bool: True if the point is valid, False otherwise.
-        """
-        if fast:
-            return utility > 0
-
-        for alternative in self.pf:
-            if pareto_dominates(alternative, point) or np.all(alternative == point):
-                return False
-        return True
-
-    def solve(self, log_freq=10):
+    def solve(self, log_freq=1):
         """Solve the problem."""
         self.init_phase()
         step = 0
@@ -148,15 +137,15 @@ class Priol2D:
                 print(f'Step {step} - Covered volume: {self.percentage_covered():.5f}%')
 
             box = self.get_next_box()
-            target = np.copy(box.ideal)
-            local_nadir = np.copy(box.nadir)
-            found_vec, utility = self.inner_loop.solve(target, local_nadir)
+            ideal = np.copy(box.ideal)
+            referent = np.copy(box.nadir)
+            vec = self.oracle.solve(referent, ideal)
 
-            if self.accept_point(found_vec, utility):  # Check that new point is valid.
-                self.update(box, found_vec)
+            if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
+                self.update(box, vec)
             else:
                 self.remove_box(box)
-
+            self.estimate_error()
             step += 1
 
         pf = p_prune(self.pf.copy())
