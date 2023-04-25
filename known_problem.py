@@ -2,20 +2,21 @@ import argparse
 
 import numpy as np
 
-from outer_loop import OuterLoop
-from outer_loop_2D import OuterLoop2D
-from pareto import verify_pcs
-from vector_u import create_batched_fast_translated_rectangle_u
+from box_splitting_nd import BoxSplittingND
+from priol_2D import Priol2D
+from priol import Priol
+from pareto import verify_pcs, extreme_prune
+from vector_u import create_batched_aasf
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--iterations', type=int, default=100, help='The number of iterations.')
-    parser.add_argument('--objectives', type=int, default=3, help='The number of objectives.')
-    parser.add_argument('--vecs', type=int, default=10, help='The number of vectors.')
+    parser.add_argument('--objectives', type=int, default=8, help='The number of objectives.')
+    parser.add_argument('--vecs', type=int, default=100, help='The number of vectors.')
     parser.add_argument('--low', type=int, default=0, help='The lower bound for the random integers.')
     parser.add_argument('--high', type=int, default=10, help='The upper bound for the random integers.')
-    parser.add_argument('--outer_loop', type=str, default='ND', help='The outer loop to use.')
+    parser.add_argument('--outer_loop', type=str, default='PRIOL', help='The outer loop to use.')
     parser.add_argument('--seed', type=int, default=1, help='The seed for the random number generator.')
     return parser.parse_args()
 
@@ -55,23 +56,36 @@ def generate_problem(objectives=2, vecs=10, low=0, high=10, rng=None):
 class InnerLoop:
     """A simple inner-loop method for the known problem setting."""
 
-    def __init__(self, problem):
+    def __init__(self, problem, aug=0.01):
         self.problem = problem
+        self.aug = aug
 
-    def solve(self, target, nadir):
+    def get_nadir(self):
+        """Get the true nadir point.
+
+        Note:
+            This is purely used for testing purposes.
+
+        Returns:
+            np.ndarray: The true nadir point.
+        """
+        correct_pf = extreme_prune(np.copy(self.problem))
+        return np.min(correct_pf, axis=0)
+
+    def solve(self, referent, ideal):
         """The inner loop solver for the basic setting.
 
         Args:
-            target (np.ndarray): The target vector.
-            nadir (np.ndarray): The nadir vector.
+            referent (np.ndarray): The reference vector.
+            ideal (np.ndarray): The ideal vector.
 
         Returns:
             np.ndarray: The Pareto optimal vector.
         """
-        u_f = create_batched_fast_translated_rectangle_u(target, nadir)
+        u_f = create_batched_aasf(referent, referent, ideal, aug=self.aug)
         utilities = u_f(self.problem)
         best_point = np.argmax(utilities)
-        return self.problem[best_point], utilities[best_point]
+        return self.problem[best_point]
 
 
 if __name__ == '__main__':
@@ -87,9 +101,11 @@ if __name__ == '__main__':
         if args.outer_loop == '2D':
             if args.objectives != 2:
                 raise ValueError('The 2D outer loop can only be used for 2D problems.')
-            outer_loop = OuterLoop2D(problem, inner_loop, linear_solver)
+            outer_loop = Priol2D(problem, inner_loop, linear_solver)
+        elif args.outer_loop == 'PRIOL':
+            outer_loop = Priol(problem, args.objectives, inner_loop, linear_solver, seed=args.seed)
         else:
-            outer_loop = OuterLoop(problem, args.objectives, inner_loop, linear_solver, seed=args.seed)
+            outer_loop = BoxSplittingND(problem, args.objectives, inner_loop, linear_solver, seed=args.seed)
 
         pf = outer_loop.solve()
         correct_set, is_correct = verify_pcs(problem, pf)
@@ -102,8 +118,8 @@ if __name__ == '__main__':
             print(f'Obtained set: {pf}')
             print(f'Number of missing elements: {len(missing_set)} - Difference : {missing_set}')
             print(f'Bounding box: {outer_loop.bounding_box}')
+            print(f'Lower set: {outer_loop.lower_points}')
 
             for point in missing_set:
-                for box in outer_loop.removed_boxes:
-                    if box.contains(point):
-                        print(f'Point {point} was removed by box {box}. Inner point? {box.contains_inner(point)}')
+                strict_ok = np.any(np.all(np.array(point) > outer_loop.lower_points, axis=1))
+                print(f'Point {point} strictly dominates some lower point: {strict_ok}')
