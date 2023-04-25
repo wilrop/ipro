@@ -6,7 +6,7 @@ from box import Box
 from pareto import p_prune, pareto_dominates
 
 
-class OuterLoop:
+class BoxSplittingND:
     """An inner-outer loop method for solving arbitrary multi-objective problems."""
 
     def __init__(self,
