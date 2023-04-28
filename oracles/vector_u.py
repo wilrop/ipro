@@ -14,9 +14,10 @@ def constrained_sum(vector, referent, nadir, ideal):
     Returns:
         float: The constrained utility.
     """
-    min_val = min((vector - referent) / (ideal - nadir))
+    frac_improvement = (vector - referent) / (ideal - nadir)
+    min_val = min(frac_improvement)
     if min_val > 0:
-        return sum(vector)
+        return sum(frac_improvement)
     else:
         return min_val
 
@@ -76,8 +77,8 @@ def aasf(vector, referent, nadir, ideal, aug=0.):
     Returns:
         float: The obtained utility.
     """
-    pos_vec = (ideal - nadir)
-    return min((vector - referent) / pos_vec) + aug * sum(vector / pos_vec)
+    frac_improvement = (vector - referent) / (ideal - nadir)
+    return min(frac_improvement) + aug * sum(frac_improvement)
 
 
 def create_aasf(referent, nadir, ideal, aug=0.):
@@ -110,8 +111,16 @@ def create_batched_aasf(referent, nadir, ideal, aug=0., backend='numpy'):
     """
     pos_vec = (ideal - nadir)
     if backend == 'numpy':
-        return lambda vec: np.min((vec - referent) / pos_vec, axis=-1) + aug * np.sum(vec / pos_vec, axis=-1)
+        def numpy_func(vec):
+            frac_improvement = (vec - referent) / pos_vec
+            return np.min(frac_improvement, axis=-1) + aug * np.sum(frac_improvement, axis=-1)
+
+        return numpy_func
     elif backend == 'torch':
-        return lambda vec: torch.min((vec - referent) / pos_vec, dim=-1)[0] + aug * torch.sum(vec / pos_vec, dim=-1)
+        def torch_func(vec):
+            frac_improvement = (vec - referent) / pos_vec
+            return torch.min(frac_improvement, dim=-1)[0] + aug * torch.sum(frac_improvement, dim=-1)
+
+        return torch_func
     else:
         raise NotImplementedError

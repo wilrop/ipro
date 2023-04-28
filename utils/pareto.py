@@ -56,6 +56,9 @@ def extreme_prune(candidates):
         ndarray: A Pareto coverage set.
     """
     candidates = np.unique(candidates, axis=0)
+    if len(candidates) == 1:
+        return candidates
+
     res_eq = np.all(candidates[:, None, None] <= candidates, axis=-1).squeeze()
     res_g = np.all(candidates[:, None, None] < candidates, axis=-1).squeeze()
     c1 = np.sum(res_eq, axis=-1) == 1

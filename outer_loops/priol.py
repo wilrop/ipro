@@ -1,8 +1,9 @@
+import time
+
 import numpy as np
 import pygmo as pg
-from box import Box
-from pareto import strict_pareto_dominates, extreme_prune
-import time
+from outer_loops.box import Box
+from utils.pareto import strict_pareto_dominates, extreme_prune
 
 
 class Priol:
@@ -102,8 +103,8 @@ class Priol:
         for i in range(self.dim):
             weight_vec = np.zeros(self.dim)
             weight_vec[i] = 1
-            max_i = self.linear_solver(self.problem, weight_vec)
-            min_i = self.linear_solver(self.problem, -1 * weight_vec)
+            max_i = self.linear_solver.solve(weight_vec)
+            min_i = self.linear_solver.solve(-1 * weight_vec)
             nadir[i] = min_i[i]
             ideal[i] = max_i[i]
             pf.append(max_i)
@@ -120,7 +121,7 @@ class Priol:
         self.lower_points = np.array([nadir])
 
         for point in self.pf:  # Initialise the lower points.
-            self.update_lower_points(np.array(point), init=True)
+            self.update_lower_points(np.array(point))
 
         self.upper_points = np.array([ideal])  # Initialise the upper points.
         self.error_estimates.append(max(ideal - nadir))
@@ -210,10 +211,11 @@ class Priol:
         shifted[range(self.dim), :, range(self.dim)] = np.expand_dims(vec, -1)
         shifted = shifted.reshape(-1, self.dim)
         shifted = shifted[np.all(shifted > self.nadir, axis=-1)]
+
         new_upper_points = np.vstack((to_keep, shifted))
         self.upper_points = extreme_prune(new_upper_points)
 
-    def update_lower_points(self, vec, init=False):
+    def update_lower_points(self, vec):
         """Update the upper set.
 
         Args:
@@ -224,9 +226,7 @@ class Priol:
         shifted = np.stack([self.lower_points[strict_dominates == 1]] * self.dim)
         shifted[range(self.dim), :, range(self.dim)] = np.expand_dims(vec, -1)
         shifted = shifted.reshape(-1, self.dim)
-
-        if not init:  # This ensures that after the initialisation phase only correct corners are kept.
-            shifted = shifted[np.all(self.ideal > shifted, axis=-1)]
+        shifted = shifted[np.all(self.ideal > shifted, axis=-1)]
 
         new_lower_points = np.vstack((to_keep, shifted))
         self.lower_points = -extreme_prune(-new_lower_points)
@@ -249,7 +249,7 @@ class Priol:
         else:
             raise ValueError(f'Unknown method {method}')
 
-    def solve(self, log_freq=50, update_freq=50):
+    def solve(self, log_freq=1, update_freq=50):
         """Solve the problem.
 
         Args:
@@ -264,11 +264,18 @@ class Priol:
 
         if done:
             print('The problem is solved in the initial phase.')
+            print(self.pf)
             return {tuple(vec) for vec in self.pf}
 
         while self.error_estimates[-1] > self.tol and step < self.max_steps:
+            if step % log_freq == 0:
+                print(f'Step {step}')
+                print(f'↪ Covered volume: {self.covered_volume * 100:.5f}%')
+                print(f'↪ Error estimate: {self.error_estimates[-1]:.5f}')
+
             referent = self.select_referent(method='first')
-            vec = self.oracle.solve(referent, self.ideal)
+            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal))
+            print(f'Referent {referent} -> Vec {vec}')
 
             if strict_pareto_dominates(vec, referent):
                 self.pf = np.vstack((self.pf, vec))
@@ -284,11 +291,6 @@ class Priol:
                 self.update_dominated_hv()
                 self.update_dominating_hv()
                 self.covered_volume = (self.dominated_hv + self.dominating_hv) / self.total_hv
-
-            if step % log_freq == 0:
-                print(f'Step {step}')
-                print(f'↪ Covered volume: {self.covered_volume * 100:.5f}%')
-                print(f'↪ Error estimate: {self.error_estimates[-1]:.5f}')
 
             self.estimate_error()
             step += 1

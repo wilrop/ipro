@@ -35,7 +35,7 @@ class ProbabilisticEnsemble(nn.Module):
             input_dim,
             output_dim,
             ensemble_size=5,
-            arch=[200, 200, 200, 200],
+            arch=(200, 200, 200, 200),
             activation=F.relu,
             learning_rate=0.001,
             num_elites=2,

@@ -1,8 +1,10 @@
+import time
+
 import numpy as np
 from sortedcontainers import SortedKeyList
 
-from box import Box
-from pareto import p_prune, strict_pareto_dominates
+from outer_loops.box import Box
+from utils.pareto import p_prune, strict_pareto_dominates
 
 
 class Priol2D:
@@ -103,9 +105,9 @@ class Priol2D:
         """
         outer_points = []
         for d in range(2):
-            weight_vec = np.zeros(2)
-            weight_vec[d] = 1
-            outer_points.append(self.linear_solver(self.problem, weight_vec))
+            weights = np.zeros(2)
+            weights[d] = 1
+            outer_points.append(self.linear_solver.solve(weights))
         return np.array(outer_points)
 
     def init_phase(self):
@@ -129,6 +131,7 @@ class Priol2D:
 
     def solve(self, log_freq=1):
         """Solve the problem."""
+        start = time.time()
         self.init_phase()
         step = 0
 
@@ -145,8 +148,11 @@ class Priol2D:
                 self.update(box, vec)
             else:
                 self.remove_box(box)
+                self.pf.add(tuple(vec))  # Add vec to the PF for robustness. It'll get pruned anyway if it's dominated.
             self.estimate_error()
             step += 1
 
         pf = p_prune(self.pf.copy())
+
+        print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
         return pf

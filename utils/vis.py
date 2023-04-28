@@ -7,7 +7,7 @@ import imageio.v3 as iio
 def plot_patches(patches, pf, points, log_dir, name):
     pf = sorted(pf, key=lambda x: x[0])
     fig, ax = plt.subplots()
-    ax.set_facecolor((154/256, 142/256, 148/256, 0.8))
+    ax.set_facecolor((154 / 256, 142 / 256, 148 / 256, 0.8))
     ax.scatter(points[:, 0], points[:, 1], c='b', s=15)
 
     rectangles = [(tuple(patch.bot_left), patch.width, patch.height) for patch in patches]
