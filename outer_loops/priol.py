@@ -43,6 +43,7 @@ class Priol:
         self.nadir = None
         self.ideal = None
         self.pf = []
+        self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
         self.lower_points = []
         self.upper_points = []
@@ -64,6 +65,7 @@ class Priol:
         self.nadir = None
         self.ideal = None
         self.pf = []
+        self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
         self.lower_points = []
         self.upper_points = []
@@ -285,6 +287,7 @@ class Priol:
                 self.completed = np.vstack((self.completed, referent))
                 self.lower_points = self.lower_points[np.any(self.lower_points != referent, axis=1)]
                 self.update_upper_points(referent)
+                self.robust_points = np.vstack((self.robust_points, vec))
 
             if step % update_freq == 0:
                 self.compute_hvis()
@@ -295,7 +298,7 @@ class Priol:
             self.estimate_error()
             step += 1
 
-        pf = {tuple(vec) for vec in extreme_prune(self.pf)}
+        pf = {tuple(vec) for vec in extreme_prune(np.vstack((self.pf, self.robust_points)))}
 
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
         return pf
