@@ -16,6 +16,7 @@ class DRLOracle:
         self.gamma = gamma
         self.eval_episodes = eval_episodes
         self.u_func = None
+        self.trained_models = {}
 
     def reset(self):
         """Reset the environment and the agent."""
@@ -51,9 +52,23 @@ class DRLOracle:
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
+    def get_closest_referent(self, referent):
+        """Get the processed referent closest to the given referent.
+
+        Args:
+            referent (ndarray): The referent to get the closest processed referent for.
+
+        Returns:
+            ndarray: The closest processed referent.
+        """
+        referents = list(self.trained_models.keys())
+        if len(referents) == 0:
+            return False
+        distances = np.array([np.linalg.norm(np.array(referent) - np.array(r)) for r in referents])
+        return referents[np.argmin(distances)]
+
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""
-        self.reset()
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, backend='torch')

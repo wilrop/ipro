@@ -5,7 +5,6 @@ import torch.nn.functional as F
 
 from oracles.probabilistic_ensemble import ProbabilisticEnsemble
 from oracles.replay_buffer import PrioritizedAccruedRewardReplayBuffer, AccruedRewardReplayBuffer
-from oracles.vector_u import create_batched_aasf
 from oracles.drl_oracle import DRLOracle
 
 
@@ -44,7 +43,7 @@ class MODQN(DRLOracle):
     def __init__(self,
                  env,
                  aug=0.2,
-                 dqn_lr=0.001,
+                 lrs=(0.001,),
                  learning_start=1000,
                  train_freq=1,
                  target_update_freq=100,
@@ -54,7 +53,7 @@ class MODQN(DRLOracle):
                  exploration_frac=0.5,
                  gamma=0.99,
                  tau=1.0,
-                 dqn_hidden_layers=(64, 64),
+                 hidden_layers=((64, 64),),
                  model_based=False,
                  model_lr=0.001,
                  model_hidden_layers=(64, 64),
@@ -62,8 +61,8 @@ class MODQN(DRLOracle):
                  pe_size=5,
                  buffer_size=100000,
                  per=False,
-                 alpha_per: float = 0.6,
-                 min_priority: float = 1.0,
+                 alpha_per=0.6,
+                 min_priority=1.0,
                  batch_size=32,
                  init_real_frac=0.8,
                  final_real_frac=0.1,
@@ -74,7 +73,7 @@ class MODQN(DRLOracle):
                  seed=0):
         super().__init__(env, aug=aug, gamma=gamma, eval_episodes=eval_episodes)
 
-        self.dqn_lr = dqn_lr
+        self.dqn_lr = lrs[0]
         self.learning_start = learning_start
         self.train_freq = train_freq
         self.target_update_freq = target_update_freq
@@ -95,7 +94,7 @@ class MODQN(DRLOracle):
 
         self.input_dim = int(env.observation_space.shape[0] + self.num_objectives)
         self.output_dim = int(self.num_actions * self.num_objectives)
-        self.dqn_hidden_layers = dqn_hidden_layers
+        self.dqn_hidden_layers = hidden_layers[0]
 
         self.model_based = model_based
         self.model_lr = model_lr
@@ -140,6 +139,8 @@ class MODQN(DRLOracle):
         self.model_train_finish = model_train_finish
         self.model_train_step = 0
         self.u_func = None
+
+        self.trained_models = {}  # Collect trained models as starting points for future iterations.
 
         if model_based:
             self._init_env_model()
@@ -201,8 +202,9 @@ class MODQN(DRLOracle):
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)
-        self.real_buffer.reset()
-        self.model_buffer.reset()
+        self.real_buffer.reset_priorities()
+        # self.real_buffer.reset()
+        # self.model_buffer.reset()
         self.u_func = None
 
     def reset_env_model(self):
@@ -447,3 +449,32 @@ class MODQN(DRLOracle):
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
+
+    def load_model(self, referent):
+        """Load the model that is closest to the given referent.
+
+        Args:
+            referent (ndarray): The referent to load the model for.
+        """
+        closest_referent = self.get_closest_referent(referent)
+        if closest_referent:
+            self.target_network.load_state_dict(self.trained_models[tuple(closest_referent)])
+            self.q_network.load_state_dict(self.trained_models[tuple(closest_referent)])
+
+    def solve(self, referent, ideal, warm_start=True):
+        """Solve for problem for the given referent and ideal.
+
+        Args:
+            referent (list): The referent to solve for.
+            ideal (list): The ideal to solve for.
+            warm_start (bool, optional): Whether to warm start the solver. Defaults to False.
+
+        Returns:
+            list: The solution to the problem.
+        """
+        self.reset()
+        if warm_start:
+            self.load_model(referent)
+        pareto_point = super().solve(referent, ideal)
+        self.trained_models[tuple(referent)] = self.q_network.state_dict()
+        return pareto_point
