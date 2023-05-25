@@ -43,7 +43,7 @@ class MODQN(DRLOracle):
     def __init__(self,
                  env,
                  aug=0.2,
-                 lrs=(0.001,),
+                 lr=0.001,
                  learning_start=1000,
                  train_freq=1,
                  target_update_freq=100,
@@ -53,7 +53,7 @@ class MODQN(DRLOracle):
                  exploration_frac=0.5,
                  gamma=0.99,
                  tau=1.0,
-                 hidden_layers=((64, 64),),
+                 hidden_layers=(64, 64),
                  model_based=False,
                  model_lr=0.001,
                  model_hidden_layers=(64, 64),
@@ -73,7 +73,7 @@ class MODQN(DRLOracle):
                  seed=0):
         super().__init__(env, aug=aug, gamma=gamma, eval_episodes=eval_episodes)
 
-        self.dqn_lr = lrs[0]
+        self.dqn_lr = lr
         self.learning_start = learning_start
         self.train_freq = train_freq
         self.target_update_freq = target_update_freq
@@ -94,7 +94,7 @@ class MODQN(DRLOracle):
 
         self.input_dim = int(env.observation_space.shape[0] + self.num_objectives)
         self.output_dim = int(self.num_actions * self.num_objectives)
-        self.dqn_hidden_layers = hidden_layers[0]
+        self.dqn_hidden_layers = hidden_layers
 
         self.model_based = model_based
         self.model_lr = model_lr

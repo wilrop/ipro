@@ -61,7 +61,7 @@ def create_batched_cs(referent, nadir, ideal, backend='numpy'):
         raise NotImplementedError
 
 
-def aasf(vector, referent, nadir, ideal, aug=0.):
+def aasf(vector, referent, nadir, ideal, aug=0., backend='numpy'):
     """Compute the utility from a vector given a specific target vector.
 
     Note:
@@ -72,16 +72,20 @@ def aasf(vector, referent, nadir, ideal, aug=0.):
         referent (ndarray): The referent vector.
         nadir (ndarray): The nadir vector.
         ideal (ndarray): The ideal vector.
-        aug (float): The augmentation factor. Defaults to 0.
+        aug (float, optional): The augmentation factor. Defaults to 0.
+        backend (str, optional): The backend to use. Defaults to 'numpy'.
 
     Returns:
         float: The obtained utility.
     """
     frac_improvement = (vector - referent) / (ideal - nadir)
-    return min(frac_improvement) + aug * sum(frac_improvement)
+    if backend == 'numpy':
+        return np.min(frac_improvement) + aug * np.mean(frac_improvement)
+    elif backend == 'torch':
+        return torch.min(frac_improvement) + aug * torch.mean(frac_improvement)
 
 
-def create_aasf(referent, nadir, ideal, aug=0.):
+def create_aasf(referent, nadir, ideal, aug=0., backend='numpy'):
     """Create a non-batched augmented achievement scalarizing function.
 
     Args:
@@ -89,11 +93,12 @@ def create_aasf(referent, nadir, ideal, aug=0.):
         nadir (ndarray): The nadir vector.
         ideal (ndarray): The ideal vector.
         aug (float): The augmentation factor. Defaults to 0.
+        backend (str, optional): The backend to use. Defaults to 'numpy'.
 
     Returns:
         function: The non-batched augmented achievement scalarizing function.
     """
-    return lambda vec: aasf(vec, referent, nadir, ideal, aug=aug)
+    return lambda vec: aasf(vec, referent, nadir, ideal, aug=aug, backend=backend)
 
 
 def create_batched_aasf(referent, nadir, ideal, aug=0., backend='numpy'):
