@@ -47,6 +47,7 @@ class MOA2C(DRLOracle):
                  aug=0.2,
                  lrs=(0.001, 0.001),
                  hidden_layers=((64, 64), (64, 64)),
+                 one_hot=False,
                  e_coef=0.01,
                  v_coef=0.5,
                  gamma=0.99,
@@ -59,7 +60,7 @@ class MOA2C(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, aug=aug, gamma=gamma, eval_episodes=eval_episodes)
+        super().__init__(env, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -81,7 +82,8 @@ class MOA2C(DRLOracle):
         self.seed = seed
         self.rng = np.random.default_rng(seed=seed)
 
-        self.input_dim = int(env.observation_space.shape[0] + self.num_objectives)
+        self.one_hot = one_hot
+        self.input_dim = self.obs_dim + self.num_objectives
         self.actor_output_dim = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
         self.actor_layers, self.critic_layers = hidden_layers
@@ -96,15 +98,12 @@ class MOA2C(DRLOracle):
         self.gae_lambda = gae_lambda
 
         self.n_steps = n_steps
-        self.rollout_buffer = RolloutBuffer(env.observation_space.shape,
+        self.rollout_buffer = RolloutBuffer((self.obs_dim,),
                                             env.action_space.shape,
                                             rew_dim=self.num_objectives,
                                             max_size=self.n_steps,
                                             action_dtype=int,
                                             aug_obs=True)
-
-        self.u_func = None
-        self.trained_models = {}  # Collect trained models as starting points for future iterations.
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
@@ -204,7 +203,8 @@ class MOA2C(DRLOracle):
         Returns:
             Tuple: The initial observation, accrued reward, augmented observation and timestep.
         """
-        obs, _ = self.env.reset()
+        raw_obs, _ = self.env.reset()
+        obs = self.format_obs(raw_obs)
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)  # Create the augmented state.
         timestep = 0
@@ -250,9 +250,10 @@ class MOA2C(DRLOracle):
             with torch.no_grad():
                 action = self.select_action(aug_obs)
 
-            next_obs, reward, terminated, truncated, _ = self.env.step(action)
-            accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
+            next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+            next_obs = self.format_obs(next_raw_obs)
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
+            accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated or truncated)
 
             if (global_step + 1) % self.n_steps == 0:

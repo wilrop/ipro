@@ -40,7 +40,7 @@ def parse_args():
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
-    parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
+    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
 
     # Model based arguments.
     parser.add_argument("--model_based", type=bool, default=False, help="Whether to use a model-based DQN.")

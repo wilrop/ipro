@@ -1,6 +1,8 @@
 import torch
 import numpy as np
+
 from oracles.vector_u import create_batched_aasf
+from gymnasium.spaces import Box
 
 
 class DRLOracle:
@@ -8,40 +10,84 @@ class DRLOracle:
                  env,
                  aug=0.2,
                  gamma=0.99,
+                 one_hot=False,
                  eval_episodes=100):
         self.env = env
         self.aug = aug
+
         self.num_actions = env.action_space.n
         self.num_objectives = env.reward_space.shape[0]
+
+        if isinstance(self.env.observation_space, Box):
+            low_bound = self.env.observation_space.low
+            high_bound = self.env.observation_space.high
+            self.obs_shape = self.env.observation_space.shape
+            if one_hot:
+                self.box_shape = (high_bound[0] - low_bound[0] + 1, high_bound[1] - low_bound[1] + 1)
+                self.obs_dim = np.prod(self.box_shape)
+            else:
+                self.obs_dim = np.prod(self.obs_shape)
+
         self.gamma = gamma
+        self.one_hot = one_hot
         self.eval_episodes = eval_episodes
         self.u_func = None
-        self.trained_models = {}
+        self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
     def reset(self):
         """Reset the environment and the agent."""
         raise NotImplementedError
 
-    def select_greedy_action(self, state, accrued_reward):
-        """Select the greedy action for the given state."""
+    def select_greedy_action(self, obs, accrued_reward):
+        """Select the greedy action for the given observation."""
         raise NotImplementedError
+
+    def one_hot_encode(self, obs):
+        """One-hot encode the given observation.
+
+        Args:
+            obs (ndarray): The observation to one-hot encode.
+
+        Returns:
+            ndarray: The one-hot encoded observation.
+        """
+        flat_obs = np.ravel_multi_index(obs, self.box_shape)
+        one_hot_obs = np.zeros(self.obs_dim)
+        one_hot_obs[flat_obs] = 1
+        return one_hot_obs
+
+    def format_obs(self, obs):
+        """Format the given observation.
+
+        Args:
+            obs (ndarray): The observation to format.
+
+        Returns:
+            ndarray: The formatted observation.
+        """
+        if self.one_hot:
+            return self.one_hot_encode(obs)
+        else:
+            return obs.flatten()
 
     def evaluate(self):
         """Evaluate MODQN on the given environment."""
         pareto_point = np.zeros(self.num_objectives)
 
         for episode in range(self.eval_episodes):
-            state, _ = self.env.reset()
+            raw_obs, _ = self.env.reset()
+            obs = self.format_obs(raw_obs)
             terminated = False
             truncated = False
             accrued_reward = np.zeros(self.num_objectives)
             timestep = 0
 
             while not (terminated or truncated):
-                action = self.select_greedy_action(state, accrued_reward)
-                next_state, reward, terminated, truncated, _ = self.env.step(action)
+                action = self.select_greedy_action(obs, accrued_reward)
+                next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+                next_obs = self.format_obs(next_raw_obs)
                 accrued_reward += (self.gamma ** timestep) * reward
-                state = next_state
+                obs = next_obs
                 timestep += 1
 
             pareto_point += accrued_reward
