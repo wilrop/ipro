@@ -10,10 +10,11 @@ from utils.pareto import p_prune, strict_pareto_dominates
 class Priol2D:
     """An inner-outer loop method for solving 2D multi-objective problems."""
 
-    def __init__(self, problem, oracle, linear_solver, tolerance=1e-6, log_dir=None):
+    def __init__(self, problem, oracle, linear_solver, warm_start=False, tolerance=1e-6, log_dir=None):
         self.problem = problem
         self.oracle = oracle
         self.linear_solver = linear_solver
+        self.warm_start = warm_start
         self.tolerance = tolerance
         self.log_dir = log_dir
 
@@ -142,7 +143,7 @@ class Priol2D:
             box = self.get_next_box()
             ideal = np.copy(box.ideal)
             referent = np.copy(box.nadir)
-            vec = self.oracle.solve(referent, ideal)
+            vec = self.oracle.solve(referent, ideal, warm_start=self.warm_start)
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
                 self.update(box, vec)

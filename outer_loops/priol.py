@@ -14,6 +14,7 @@ class Priol:
                  dimensions,
                  oracle,
                  linear_solver,
+                 warm_start=False,
                  tolerance=1e-1,
                  max_steps=5000,
                  rng=None,
@@ -35,6 +36,7 @@ class Priol:
         self.ref_offset = ref_offset
         self.approx_hv = pg.bf_fpras(eps=hv_eps, delta=hv_delta, seed=seed)  # Polynomial time approx hypervolume.
 
+        self.warm_start = warm_start
         self.tol = tolerance
         self.max_steps = max_steps
 
@@ -276,7 +278,7 @@ class Priol:
                 print(f'↪ Error estimate: {self.error_estimates[-1]:.5f}')
 
             referent = self.select_referent(method='first')
-            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal))
+            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal), warm_start=self.warm_start)
             print(f'Referent {referent} -> Vec {vec}')
 
             if strict_pareto_dominates(vec, referent):
