@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.02, help="The augmentation term in the utility function.")
     parser.add_argument("--env", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
-    parser.add_argument("--continuous_state", type=bool, default=False, help="Whether to use a continuous state space.")
+    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=40000,
@@ -129,7 +129,13 @@ if __name__ == '__main__':
                          log_freq=args.log_freq,
                          seed=args.seed,
                          )
-    ol = init_outer_loop(args.outer_loop, env, num_objectives, oracle, linear_solver, seed=args.seed)
+    ol = init_outer_loop(args.outer_loop,
+                         env,
+                         num_objectives,
+                         oracle,
+                         linear_solver,
+                         warm_start=args.warm_start,
+                         seed=args.seed)
     pf = ol.solve()
 
     print("Pareto front:")

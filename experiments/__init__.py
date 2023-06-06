@@ -14,7 +14,7 @@ def setup_env(args):
     if args.env == 'deep-sea-treasure-v0':
         env = gym.make(args.env, float_state=args.continuous_state)
     elif args.env == 'deep-sea-treasure-concave-v0':
-        env = mo_gym.make('deep-sea-treasure-v0', float_state=args.continuous_state, dst_map=CONCAVE_MAP)
+        env = mo_gym.make('deep-sea-treasure-v0', dst_map=CONCAVE_MAP)
     elif args.env == 'mo-mountaincar-v0':
         env = mo_gym.make(args.env)
     else:

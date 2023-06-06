@@ -26,12 +26,12 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1, help="The random seed.")
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-A2C", help="The algorithm to use.")
-    parser.add_argument("--aug", type=float, default=0.01, help="The augmentation term in the utility function.")
+    parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--env", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
-    parser.add_argument("--continuous_state", type=bool, default=False, help="Whether to use a continuous state space.")
+    parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=20000,
+    parser.add_argument("--global_steps", type=int, default=50000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
@@ -39,7 +39,7 @@ def parse_args():
     # Oracle arguments.
     parser.add_argument("--lrs", nargs='+', type=float, default=(0.0003, 0.001),
                         help="The learning rates for the models.")
-    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64),),
+    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
 
     # Model based arguments.
@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.1, help="The entropy coefficient for A2C.")
+    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
     parser.add_argument("--max_grad_norm", type=float, default=50,
                         help="The maximum norm for the gradient clipping.")
@@ -95,7 +95,13 @@ if __name__ == '__main__':
                          log_freq=args.log_freq,
                          seed=args.seed
                          )
-    ol = init_outer_loop(args.outer_loop, env, num_objectives, oracle, linear_solver, seed=args.seed)
+    ol = init_outer_loop(args.outer_loop,
+                         env,
+                         num_objectives,
+                         oracle,
+                         linear_solver,
+                         warm_start=args.warm_start,
+                         seed=args.seed)
     pf = ol.solve()
 
     print("Pareto front:")
