@@ -31,7 +31,6 @@ def parse_args():
     parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.02, help="The augmentation term in the utility function.")
     parser.add_argument("--env", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
-    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=40000,
@@ -42,6 +41,7 @@ def parse_args():
     # Oracle arguments.
     parser.add_argument("--lr", type=float, default=0.001, help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
+    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
 
     # Model based arguments.
     parser.add_argument("--model_based", type=bool, default=False, help="Whether to use a model-based DQN.")
@@ -101,6 +101,8 @@ if __name__ == '__main__':
                          env,
                          aug=args.aug,
                          lr=args.lr,
+                         hidden_layers=args.hidden_layers,
+                         one_hot=args.one_hot,
                          learning_start=args.learning_start,
                          train_freq=args.train_freq,
                          target_update_freq=args.target_update_freq,
@@ -110,7 +112,6 @@ if __name__ == '__main__':
                          exploration_frac=args.exploration_frac,
                          gamma=args.gamma,
                          tau=args.tau,
-                         hidden_layers=args.hidden_layers,
                          model_based=args.model_based,
                          model_lr=args.model_lr,
                          model_hidden_layers=args.model_hidden_layers,
