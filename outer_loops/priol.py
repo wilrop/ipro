@@ -24,7 +24,6 @@ class Priol:
                  hv_eps=0.1,
                  hv_delta=0.1,
                  save_figs=False,
-                 log_dir=None
                  ):
         self.problem = problem
         self.dim = dimensions
@@ -55,7 +54,6 @@ class Priol:
         self.covered_volume = 0
 
         self.save_figs = save_figs
-        self.log_dir = log_dir
 
         self.seed = seed
         self.rng = rng if rng is not None else np.random.default_rng(seed)
