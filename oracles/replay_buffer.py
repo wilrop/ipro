@@ -413,7 +413,7 @@ class RolloutBuffer:
         self.dones[self.ptr:self.ptr + size] = np.array(done).copy()
 
         self.ptr = (self.ptr + size) % self.max_size
-        self.size = min(self.size + 1, self.max_size)
+        self.size = min(self.size + size, self.max_size)
 
     def sample(self, batch_size, replace=True, use_cer=False, to_tensor=False, device=None):
         """Sample a batch of experiences.
