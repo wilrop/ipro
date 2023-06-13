@@ -396,7 +396,7 @@ class RolloutBuffer:
         self.rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
         self.dones = np.zeros((max_size, 1), dtype=np.float32)
 
-    def add(self, obs, action, reward, next_obs, done):
+    def add(self, obs, action, reward, next_obs, done, size=1):
         """Add a new experience to memory.
 
         Args:
@@ -406,13 +406,13 @@ class RolloutBuffer:
             next_obs: Next observation
             done: Done
         """
-        self.obs[self.ptr] = np.array(obs).copy()
-        self.next_obs[self.ptr] = np.array(next_obs).copy()
-        self.actions[self.ptr] = np.array(action).copy()
-        self.rewards[self.ptr] = np.array(reward).copy()
-        self.dones[self.ptr] = np.array(done).copy()
+        self.obs[self.ptr:self.ptr + size] = np.array(obs).copy()
+        self.next_obs[self.ptr:self.ptr + size] = np.array(next_obs).copy()
+        self.actions[self.ptr:self.ptr + size] = np.array(action).copy()
+        self.rewards[self.ptr:self.ptr + size] = np.array(reward).copy()
+        self.dones[self.ptr:self.ptr + size] = np.array(done).copy()
 
-        self.ptr = (self.ptr + 1) % self.max_size
+        self.ptr = (self.ptr + size) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
     def sample(self, batch_size, replace=True, use_cer=False, to_tensor=False, device=None):
