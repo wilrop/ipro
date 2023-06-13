@@ -51,7 +51,6 @@ class MOA2C(DRLOracle):
                  e_coef=0.01,
                  v_coef=0.5,
                  gamma=0.99,
-                 tau=1.0,
                  max_grad_norm=0.5,
                  normalize_advantage=True,
                  n_steps=10,
@@ -72,7 +71,6 @@ class MOA2C(DRLOracle):
         self.e_coef = e_coef
         self.v_coef = v_coef
         self.gamma = gamma
-        self.tau = tau
         self.s0 = None
 
         self.global_steps = global_steps
@@ -121,7 +119,6 @@ class MOA2C(DRLOracle):
             "e_coef": self.e_coef,
             "v_coef": self.v_coef,
             "gamma": self.gamma,
-            "tau": self.tau,
             "max_grad_norm": self.max_grad_norm,
             "normalize_advantage": self.normalize_advantage,
             "n_steps": self.n_steps,
@@ -252,8 +249,8 @@ class MOA2C(DRLOracle):
 
             next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
             next_obs = self.format_obs(next_raw_obs)
-            aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
+            aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated or truncated)
 
             if (global_step + 1) % self.n_steps == 0:
