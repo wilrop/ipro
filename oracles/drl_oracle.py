@@ -51,9 +51,16 @@ class DRLOracle:
         Returns:
             ndarray: The one-hot encoded observation.
         """
+        dims = obs.ndim
+        if dims == 1:
+            obs = np.expand_dims(obs, axis=0)
+        num_obs = len(obs)
+        obs = np.swapaxes(obs, 0, 1)
         flat_obs = np.ravel_multi_index(obs, self.box_shape)
-        one_hot_obs = np.zeros(self.obs_dim)
-        one_hot_obs[flat_obs] = 1
+        one_hot_obs = np.zeros((num_obs, self.obs_dim))
+        one_hot_obs[np.arange(num_obs), flat_obs] = 1
+        if dims == 1:
+            one_hot_obs = np.squeeze(one_hot_obs, axis=0)
         return one_hot_obs
 
     def format_obs(self, obs):
