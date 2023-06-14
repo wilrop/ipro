@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.distributions.categorical import Categorical as CDist
 from oracles.policy import Categorical
 from oracles.drl_oracle import DRLOracle
 from oracles.replay_buffer import RolloutBuffer
@@ -111,6 +112,12 @@ class MOA2C(DRLOracle):
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
 
+    @staticmethod
+    def init_weights(m, bias_const=0.01):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            torch.nn.init.constant_(m.bias, bias_const)
+
     def get_config(self):
         return {
             "aug": self.aug,
@@ -179,10 +186,11 @@ class MOA2C(DRLOracle):
         if self.normalize_advantage:
             advantages = (advantages - advantages.mean(dim=0)) / (advantages.std(dim=0) + 1e-8)
 
-        log_prob = self.policy.log_prob(actions.unsqueeze(dim=-1), self.actor(aug_obs))
+        dist = CDist(logits=self.actor(aug_obs))  # Distribution over actions.
+        log_prob = dist.log_prob(actions).unsqueeze(1)  # Log probability of actions.
         pg_loss = -(advantages * log_prob).mean(dim=0)  # Policy gradient loss with advantage as baseline.
         policy_loss = torch.dot(v_s0.grad, pg_loss)  # Gradient update rule for SER.
-        entropy_loss = -torch.mean(-log_prob)
+        entropy_loss = -torch.mean(dist.entropy())
         value_loss = F.mse_loss(returns, v_preds[:-1])
 
         self.actor_optimizer.zero_grad()

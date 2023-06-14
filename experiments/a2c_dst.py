@@ -1,9 +1,12 @@
+import os
 import random
 import torch
 import argparse
+import time
 
 import numpy as np
 
+from utils.helpers import strtobool
 from experiments import setup_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
@@ -14,29 +17,36 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Logging arguments.
-    parser.add_argument("--track", action="store_true", default=False, help="Track the experiments using wandb")
-    parser.add_argument("--log_dir", type=str, default="logs", help="Directory where to save the logs")
-    parser.add_argument("--wandb-project-name", type=str, default="cones", help="the wandb's project name")
+    parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
+                        help="the name of this experiment")
+    parser.add_argument("--seed", type=int, default=1, help="seed of the experiment")
+    parser.add_argument("--torch-deterministic", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+                        help="if toggled, `torch.backends.cudnn.deterministic=False`")
+    parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="if toggled, cuda will be enabled by default")
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="if toggled, this experiment will be tracked with Weights and Biases")
+    parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
-    parser.add_argument("--save_figs", type=bool, default=False, help="Whether to save figures. Only used in 2D")
-    parser.add_argument("--log_freq", type=int, default=1000,
-                        help="The frequency (in number of steps) at which to log the results.")
+    parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="whether to capture videos of the agent performances (check out `videos` folder)")
+    parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
 
     # General arguments.
-    parser.add_argument("--seed", type=int, default=1, help="The random seed.")
+    parser.add_argument("--env_id", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-A2C", help="The algorithm to use.")
-    parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
-    parser.add_argument("--env", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
+    parser.add_argument("--aug", type=float, default=0.001, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=50000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
+    parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0003, 0.001),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.001, 0.0025),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -55,12 +65,12 @@ def parse_args():
     # MO-A2C specific arguments.
     parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
-    parser.add_argument("--max_grad_norm", type=float, default=50,
+    parser.add_argument("--max_grad_norm", type=float, default=0.5,
                         help="The maximum norm for the gradient clipping.")
-    parser.add_argument("--normalize_advantage", type=bool, default=False,
+    parser.add_argument("--normalize_advantage", type=bool, default=True,
                         help="Whether to normalize the advantages in A2C.")
     parser.add_argument("--n_steps", type=int, default=10, help="The number of steps for the n-step A2C.")
-    parser.add_argument("--gae_lambda", type=float, default=0.5, help="The lambda parameter for the GAE.")
+    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
 
     args = parser.parse_args()
     return args
@@ -68,6 +78,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
     # Seeding
     torch.manual_seed(args.seed)
