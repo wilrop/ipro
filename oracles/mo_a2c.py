@@ -108,6 +108,8 @@ class MOA2C(DRLOracle):
         """Reset the actor and critic networks, optimizers and policy."""
         self.actor = Actor(self.input_dim, self.actor_layers, self.actor_output_dim)
         self.critic = Critic(self.input_dim, self.critic_layers, self.output_dim_critic)
+        self.actor.apply(self.init_weights)
+        self.critic.apply(self.init_weights)
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
