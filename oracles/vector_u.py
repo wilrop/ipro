@@ -118,13 +118,13 @@ def create_batched_aasf(referent, nadir, ideal, aug=0., backend='numpy'):
     if backend == 'numpy':
         def numpy_func(vec):
             frac_improvement = (vec - referent) / pos_vec
-            return np.min(frac_improvement, axis=-1) + aug * np.sum(frac_improvement, axis=-1)
+            return np.min(frac_improvement, axis=-1) + aug * np.mean(frac_improvement, axis=-1)
 
         return numpy_func
     elif backend == 'torch':
         def torch_func(vec):
             frac_improvement = (vec - referent) / pos_vec
-            return torch.min(frac_improvement, dim=-1)[0] + aug * torch.sum(frac_improvement, dim=-1)
+            return torch.min(frac_improvement, dim=-1)[0] + aug * torch.mean(frac_improvement, dim=-1)
 
         return torch_func
     else:
