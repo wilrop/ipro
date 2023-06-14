@@ -1,0 +1,134 @@
+import os
+import random
+import torch
+import argparse
+import time
+
+import numpy as np
+
+from utils.helpers import strtobool
+from experiments import setup_vector_env
+from linear_solvers import init_linear_solver
+from oracles import init_oracle
+from outer_loops import init_outer_loop
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    # Logging arguments.
+    parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
+                        help="the name of this experiment")
+    parser.add_argument("--seed", type=int, default=1, help="seed of the experiment")
+    parser.add_argument("--torch-deterministic", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+                        help="if toggled, `torch.backends.cudnn.deterministic=False`")
+    parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="if toggled, cuda will be enabled by default")
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="if toggled, this experiment will be tracked with Weights and Biases")
+    parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
+    parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
+    parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                        help="whether to capture videos of the agent performances (check out `videos` folder)")
+    parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
+
+    # General arguments.
+    parser.add_argument("--env_id", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
+    parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
+    parser.add_argument("--oracle", type=str, default="MO-PPO", help="The algorithm to use.")
+    parser.add_argument("--aug", type=float, default=0.002, help="The augmentation term in the utility function.")
+    parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
+    parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
+    parser.add_argument("--global_steps", type=int, default=500000,
+                        help="The total number of steps to run the experiment.")
+    parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
+    parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
+    parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
+
+    # Oracle arguments.
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.001),
+                        help="The learning rates for the models.")
+    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
+                        help="The hidden layers for the model.")
+    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
+
+    # Model based arguments.
+    parser.add_argument("--model_based", type=bool, default=False, help="Whether to use a model-based DQN.")
+    parser.add_argument("--model_lr", type=float, default=0.001, help="The learning rate for the model.")
+    parser.add_argument("--model_hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
+    parser.add_argument("--model_steps", type=int, default=32,
+                        help="The number of steps to take for each model training step.")
+    parser.add_argument("--model_train_finish", type=int, default=10000,
+                        help="The number of steps after which the model training is finished.")
+    parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
+
+    # MO-A2C specific arguments.
+    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
+    parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for PPO.")
+    parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
+    parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
+    parser.add_argument("--update_epochs", type=int, default=4, help="The number of epochs to use for the update.")
+    parser.add_argument("--max_grad_norm", type=float, default=0.5,
+                        help="The maximum norm for the gradient clipping.")
+    parser.add_argument("--normalize_advantage", type=bool, default=False,
+                        help="Whether to normalize the advantages in A2C.")
+    parser.add_argument("--clip_coef", type=float, default=0.2, help="The clipping coefficient for PPO.")
+    parser.add_argument("--clip_vloss", type=bool, default=False, help="Whether to clip the value loss in PPO.")
+    parser.add_argument("--n_steps", type=int, default=124, help="The number of steps for the n-step PPO.")
+    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
+    parser.add_argument("--eps", type=float, default=1e-5, help="The epsilon parameter for the Adam optimizer.")
+
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+
+    # Seeding
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+
+    envs, num_objectives = setup_vector_env(args, run_name)
+    linear_solver = init_linear_solver('known_box',
+                                       nadirs=[np.array([0., 0.]), np.array([124.0, -19.])],
+                                       ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
+    oracle = init_oracle(args.oracle,
+                         envs,
+                         aug=args.aug,
+                         gamma=args.gamma,
+                         lrs=args.lrs,
+                         eps=args.eps,
+                         hidden_layers=args.hidden_layers,
+                         one_hot=args.one_hot,
+                         e_coef=args.e_coef,
+                         v_coef=args.v_coef,
+                         num_envs=args.num_envs,
+                         num_minibatches=args.num_minibatches,
+                         update_epochs=args.update_epochs,
+                         max_grad_norm=args.max_grad_norm,
+                         normalize_advantage=args.normalize_advantage,
+                         clip_coef=args.clip_coef,
+                         clip_vloss=args.clip_vloss,
+                         gae_lambda=args.gae_lambda,
+                         n_steps=args.n_steps,
+                         global_steps=args.global_steps,
+                         eval_episodes=args.eval_episodes,
+                         log_freq=args.log_freq,
+                         seed=args.seed,
+                         )
+
+    ol = init_outer_loop(args.outer_loop,
+                         envs,
+                         num_objectives,
+                         oracle,
+                         linear_solver,
+                         warm_start=args.warm_start,
+                         seed=args.seed)
+    pf = ol.solve()
+
+    print("Pareto front:")
+    for point in pf:
+        print(point)
