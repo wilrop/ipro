@@ -14,6 +14,7 @@ class Priol:
                  dimensions,
                  oracle,
                  linear_solver,
+                 writer,
                  warm_start=False,
                  tolerance=1e-1,
                  max_steps=5000,
@@ -27,7 +28,6 @@ class Priol:
                  ):
         self.problem = problem
         self.dim = dimensions
-
         self.oracle = oracle
         self.linear_solver = linear_solver
 
@@ -43,50 +43,22 @@ class Priol:
         self.total_hv = 0
         self.nadir = None
         self.ideal = None
-        self.pf = []
+        self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
         self.lower_points = []
         self.upper_points = []
         self.dominated_hv = 0
-        self.dominating_hv = 0
+        self.discarded_hv = 0
         self.error_estimates = []
-        self.covered_volume = 0
+        self.coverage = 0
 
         self.save_figs = save_figs
 
         self.seed = seed
         self.rng = rng if rng is not None else np.random.default_rng(seed)
 
-    def reset(self):
-        """Reset the algorithm to its initial state."""
-        self.bounding_box = None
-        self.total_hv = 0
-        self.nadir = None
-        self.ideal = None
-        self.pf = []
-        self.robust_points = np.empty((0, self.dim))
-        self.completed = np.empty((0, self.dim))
-        self.lower_points = []
-        self.upper_points = []
-        self.dominated_hv = 0
-        self.dominating_hv = 0
-        self.error_estimates = []
-        self.covered_volume = 0
-
-    def config(self):
-        """Get the configuration of the algorithm."""
-        return {
-            'dimensions': self.dim,
-            'tolerance': self.tol,
-            'max_steps': self.max_steps,
-            'seed': self.seed,
-            'approx': self.approx,
-            'hv_eps': self.approx_hv.eps,
-            'hv_delta': self.approx_hv.delta,
-            'save_figs': self.save_figs,
-            'log_dir': self.log_dir
-        }
+        self.writer = writer
 
     def init_phase(self):
         """Run the initialisation phase of the algorithm.
@@ -233,9 +205,9 @@ class Priol:
         new_lower_points = np.vstack((to_keep, shifted))
         self.lower_points = -extreme_prune(-new_lower_points)
 
-    def update_dominating_hv(self):
+    def update_discarded_hv(self):
         """Update the hypervolume of the dominating space."""
-        self.dominating_hv = self.compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)
+        self.discarded_hv = self.compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)
 
     def update_dominated_hv(self):
         """Update the hypervolume of the dominated space."""
@@ -251,11 +223,11 @@ class Priol:
         else:
             raise ValueError(f'Unknown method {method}')
 
-    def solve(self, log_freq=1, update_freq=50):
+    def solve(self, update_freq=1):
         """Solve the problem.
 
         Args:
-            log_freq (int, optional): The frequency of logging the progress of the algorithm. Defaults to 10.
+            update_freq (int, optional): The frequency of updates. Defaults to 50.
 
         Returns:
             set: The Pareto front.
@@ -270,14 +242,11 @@ class Priol:
             return {tuple(vec) for vec in self.pf}
 
         while self.error_estimates[-1] > self.tol and step < self.max_steps:
-            if step % log_freq == 0:
-                print(f'Step {step}')
-                print(f'↪ Covered volume: {self.covered_volume * 100:.5f}%')
-                print(f'↪ Error estimate: {self.error_estimates[-1]:.5f}')
+            begin_loop = time.time()
+            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
 
             referent = self.select_referent(method='first')
             vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal), warm_start=self.warm_start)
-            print(f'Referent {referent} -> Vec {vec}')
 
             if strict_pareto_dominates(vec, referent):
                 self.pf = np.vstack((self.pf, vec))
@@ -291,12 +260,20 @@ class Priol:
 
             if step % update_freq == 0:
                 self.compute_hvis()
-                self.update_dominated_hv()
-                self.update_dominating_hv()
-                self.covered_volume = (self.dominated_hv + self.dominating_hv) / self.total_hv
 
+            self.update_dominated_hv()
+            self.update_discarded_hv()
             self.estimate_error()
+            self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
+
             step += 1
+
+            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+            print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
+            print('---------------------')
 
         pf = {tuple(vec) for vec in extreme_prune(np.vstack((self.pf, self.robust_points)))}
 

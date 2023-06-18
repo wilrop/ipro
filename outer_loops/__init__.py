@@ -2,7 +2,7 @@ from outer_loops.priol import Priol
 from outer_loops.priol_2D import Priol2D
 
 
-def init_outer_loop(alg, problem, objectives, oracle, linear_solver, **kwargs):
+def init_outer_loop(alg, problem, objectives, oracle, linear_solver, writer, **kwargs):
     """Initialise an outer loop.
 
     Args:
@@ -18,8 +18,8 @@ def init_outer_loop(alg, problem, objectives, oracle, linear_solver, **kwargs):
     if alg == '2D':
         if objectives != 2:
             raise ValueError('The 2D outer loop can only be used for 2D problems.')
-        return Priol2D(problem, oracle, linear_solver, **kwargs)
+        return Priol2D(problem, oracle, linear_solver, writer, **kwargs)
     elif alg == 'PRIOL':
-        return Priol(problem, objectives, oracle, linear_solver, **kwargs)
+        return Priol(problem, objectives, oracle, linear_solver, writer, **kwargs)
     else:
         raise ValueError(f'Unknown outer loop algorithm: {alg}')

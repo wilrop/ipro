@@ -4,14 +4,22 @@ import numpy as np
 from sortedcontainers import SortedKeyList
 
 from outer_loops.box import Box
-from utils.pareto import p_prune, strict_pareto_dominates
+from utils.pareto import extreme_prune, strict_pareto_dominates
 
 
 class Priol2D:
     """An inner-outer loop method for solving 2D multi-objective problems."""
 
-    def __init__(self, problem, oracle, linear_solver, warm_start=False, tolerance=1e-6, seed=None):
+    def __init__(self,
+                 problem,
+                 oracle,
+                 linear_solver,
+                 writer,
+                 warm_start=False,
+                 tolerance=1e-6,
+                 seed=None):
         self.problem = problem
+        self.dim = 2
         self.oracle = oracle
         self.linear_solver = linear_solver
         self.warm_start = warm_start
@@ -19,28 +27,20 @@ class Priol2D:
         self.seed = seed  # Not used in this algorithm.
 
         self.bounding_box = None
-        self.removed_boxes = []
+        self.ideal = None
+        self.nadir = None
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
-        self.pf = set()
+        self.pf = np.empty((0, self.dim))
+        self.robust_points = np.empty((0, self.dim))
+        self.completed = np.empty((0, self.dim))
+
+        self.total_hv = 0
+        self.dominated_hv = 0
+        self.discarded_hv = 0
+        self.coverage = 0
         self.error_estimates = []
-        self.covered_volume = 0
 
-    def reset(self):
-        """Reset the algorithm to its initial state."""
-        self.bounding_box = None
-        self.removed_boxes = []
-        self.box_queue = SortedKeyList([], key=lambda x: x.volume)
-        self.pf = set()
-        self.error_estimates = []
-        self.covered_volume = 0
-
-    def percentage_covered(self):
-        """Get the percentage of the bounding box that is covered.
-
-        Returns:
-            float: The percentage of the bounding box that is covered.
-        """
-        return self.covered_volume / self.bounding_box.volume * 100
+        self.writer = writer
 
     def estimate_error(self):
         """Estimate the error of the algorithm."""
@@ -49,15 +49,6 @@ class Priol2D:
         else:
             largest_box = self.box_queue[-1]
             self.error_estimates.append(np.max(largest_box.ideal - largest_box.nadir))
-
-    def remove_box(self, box):
-        """Remove a box from the algorithm.
-
-        Args:
-            box (Box): The box to remove.
-        """
-        self.removed_boxes.append(box)
-        self.covered_volume += box.volume
 
     def split_box(self, box, point):
         """Split a box into two new boxes.
@@ -77,11 +68,11 @@ class Priol2D:
         ideal2 = np.array([box.ideal[0], point[1]])
         new_box2 = Box(ideal2, nadir2)
 
-        self.remove_box(Box(box.nadir, point))
-        self.remove_box(Box(point, box.ideal))
+        self.dominated_hv += Box(box.nadir, point).volume
+        self.discarded_hv += Box(point, box.ideal).volume
         return new_box1, new_box2
 
-    def update(self, box, point):
+    def update_box_queue(self, box, point):
         """Update the algorithm with a new point.
 
         Args:
@@ -95,8 +86,6 @@ class Priol2D:
 
         if new_box2.volume > self.tolerance:
             self.box_queue.add(new_box2)
-
-        self.pf.add(tuple(point))
 
     def get_outer_points(self):
         """Get the outer points of the problem.
@@ -115,9 +104,12 @@ class Priol2D:
         """The initial phase in solving the problem."""
         outer_points = self.get_outer_points()
         self.bounding_box = Box(np.min(outer_points, axis=0), np.max(outer_points, axis=0))
-        self.pf.update([tuple(vec) for vec in outer_points])
+        self.ideal = np.copy(self.bounding_box.ideal)
+        self.nadir = np.copy(self.bounding_box.nadir)
+        self.pf = np.vstack((self.pf, outer_points))
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
+        self.total_hv = self.bounding_box.volume
 
     def get_next_box(self):
         """Get the next box to search."""
@@ -130,31 +122,46 @@ class Priol2D:
         """Check if the algorithm is done."""
         return not self.box_queue or self.error_estimates[-1] <= self.tolerance
 
-    def solve(self, log_freq=1):
-        """Solve the problem."""
+    def solve(self):
+        """Solve the problem.
+
+        Returns:
+            set: The Pareto front.
+        """
         start = time.time()
         self.init_phase()
         step = 0
 
         while not self.is_done():
-            if step % log_freq == 0:
-                print(f'Step {step} - Covered volume: {self.percentage_covered():.5f}%')
+            begin_loop = time.time()
+            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
 
             box = self.get_next_box()
             ideal = np.copy(box.ideal)
             referent = np.copy(box.nadir)
             vec = self.oracle.solve(referent, ideal, warm_start=self.warm_start)
-            print(f'Referent {referent} -> Vec {vec}')
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
-                self.update(box, vec)
+                self.update_box_queue(box, vec)
+                self.pf = np.vstack((self.pf, vec))
             else:
-                self.remove_box(box)
-                self.pf.add(tuple(vec))  # Add vec to the PF for robustness. It'll get pruned anyway if it's dominated.
+                self.discarded_hv += box.volume
+                self.completed = np.vstack((self.completed, referent))
+                self.robust_points = np.vstack((self.robust_points, vec))
+
             self.estimate_error()
+            self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
+
             step += 1
 
-        pf = p_prune(self.pf.copy())
+            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+            print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
+            print('---------------------')
+
+        pf = {tuple(vec) for vec in extreme_prune(np.vstack((self.pf, self.robust_points)))}
 
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
         return pf
