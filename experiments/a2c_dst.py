@@ -40,7 +40,7 @@ def parse_args():
     parser.add_argument("--oracle", type=str, default="MO-A2C", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
-    parser.add_argument("--warm_start", type=bool, default=True, help="Whether to warm start the inner loop.")
+    parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=50000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")

@@ -160,5 +160,4 @@ class DRLOracle:
         self.train()
         pareto_point = self.evaluate()
         self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
-        self.iteration += 1
         return pareto_point

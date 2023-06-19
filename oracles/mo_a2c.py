@@ -313,4 +313,5 @@ class MOA2C(DRLOracle):
         pareto_point = super().solve(referent, ideal)
         self.log_distances(pareto_point)
         self.trained_models[tuple(referent)] = (self.actor.state_dict(), self.critic.state_dict())
+        self.iteration += 1
         return pareto_point
