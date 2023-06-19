@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.distributions.categorical import Categorical as CDist
 from oracles.policy import Categorical
 from oracles.drl_oracle import DRLOracle
 from oracles.replay_buffer import RolloutBuffer
@@ -12,10 +11,10 @@ from oracles.replay_buffer import RolloutBuffer
 class Actor(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -30,10 +29,10 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -45,6 +44,7 @@ class Critic(nn.Module):
 class MOA2C(DRLOracle):
     def __init__(self,
                  env,
+                 writer,
                  aug=0.2,
                  lrs=(0.001, 0.001),
                  hidden_layers=((64, 64), (64, 64)),
@@ -60,7 +60,7 @@ class MOA2C(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env, writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -104,6 +104,8 @@ class MOA2C(DRLOracle):
                                             action_dtype=int,
                                             aug_obs=True)
 
+        self.estimated_values = {}
+
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
         self.actor = Actor(self.input_dim, self.actor_layers, self.actor_output_dim)
@@ -113,6 +115,7 @@ class MOA2C(DRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+        self.estimated_values = {}
 
     @staticmethod
     def init_weights(m, bias_const=0.01):
@@ -138,35 +141,20 @@ class MOA2C(DRLOracle):
             "seed": self.seed
         }
 
-    def calc_returns(self, rewards, dones, v_preds):
-        """Compute the returns from the rewards and values.
-
-        Args:
-            rewards (Tensor): The rewards.
-            dones (Tensor): The dones.
-            v_preds (Tensor): The predicted values for the observations and final next observation.
-
-        Returns:
-            Tensor: The returns.
-        """
-        returns = torch.zeros_like(rewards)
-        returns[-1] = rewards[-1] + self.gamma * v_preds[-1] * (1 - dones[-1])
-        for t in reversed(range(len(rewards) - 1)):
-            returns[t] = rewards[t] + self.gamma * (1 - dones[t]) * returns[t + 1]
-        return returns
-
-    def calc_generalised_advantages(self, rewards, dones, v_preds):
+    def calc_generalised_advantages(self, rewards, dones, values, v_next):
         """Compute the advantages for the rollouts.
 
         Args:
             rewards (Tensor): The rewards.
             dones (Tensor): The dones.
-            v_preds (Tensor): The predicted values for the observations and final next observation.
+            values (Tensor): The values.
+            v_next (Tensor): The value of the next state.
 
         Returns:
             Tensor: The advantages.
         """
-        td_errors = rewards + self.gamma * (1 - dones) * v_preds[1:] - v_preds[:-1]
+        v_comb = torch.cat((values, v_next), dim=0)
+        td_errors = rewards + self.gamma * (1 - dones) * v_comb[1:] - v_comb[:-1]
         advantages = torch.zeros_like(td_errors)
         advantages[-1] = td_errors[-1]
         for t in reversed(range(len(td_errors) - 1)):
@@ -181,28 +169,38 @@ class MOA2C(DRLOracle):
         v_s0.requires_grad = True
         self.u_func(v_s0).backward()  # Gradient of utility function w.r.t. values.
 
-        v_preds = self.critic(torch.cat((aug_obs, aug_next_obs[-1:]), dim=0))  # Predict values of observations.
-        returns = self.calc_returns(rewards, dones, v_preds)
-        advantages = self.calc_generalised_advantages(rewards, dones, v_preds)
+        values = self.critic(aug_obs)  # Predict values of observations.
+        with torch.no_grad():
+            v_next = self.critic(aug_next_obs[-1:])  # Predict values of next observations.
+            advantages = self.calc_generalised_advantages(rewards, dones, values, v_next)
+            returns = advantages + values
 
         if self.normalize_advantage:
             advantages = (advantages - advantages.mean(dim=0)) / (advantages.std(dim=0) + 1e-8)
 
-        dist = CDist(logits=self.actor(aug_obs))  # Distribution over actions.
-        log_prob = dist.log_prob(actions).unsqueeze(1)  # Log probability of actions.
+        actor_out = self.actor(aug_obs)  # Predict logits of actions.
+        log_prob, entropy = self.policy.evaluate_actions(actor_out, actions)  # Evaluate actions.
         pg_loss = -(advantages * log_prob).mean(dim=0)  # Policy gradient loss with advantage as baseline.
         policy_loss = torch.dot(v_s0.grad, pg_loss)  # Gradient update rule for SER.
-        entropy_loss = -torch.mean(dist.entropy())
-        value_loss = F.mse_loss(returns, v_preds[:-1])
+        entropy_loss = -torch.mean(entropy)  # Compute entropy bonus.
+        value_loss = F.mse_loss(returns, values)
 
+        loss = policy_loss + self.v_coef * value_loss + self.e_coef * entropy_loss
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
-        loss = policy_loss + self.v_coef * value_loss + self.e_coef * entropy_loss
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
-        self.actor_optimizer.step()
+        a_gnorm = self._compute_grad_norm(self.actor)
+        c_gnorm = self._compute_grad_norm(self.critic)
+        nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+        nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
         self.critic_optimizer.step()
+        self.actor_optimizer.step()
+
+        with torch.no_grad():  # Compute utility of the policy estimated by the critic. Used for logging.
+            v_s0 = self.critic(self.s0)  # Value of s0.
+            utility = self.u_func(v_s0).item()  # Utility of the policy.
+
+        return utility, v_s0, loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
     def reset_env(self):
         """Reset the environment.
@@ -215,8 +213,7 @@ class MOA2C(DRLOracle):
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)  # Create the augmented state.
         timestep = 0
-        self.s0 = aug_obs
-        return obs, accrued_reward, aug_obs, timestep
+        return aug_obs, accrued_reward, timestep
 
     def select_action(self, aug_obs):
         """Select an action from the policy.
@@ -231,24 +228,23 @@ class MOA2C(DRLOracle):
         action = self.policy(log_probs).item()  # Sample an action from the distribution.
         return action
 
-    def select_greedy_action(self, obs, accrued_reward):
+    def select_greedy_action(self, aug_obs):
         """Select a greedy action. Used by the solve method in the super class.
 
         Args:
-            obs (Tensor): The observation.
-            accrued_reward (Tensor): The accrued reward.
+            aug_obs (Tensor): The augmented observation.
 
         Returns:
             int: The action.
         """
-        aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
         action = self.policy.greedy(log_probs).item()  # Sample an action from the distribution.
         return action
 
     def train(self):
         """Train the agent."""
-        obs, accrued_reward, aug_obs, timestep = self.reset_env()
+        aug_obs, accrued_reward, timestep = self.reset_env()
+        self.s0 = aug_obs
 
         for global_step in range(self.global_steps):
             if global_step % self.log_freq == 0:
@@ -264,14 +260,22 @@ class MOA2C(DRLOracle):
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated or truncated)
 
             if (global_step + 1) % self.n_steps == 0:
-                self.update_policy()
+                utility, v_s0, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
+                self.writer.add_scalar(f'losses/{self.iteration}/utility', utility, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
+                self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
+                self.estimated_values[global_step] = np.asarray(v_s0)
                 self.rollout_buffer.reset()
 
             aug_obs = aug_next_obs
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                obs, accrued_reward, aug_obs, timestep = self.reset_env()
+                aug_obs, accrued_reward, timestep = self.reset_env()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
         """Load the model that is closest to the given referent.
@@ -291,11 +295,22 @@ class MOA2C(DRLOracle):
             if load_critic:
                 self.critic.load_state_dict(critic_net)
 
+    def log_distances(self, pareto_point):
+        """Log the distance of the estimated values to the retrieved pareto point.
+
+        Args:
+            pareto_point (ndarray): The pareto point.
+        """
+        distances = np.linalg.norm(np.array(list(self.estimated_values.values())) - pareto_point, axis=1)
+        for step, dist in zip(self.estimated_values.keys(), distances):
+            self.writer.add_scalar(f'losses/distance', dist, step)
+
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         if warm_start:
             self.load_model(referent)
         pareto_point = super().solve(referent, ideal)
+        self.log_distances(pareto_point)
         self.trained_models[tuple(referent)] = (self.actor.state_dict(), self.critic.state_dict())
         return pareto_point
