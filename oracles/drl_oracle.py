@@ -120,7 +120,7 @@ class DRLOracle:
 
             while not (terminated or truncated):
                 aug_obs = np.concatenate((obs, accrued_reward))
-                action = policy(aug_obs)
+                action = policy(torch.tensor(aug_obs, dtype=torch.float))
                 next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
                 next_obs = self.format_obs(next_raw_obs)
                 accrued_reward += (self.gamma ** timestep) * reward
