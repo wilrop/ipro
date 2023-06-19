@@ -37,6 +37,7 @@ class DRLOracle:
 
         self.iteration = 0
         self.writer = writer
+        self.estimated_values = {}
 
     @staticmethod
     def _compute_grad_norm(model):
@@ -135,6 +136,16 @@ class DRLOracle:
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
+    def log_distances(self, pareto_point):
+        """Log the distance of the estimated values to the retrieved pareto point.
+
+        Args:
+            pareto_point (ndarray): The pareto point.
+        """
+        distances = np.linalg.norm(np.array(list(self.estimated_values.values())) - pareto_point, axis=1)
+        for step, dist in zip(self.estimated_values.keys(), distances):
+            self.writer.add_scalar(f'losses/{self.iteration}/distance', dist, step)
+
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.
 
@@ -160,4 +171,6 @@ class DRLOracle:
         self.train()
         pareto_point = self.evaluate()
         self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
+        self.log_distances(pareto_point)
+        self.iteration += 1
         return pareto_point

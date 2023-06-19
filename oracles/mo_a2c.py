@@ -104,8 +104,6 @@ class MOA2C(DRLOracle):
                                             action_dtype=int,
                                             aug_obs=True)
 
-        self.estimated_values = {}
-
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
         self.actor = Actor(self.input_dim, self.actor_layers, self.actor_output_dim)
@@ -295,23 +293,11 @@ class MOA2C(DRLOracle):
             if load_critic:
                 self.critic.load_state_dict(critic_net)
 
-    def log_distances(self, pareto_point):
-        """Log the distance of the estimated values to the retrieved pareto point.
-
-        Args:
-            pareto_point (ndarray): The pareto point.
-        """
-        distances = np.linalg.norm(np.array(list(self.estimated_values.values())) - pareto_point, axis=1)
-        for step, dist in zip(self.estimated_values.keys(), distances):
-            self.writer.add_scalar(f'losses/{self.iteration}/distance', dist, step)
-
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         if warm_start:
             self.load_model(referent)
         pareto_point = super().solve(referent, ideal)
-        self.log_distances(pareto_point)
         self.trained_models[tuple(referent)] = (self.actor.state_dict(), self.critic.state_dict())
-        self.iteration += 1
         return pareto_point
