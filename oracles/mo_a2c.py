@@ -303,7 +303,7 @@ class MOA2C(DRLOracle):
         """
         distances = np.linalg.norm(np.array(list(self.estimated_values.values())) - pareto_point, axis=1)
         for step, dist in zip(self.estimated_values.keys(), distances):
-            self.writer.add_scalar(f'losses/distance', dist, step)
+            self.writer.add_scalar(f'losses/{self.iteration}/distance', dist, step)
 
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
