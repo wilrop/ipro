@@ -8,6 +8,7 @@ from gymnasium.spaces import Box
 class DRLOracle:
     def __init__(self,
                  env,
+                 writer,
                  aug=0.2,
                  gamma=0.99,
                  one_hot=False,
@@ -34,12 +35,28 @@ class DRLOracle:
         self.u_func = None
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
+        self.iteration = 0
+        self.writer = writer
+
+    @staticmethod
+    def _compute_grad_norm(model):
+        """Compute the gradient norm of the model parameters."""
+        total_norm = 0
+        for p in model.parameters():
+            param_norm = p.grad.data.norm(2)
+            total_norm += param_norm.item() ** 2
+        return total_norm ** (1. / 2)
+
     def reset(self):
         """Reset the environment and the agent."""
         raise NotImplementedError
 
-    def select_greedy_action(self, obs, accrued_reward):
+    def select_greedy_action(self, aug_obs):
         """Select the greedy action for the given observation."""
+        raise NotImplementedError
+
+    def select_action(self, aug_obs):
+        """Select an action for the given observation."""
         raise NotImplementedError
 
     def one_hot_encode(self, obs):
@@ -77,8 +94,20 @@ class DRLOracle:
         else:
             return obs.flatten()
 
-    def evaluate(self):
-        """Evaluate MODQN on the given environment."""
+    def evaluate(self, deterministic=True):
+        """Evaluate the agent on the environment.
+
+        Args:
+            deterministic (bool): Whether to use a deterministic policy or not.
+
+        Returns:
+            ndarray: The average reward over the evaluation episodes.
+        """
+        if deterministic:
+            policy = self.select_greedy_action
+        else:
+            policy = self.select_action
+
         pareto_point = np.zeros(self.num_objectives)
 
         for episode in range(self.eval_episodes):
@@ -90,7 +119,8 @@ class DRLOracle:
             timestep = 0
 
             while not (terminated or truncated):
-                action = self.select_greedy_action(obs, accrued_reward)
+                aug_obs = np.concatenate((obs, accrued_reward))
+                action = policy(aug_obs)
                 next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
                 next_obs = self.format_obs(next_raw_obs)
                 accrued_reward += (self.gamma ** timestep) * reward
@@ -122,9 +152,13 @@ class DRLOracle:
 
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""
+        self.writer.add_text('referent', str(referent), self.iteration)
+        self.writer.add_text('ideal', str(ideal), self.iteration)
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, backend='torch')
         self.train()
         pareto_point = self.evaluate()
+        self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
+        self.iteration += 1
         return pareto_point
