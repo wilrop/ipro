@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from torch.distributions.categorical import Categorical as CDist
 
 
 class Policy(object):
@@ -100,6 +101,10 @@ class Categorical(Policy):
 
     def greedy(self, log_probs):
         return torch.argmax(log_probs, dim=-1)
+
+    def evaluate_actions(self, log_probs, actions):
+        dist = CDist(logits=log_probs)  # Distribution over actions.
+        return dist.log_prob(actions).unsqueeze(1), dist.entropy()
 
 
 class MultiCategorical(Policy):
