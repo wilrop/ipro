@@ -1,0 +1,42 @@
+{
+    "os": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.8.16",
+    "heartbeatAt": "2023-06-19T14:55:40.175515",
+    "startedAt": "2023-06-19T14:55:39.510481",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/willemropke/Documents/geohunt/experiments/a2c_dst.py",
+    "codePath": "experiments/a2c_dst.py",
+    "git": {
+        "remote": "git@github.com:wilrop/geohunt.git",
+        "commit": "802b9f18785d6c39e20beaa70a2393e28915979b"
+    },
+    "email": "willem.ropke@vub.be",
+    "root": "/Users/willemropke/Documents/geohunt",
+    "host": "Willems-MacBook-Pro-2.local",
+    "username": "willemropke",
+    "executable": "/opt/anaconda3/envs/priol/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 2400,
+        "min": 2400,
+        "max": 2400
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2400,
+            "min": 2400,
+            "max": 2400
+        }
+    ],
+    "disk": {
+        "total": 926.3517189025879,
+        "used": 404.85210037231445
+    },
+    "memory": {
+        "total": 16.0
+    }
+}

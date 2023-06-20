@@ -65,14 +65,14 @@ def parse_args():
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.1, help="The entropy coefficient for A2C.")
+    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
     parser.add_argument("--max_grad_norm", type=float, default=50,
                         help="The maximum norm for the gradient clipping.")
     parser.add_argument("--normalize_advantage", type=bool, default=False,
                         help="Whether to normalize the advantages in A2C.")
     parser.add_argument("--n_steps", type=int, default=16, help="The number of steps for the n-step A2C.")
-    parser.add_argument("--gae_lambda", type=float, default=0.5, help="The lambda parameter for the GAE.")
+    parser.add_argument("--gae_lambda", type=float, default=1., help="The lambda parameter for the GAE.")
 
     args = parser.parse_args()
     return args

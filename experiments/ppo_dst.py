@@ -3,6 +3,7 @@ import random
 import torch
 import argparse
 import time
+import wandb
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from experiments import setup_vector_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
+from torch.utils.tensorboard import SummaryWriter
 
 
 def parse_args():
@@ -24,7 +26,7 @@ def parse_args():
                         help="if toggled, `torch.backends.cudnn.deterministic=False`")
     parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, cuda will be enabled by default")
-    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
                         help="if toggled, this experiment will be tracked with Weights and Biases")
     parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
@@ -39,14 +41,14 @@ def parse_args():
     parser.add_argument("--aug", type=float, default=0.002, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=500000,
+    parser.add_argument("--global_steps", type=int, default=100000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.001),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.0007),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -63,20 +65,21 @@ def parse_args():
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
+    parser.add_argument("--anneal_lr", type=bool, default=True, help="Whether to anneal the learning rate.")
+    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for PPO.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for PPO.")
-    parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
+    parser.add_argument("--num_envs", type=int, default=16, help="The number of environments to use.")
     parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
     parser.add_argument("--update_epochs", type=int, default=4, help="The number of epochs to use for the update.")
     parser.add_argument("--max_grad_norm", type=float, default=0.5,
                         help="The maximum norm for the gradient clipping.")
-    parser.add_argument("--normalize_advantage", type=bool, default=False,
+    parser.add_argument("--normalize_advantage", type=bool, default=True,
                         help="Whether to normalize the advantages in A2C.")
     parser.add_argument("--clip_coef", type=float, default=0.2, help="The clipping coefficient for PPO.")
-    parser.add_argument("--clip_vloss", type=bool, default=False, help="Whether to clip the value loss in PPO.")
-    parser.add_argument("--n_steps", type=int, default=124, help="The number of steps for the n-step PPO.")
+    parser.add_argument("--clip_vloss", type=bool, default=True, help="Whether to clip the value loss in PPO.")
+    parser.add_argument("--n_steps", type=int, default=32, help="The number of steps for the n-step PPO.")
     parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
-    parser.add_argument("--eps", type=float, default=1e-5, help="The epsilon parameter for the Adam optimizer.")
+    parser.add_argument("--eps", type=float, default=1e-8, help="The epsilon parameter for the Adam optimizer.")
 
     args = parser.parse_args()
     return args
@@ -85,6 +88,22 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+
+    if args.track:
+        wandb.init(
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
+            sync_tensorboard=True,
+            config=vars(args),
+            name=run_name,
+            monitor_gym=True,
+            save_code=True,
+        )
+    writer = SummaryWriter(f"runs/{run_name}")
+    writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+    )
 
     # Seeding
     torch.manual_seed(args.seed)
@@ -97,12 +116,14 @@ if __name__ == '__main__':
                                        ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
     oracle = init_oracle(args.oracle,
                          envs,
+                         writer,
                          aug=args.aug,
                          gamma=args.gamma,
                          lrs=args.lrs,
                          eps=args.eps,
                          hidden_layers=args.hidden_layers,
                          one_hot=args.one_hot,
+                         anneal_lr=args.anneal_lr,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
                          num_envs=args.num_envs,
@@ -125,6 +146,7 @@ if __name__ == '__main__':
                          num_objectives,
                          oracle,
                          linear_solver,
+                         writer,
                          warm_start=args.warm_start,
                          seed=args.seed)
     pf = ol.solve()

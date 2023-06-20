@@ -1,0 +1,459 @@
+diff --git a/experiments/a2c_dst.py b/experiments/a2c_dst.py
+index 0bb65f4..6a3ce5a 100644
+--- a/experiments/a2c_dst.py
++++ b/experiments/a2c_dst.py
+@@ -65,14 +65,14 @@ def parse_args():
+     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
+ 
+     # MO-A2C specific arguments.
+-    parser.add_argument("--e_coef", type=float, default=0.1, help="The entropy coefficient for A2C.")
++    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for A2C.")
+     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
+     parser.add_argument("--max_grad_norm", type=float, default=50,
+                         help="The maximum norm for the gradient clipping.")
+     parser.add_argument("--normalize_advantage", type=bool, default=False,
+                         help="Whether to normalize the advantages in A2C.")
+     parser.add_argument("--n_steps", type=int, default=16, help="The number of steps for the n-step A2C.")
+-    parser.add_argument("--gae_lambda", type=float, default=0.5, help="The lambda parameter for the GAE.")
++    parser.add_argument("--gae_lambda", type=float, default=1., help="The lambda parameter for the GAE.")
+ 
+     args = parser.parse_args()
+     return args
+diff --git a/experiments/ppo_dst.py b/experiments/ppo_dst.py
+index 5a01675..91d34b3 100644
+--- a/experiments/ppo_dst.py
++++ b/experiments/ppo_dst.py
+@@ -11,6 +11,7 @@ from experiments import setup_vector_env
+ from linear_solvers import init_linear_solver
+ from oracles import init_oracle
+ from outer_loops import init_outer_loop
++from torch.utils.tensorboard import SummaryWriter
+ 
+ 
+ def parse_args():
+@@ -39,14 +40,14 @@ def parse_args():
+     parser.add_argument("--aug", type=float, default=0.002, help="The augmentation term in the utility function.")
+     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
+     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
+-    parser.add_argument("--global_steps", type=int, default=500000,
++    parser.add_argument("--global_steps", type=int, default=100000,
+                         help="The total number of steps to run the experiment.")
+     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
+     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
+     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
+ 
+     # Oracle arguments.
+-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.001),
++    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.0007),
+                         help="The learning rates for the models.")
+     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
+                         help="The hidden layers for the model.")
+@@ -63,20 +64,21 @@ def parse_args():
+     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
+ 
+     # MO-A2C specific arguments.
+-    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
++    parser.add_argument("--anneal_lr", type=bool, default=True, help="Whether to anneal the learning rate.")
++    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for PPO.")
+     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for PPO.")
+-    parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
++    parser.add_argument("--num_envs", type=int, default=16, help="The number of environments to use.")
+     parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
+     parser.add_argument("--update_epochs", type=int, default=4, help="The number of epochs to use for the update.")
+     parser.add_argument("--max_grad_norm", type=float, default=0.5,
+                         help="The maximum norm for the gradient clipping.")
+-    parser.add_argument("--normalize_advantage", type=bool, default=False,
++    parser.add_argument("--normalize_advantage", type=bool, default=True,
+                         help="Whether to normalize the advantages in A2C.")
+     parser.add_argument("--clip_coef", type=float, default=0.2, help="The clipping coefficient for PPO.")
+-    parser.add_argument("--clip_vloss", type=bool, default=False, help="Whether to clip the value loss in PPO.")
+-    parser.add_argument("--n_steps", type=int, default=124, help="The number of steps for the n-step PPO.")
++    parser.add_argument("--clip_vloss", type=bool, default=True, help="Whether to clip the value loss in PPO.")
++    parser.add_argument("--n_steps", type=int, default=32, help="The number of steps for the n-step PPO.")
+     parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
+-    parser.add_argument("--eps", type=float, default=1e-5, help="The epsilon parameter for the Adam optimizer.")
++    parser.add_argument("--eps", type=float, default=1e-8, help="The epsilon parameter for the Adam optimizer.")
+ 
+     args = parser.parse_args()
+     return args
+@@ -86,6 +88,22 @@ if __name__ == '__main__':
+     args = parse_args()
+     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+ 
++    if args.track:
++        wandb.init(
++            project=args.wandb_project_name,
++            entity=args.wandb_entity,
++            sync_tensorboard=True,
++            config=vars(args),
++            name=run_name,
++            monitor_gym=True,
++            save_code=True,
++        )
++    writer = SummaryWriter(f"runs/{run_name}")
++    writer.add_text(
++        "hyperparameters",
++        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
++    )
++
+     # Seeding
+     torch.manual_seed(args.seed)
+     np.random.seed(args.seed)
+@@ -97,12 +115,14 @@ if __name__ == '__main__':
+                                        ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
+     oracle = init_oracle(args.oracle,
+                          envs,
++                         writer,
+                          aug=args.aug,
+                          gamma=args.gamma,
+                          lrs=args.lrs,
+                          eps=args.eps,
+                          hidden_layers=args.hidden_layers,
+                          one_hot=args.one_hot,
++                         anneal_lr=args.anneal_lr,
+                          e_coef=args.e_coef,
+                          v_coef=args.v_coef,
+                          num_envs=args.num_envs,
+@@ -125,6 +145,7 @@ if __name__ == '__main__':
+                          num_objectives,
+                          oracle,
+                          linear_solver,
++                         writer,
+                          warm_start=args.warm_start,
+                          seed=args.seed)
+     pf = ol.solve()
+diff --git a/oracles/mo_ppo.py b/oracles/mo_ppo.py
+index 82ce734..7055e15 100644
+--- a/oracles/mo_ppo.py
++++ b/oracles/mo_ppo.py
+@@ -12,10 +12,10 @@ from oracles.replay_buffer import RolloutBuffer
+ class Actor(nn.Module):
+     def __init__(self, input_dim, hidden_dims, output_dim):
+         super().__init__()
+-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
++        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+ 
+         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
+-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
++            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+ 
+         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
+         self.layers = nn.Sequential(*self.layers)
+@@ -30,10 +30,10 @@ class Actor(nn.Module):
+ class Critic(nn.Module):
+     def __init__(self, input_dim, hidden_dims, output_dim):
+         super().__init__()
+-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
++        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+ 
+         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
+-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
++            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+ 
+         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
+         self.layers = nn.Sequential(*self.layers)
+@@ -45,12 +45,14 @@ class Critic(nn.Module):
+ class MOPPO(DRLOracle):
+     def __init__(self,
+                  envs,
++                 writer,
+                  aug=0.2,
+                  gamma=0.99,
+                  lrs=(2.5e-4, 2.5e-4),
+                  eps=1e-5,
+                  hidden_layers=((64, 64), (64, 64)),
+                  one_hot=False,
++                 anneal_lr=False,
+                  e_coef=0.01,
+                  v_coef=0.5,
+                  num_envs=4,
+@@ -66,7 +68,7 @@ class MOPPO(DRLOracle):
+                  eval_episodes=100,
+                  log_freq=1000,
+                  seed=0):
+-        super().__init__(envs.envs[0], aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
++        super().__init__(envs.envs[0], writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+ 
+         if len(lrs) == 1:  # Use same learning rate for all models.
+             lrs = (lrs[0], lrs[0])
+@@ -79,6 +81,7 @@ class MOPPO(DRLOracle):
+         self.eps = eps
+         self.s0 = None
+ 
++        self.anneal_lr = anneal_lr
+         self.e_coef = e_coef
+         self.v_coef = v_coef
+         self.num_envs = num_envs
+@@ -140,7 +143,7 @@ class MOPPO(DRLOracle):
+     @staticmethod
+     def init_weights(m, std=np.sqrt(2), bias_const=0.0):
+         if isinstance(m, nn.Linear):
+-            torch.nn.init.orthogonal(m.weight, std)
++            torch.nn.init.orthogonal_(m.weight, std)
+             torch.nn.init.constant_(m.bias, bias_const)
+ 
+     def get_config(self):
+@@ -167,22 +170,6 @@ class MOPPO(DRLOracle):
+             "seed": self.seed
+         }
+ 
+-    def calc_returns(self, advantages, values):
+-        """Compute the returns from the advantages and values.
+-
+-        Notes:
+-            This method is specific to PPO.
+-            (see: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/)
+-
+-        Args:
+-            advantages (Tensor): The computed advantages.
+-            values (Tensor): The predicted values for the observations and final next observation.
+-
+-        Returns:
+-            Tensor: The returns.
+-        """
+-        return advantages + values[:-1]
+-
+     def calc_generalised_advantages(self, rewards, dones, values):
+         """Compute the advantages for the rollouts.
+ 
+@@ -201,24 +188,18 @@ class MOPPO(DRLOracle):
+             advantages[t] = td_errors[t] + self.gamma * self.gae_lambda * advantages[t + 1] * (1 - dones[t])
+         return advantages
+ 
+-    def get_action_and_value(self, x, action=None):
+-        logits = self.actor(x)
+-        probs = CDist(logits=logits)
+-        if action is None:
+-            action = probs.sample()
+-        return action, probs.log_prob(action), probs.entropy(), self.critic(x)
+-
+     def update_policy(self):
+         """Update the policy using the rollout buffer."""
+         with torch.no_grad():
+             aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
+             values = self.critic(torch.cat((aug_obs, aug_next_obs[-1:]), dim=0))  # Predict values of observations.
+             advantages = self.calc_generalised_advantages(rewards, dones, values)  # Calculate the advantages.
+-            returns = self.calc_returns(advantages, values)  # Calculate the returns.
+-            log_prob = CDist(logits=self.actor(aug_obs)).log_prob(actions)
++            returns = advantages + values[:-1]  # Calculate the returns.
++            actor_out = self.actor(aug_obs)
++            log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
+ 
+         for epoch in range(self.update_epochs):
+-            for mb_inds in torch.chunk(torch.randperm(self.batch_size), self.num_minibatches):
++            for mb_inds in torch.chunk(torch.randperm(self.batch_size, generator=self.torch_rng), self.num_minibatches):
+                 # Get the minibatch data.
+                 mb_aug_obs = aug_obs[mb_inds]
+                 mb_actions = actions[mb_inds]
+@@ -228,17 +209,19 @@ class MOPPO(DRLOracle):
+                 mb_logprobs = log_prob[mb_inds]
+ 
+                 # Get the current policy log probabilities and values.
+-                _, newlogprob, entropy, newvalue = self.get_action_and_value(mb_aug_obs, mb_actions)
++                actor_out = self.actor(mb_aug_obs)
++                newlogprob, entropy = self.policy.evaluate_actions(actor_out, mb_actions)  # Evaluate actions.
++                newvalue = self.critic(mb_aug_obs)
+                 logratio = newlogprob - mb_logprobs
+-                ratio = logratio.exp().unsqueeze(dim=-1)  # Ratio is the same for all objectives.
++                ratio = logratio.exp()  # Ratio is the same for all objectives.
+ 
+                 if self.normalize_advantage:
+                     mb_advantages = (mb_advantages - mb_advantages.mean(dim=0)) / (mb_advantages.std(dim=0) + 1e-8)
+ 
+                 # Compute the policy loss.
+                 pg_loss1 = -mb_advantages * ratio
+-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)
+-                pg_loss3 = torch.maximum(pg_loss1, pg_loss2).mean(dim=0)
++                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)  # PPO loss.
++                pg_loss3 = torch.max(pg_loss1, pg_loss2).mean(dim=0)
+ 
+                 with torch.no_grad():
+                     v_s0 = self.critic(self.s0)  # Value of s0.
+@@ -254,18 +237,26 @@ class MOPPO(DRLOracle):
+                     values_pred = newvalue
+                 value_loss = F.mse_loss(mb_returns, values_pred)
+ 
+-                entropy_loss = -entropy.mean()
++                entropy_loss = -torch.mean(entropy)
+                 loss = pg_loss + self.v_coef * value_loss + self.e_coef * entropy_loss  # The total loss.
+ 
+                 # Update the actor and critic networks.
+                 self.actor_optimizer.zero_grad()
+                 self.critic_optimizer.zero_grad()
+                 loss.backward()
++                a_gnorm = self._compute_grad_norm(self.actor)
++                c_gnorm = self._compute_grad_norm(self.critic)
+                 nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
+                 self.actor_optimizer.step()
+                 self.critic_optimizer.step()
+ 
++        with torch.no_grad():  # Compute utility of the policy estimated by the critic. Used for logging.
++            v_s0 = self.critic(self.s0)  # Value of s0.
++            utility = self.u_func(v_s0).item()  # Utility of the policy.
++
++        return utility, v_s0, loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
++
+     def select_action(self, aug_obs):
+         """Select an action from the policy.
+ 
+@@ -276,20 +267,21 @@ class MOPPO(DRLOracle):
+             int: The action.
+         """
+         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
+-        actions = self.policy(log_probs).squeeze()  # Sample an action from the distribution.
+-        return np.array(actions)
++        actions = self.policy(log_probs)  # Sample an action from the distribution.
++        if len(actions) == 1:
++            return actions.item()
++        else:
++            return np.array(actions.squeeze())
+ 
+-    def select_greedy_action(self, obs, accrued_reward):
++    def select_greedy_action(self, aug_obs):
+         """Select a greedy action. Used by the solve method in the super class.
+ 
+         Args:
+-            obs (Tensor): The observation.
+-            accrued_reward (Tensor): The accrued reward.
++            aug_obs (Tensor): The augmented observation.
+ 
+         Returns:
+             int: The action.
+         """
+-        aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
+         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
+         action = self.policy.greedy(log_probs).item()  # Sample an action from the distribution.
+         return action
+@@ -301,35 +293,45 @@ class MOPPO(DRLOracle):
+         obs = torch.tensor(self.format_obs(raw_obs), dtype=torch.float)
+         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
+         aug_obs = torch.hstack((obs, acs))
+-        self.s0 = aug_obs[0].clone()
++        self.s0 = aug_obs[0].detach()
+         timesteps = torch.zeros((self.num_envs, 1))
+ 
+         for update in range(self.num_updates):
+-            # Update the learning rate.
+-            lr_frac = 1. - update / self.num_updates
+-            self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.actor_lr
+-            self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.critic_lr
++            if self.anneal_lr:  # Update the learning rate.
++                lr_frac = 1. - update / self.num_updates
++                self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.actor_lr
++                self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.critic_lr
+ 
+             # Perform rollouts in the environments.
+             for step in range(self.n_steps):
+                 if global_step % self.log_freq == 0:
+                     print(f'Global step: {global_step}')
+-                global_step += self.num_envs  # The global step is 1 * the number of environments.
+ 
+                 with torch.no_grad():
+                     actions = self.select_action(aug_obs)
+ 
+                 next_raw_obs, rewards, terminateds, truncateds, _ = self.envs.step(actions)
+-                next_obs = torch.tensor(self.format_obs(next_raw_obs))
+-                acs += (self.gamma ** timesteps) * rewards  # Update the accrued reward.
+-                aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
+                 dones = np.expand_dims(terminateds | truncateds, axis=1)
++                next_obs = self.format_obs(next_raw_obs)
++                acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
++                aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
++
+                 self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs, dones, size=self.num_envs)
+ 
+                 aug_obs = aug_next_obs
+                 timesteps = (timesteps + 1) * (1 - dones)
++                global_step += self.num_envs  # The global step is 1 * the number of environments.
+ 
+-            self.update_policy()
++            utility, v_s0, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
++            self.writer.add_scalar(f'losses/{self.iteration}/utility', utility, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
++            self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
++            self.estimated_values[global_step] = np.asarray(v_s0)
++            self.rollout_buffer.reset()
+ 
+     def load_model(self, referent, load_actor=False, load_critic=True):
+         """Load the model that is closest to the given referent.
+diff --git a/outer_loops/priol.py b/outer_loops/priol.py
+index 5c62d49..e446845 100644
+--- a/outer_loops/priol.py
++++ b/outer_loops/priol.py
+@@ -223,6 +223,12 @@ class Priol:
+         else:
+             raise ValueError(f'Unknown method {method}')
+ 
++    def log_step(self, step):
++        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
++        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
++        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
++        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
++
+     def solve(self, update_freq=1):
+         """Solve the problem.
+ 
+@@ -241,6 +247,8 @@ class Priol:
+             print(self.pf)
+             return {tuple(vec) for vec in self.pf}
+ 
++        self.log_step(step)
++
+         while self.error_estimates[-1] > self.tol and step < self.max_steps:
+             begin_loop = time.time()
+             print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
+@@ -267,11 +275,7 @@ class Priol:
+             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
+ 
+             step += 1
+-
+-            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+-            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+-            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+-            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
++            self.log_step(step)
+             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
+             print('---------------------')
+ 
+diff --git a/outer_loops/priol_2D.py b/outer_loops/priol_2D.py
+index a9212a9..6f09f24 100644
+--- a/outer_loops/priol_2D.py
++++ b/outer_loops/priol_2D.py
+@@ -122,6 +122,12 @@ class Priol2D:
+         """Check if the algorithm is done."""
+         return not self.box_queue or self.error_estimates[-1] <= self.tolerance
+ 
++    def log_step(self, step):
++        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
++        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
++        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
++        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
++
+     def solve(self):
+         """Solve the problem.
+ 
+@@ -131,6 +137,7 @@ class Priol2D:
+         start = time.time()
+         self.init_phase()
+         step = 0
++        self.log_step(step)
+ 
+         while not self.is_done():
+             begin_loop = time.time()
+@@ -154,10 +161,7 @@ class Priol2D:
+ 
+             step += 1
+ 
+-            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+-            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+-            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+-            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
++            self.log_step(step)
+             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
+             print('---------------------')
+ 
