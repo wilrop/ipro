@@ -223,6 +223,12 @@ class Priol:
         else:
             raise ValueError(f'Unknown method {method}')
 
+    def log_step(self, step):
+        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+
     def solve(self, update_freq=1):
         """Solve the problem.
 
@@ -240,6 +246,8 @@ class Priol:
             print('The problem is solved in the initial phase.')
             print(self.pf)
             return {tuple(vec) for vec in self.pf}
+
+        self.log_step(step)
 
         while self.error_estimates[-1] > self.tol and step < self.max_steps:
             begin_loop = time.time()
@@ -267,11 +275,7 @@ class Priol:
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
 
             step += 1
-
-            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
-            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
-            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+            self.log_step(step)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 

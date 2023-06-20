@@ -122,6 +122,12 @@ class Priol2D:
         """Check if the algorithm is done."""
         return not self.box_queue or self.error_estimates[-1] <= self.tolerance
 
+    def log_step(self, step):
+        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
+        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
+        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
+        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+
     def solve(self):
         """Solve the problem.
 
@@ -131,6 +137,7 @@ class Priol2D:
         start = time.time()
         self.init_phase()
         step = 0
+        self.log_step(step)
 
         while not self.is_done():
             begin_loop = time.time()
@@ -154,10 +161,7 @@ class Priol2D:
 
             step += 1
 
-            self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
-            self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
-            self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-            self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+            self.log_step(step)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
