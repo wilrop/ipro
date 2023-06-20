@@ -12,10 +12,10 @@ from oracles.replay_buffer import RolloutBuffer
 class Actor(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -30,10 +30,10 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -45,12 +45,14 @@ class Critic(nn.Module):
 class MOPPO(DRLOracle):
     def __init__(self,
                  envs,
+                 writer,
                  aug=0.2,
                  gamma=0.99,
                  lrs=(2.5e-4, 2.5e-4),
                  eps=1e-5,
                  hidden_layers=((64, 64), (64, 64)),
                  one_hot=False,
+                 anneal_lr=False,
                  e_coef=0.01,
                  v_coef=0.5,
                  num_envs=4,
@@ -66,7 +68,7 @@ class MOPPO(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(envs.envs[0], aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(envs.envs[0], writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -79,6 +81,7 @@ class MOPPO(DRLOracle):
         self.eps = eps
         self.s0 = None
 
+        self.anneal_lr = anneal_lr
         self.e_coef = e_coef
         self.v_coef = v_coef
         self.num_envs = num_envs
@@ -140,7 +143,7 @@ class MOPPO(DRLOracle):
     @staticmethod
     def init_weights(m, std=np.sqrt(2), bias_const=0.0):
         if isinstance(m, nn.Linear):
-            torch.nn.init.orthogonal(m.weight, std)
+            torch.nn.init.orthogonal_(m.weight, std)
             torch.nn.init.constant_(m.bias, bias_const)
 
     def get_config(self):
@@ -167,22 +170,6 @@ class MOPPO(DRLOracle):
             "seed": self.seed
         }
 
-    def calc_returns(self, advantages, values):
-        """Compute the returns from the advantages and values.
-
-        Notes:
-            This method is specific to PPO.
-            (see: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/)
-
-        Args:
-            advantages (Tensor): The computed advantages.
-            values (Tensor): The predicted values for the observations and final next observation.
-
-        Returns:
-            Tensor: The returns.
-        """
-        return advantages + values[:-1]
-
     def calc_generalised_advantages(self, rewards, dones, values):
         """Compute the advantages for the rollouts.
 
@@ -201,24 +188,18 @@ class MOPPO(DRLOracle):
             advantages[t] = td_errors[t] + self.gamma * self.gae_lambda * advantages[t + 1] * (1 - dones[t])
         return advantages
 
-    def get_action_and_value(self, x, action=None):
-        logits = self.actor(x)
-        probs = CDist(logits=logits)
-        if action is None:
-            action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic(x)
-
     def update_policy(self):
         """Update the policy using the rollout buffer."""
         with torch.no_grad():
             aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
             values = self.critic(torch.cat((aug_obs, aug_next_obs[-1:]), dim=0))  # Predict values of observations.
             advantages = self.calc_generalised_advantages(rewards, dones, values)  # Calculate the advantages.
-            returns = self.calc_returns(advantages, values)  # Calculate the returns.
-            log_prob = CDist(logits=self.actor(aug_obs)).log_prob(actions)
+            returns = advantages + values[:-1]  # Calculate the returns.
+            actor_out = self.actor(aug_obs)
+            log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
 
         for epoch in range(self.update_epochs):
-            for mb_inds in torch.chunk(torch.randperm(self.batch_size), self.num_minibatches):
+            for mb_inds in torch.chunk(torch.randperm(self.batch_size, generator=self.torch_rng), self.num_minibatches):
                 # Get the minibatch data.
                 mb_aug_obs = aug_obs[mb_inds]
                 mb_actions = actions[mb_inds]
@@ -228,17 +209,19 @@ class MOPPO(DRLOracle):
                 mb_logprobs = log_prob[mb_inds]
 
                 # Get the current policy log probabilities and values.
-                _, newlogprob, entropy, newvalue = self.get_action_and_value(mb_aug_obs, mb_actions)
+                actor_out = self.actor(mb_aug_obs)
+                newlogprob, entropy = self.policy.evaluate_actions(actor_out, mb_actions)  # Evaluate actions.
+                newvalue = self.critic(mb_aug_obs)
                 logratio = newlogprob - mb_logprobs
-                ratio = logratio.exp().unsqueeze(dim=-1)  # Ratio is the same for all objectives.
+                ratio = logratio.exp()  # Ratio is the same for all objectives.
 
                 if self.normalize_advantage:
                     mb_advantages = (mb_advantages - mb_advantages.mean(dim=0)) / (mb_advantages.std(dim=0) + 1e-8)
 
                 # Compute the policy loss.
                 pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)
-                pg_loss3 = torch.maximum(pg_loss1, pg_loss2).mean(dim=0)
+                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)  # PPO loss.
+                pg_loss3 = torch.max(pg_loss1, pg_loss2).mean(dim=0)
 
                 with torch.no_grad():
                     v_s0 = self.critic(self.s0)  # Value of s0.
@@ -254,17 +237,25 @@ class MOPPO(DRLOracle):
                     values_pred = newvalue
                 value_loss = F.mse_loss(mb_returns, values_pred)
 
-                entropy_loss = -entropy.mean()
+                entropy_loss = -torch.mean(entropy)
                 loss = pg_loss + self.v_coef * value_loss + self.e_coef * entropy_loss  # The total loss.
 
                 # Update the actor and critic networks.
                 self.actor_optimizer.zero_grad()
                 self.critic_optimizer.zero_grad()
                 loss.backward()
+                a_gnorm = self._compute_grad_norm(self.actor)
+                c_gnorm = self._compute_grad_norm(self.critic)
                 nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.actor_optimizer.step()
                 self.critic_optimizer.step()
+
+        with torch.no_grad():  # Compute utility of the policy estimated by the critic. Used for logging.
+            v_s0 = self.critic(self.s0)  # Value of s0.
+            utility = self.u_func(v_s0).item()  # Utility of the policy.
+
+        return utility, v_s0, loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
     def select_action(self, aug_obs):
         """Select an action from the policy.
@@ -276,20 +267,21 @@ class MOPPO(DRLOracle):
             int: The action.
         """
         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
-        actions = self.policy(log_probs).squeeze()  # Sample an action from the distribution.
-        return np.array(actions)
+        actions = self.policy(log_probs)  # Sample an action from the distribution.
+        if len(actions) == 1:
+            return actions.item()
+        else:
+            return np.array(actions.squeeze())
 
-    def select_greedy_action(self, obs, accrued_reward):
+    def select_greedy_action(self, aug_obs):
         """Select a greedy action. Used by the solve method in the super class.
 
         Args:
-            obs (Tensor): The observation.
-            accrued_reward (Tensor): The accrued reward.
+            aug_obs (Tensor): The augmented observation.
 
         Returns:
             int: The action.
         """
-        aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
         action = self.policy.greedy(log_probs).item()  # Sample an action from the distribution.
         return action
@@ -301,35 +293,45 @@ class MOPPO(DRLOracle):
         obs = torch.tensor(self.format_obs(raw_obs), dtype=torch.float)
         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
         aug_obs = torch.hstack((obs, acs))
-        self.s0 = aug_obs[0].clone()
+        self.s0 = aug_obs[0].detach()
         timesteps = torch.zeros((self.num_envs, 1))
 
         for update in range(self.num_updates):
-            # Update the learning rate.
-            lr_frac = 1. - update / self.num_updates
-            self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.actor_lr
-            self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.critic_lr
+            if self.anneal_lr:  # Update the learning rate.
+                lr_frac = 1. - update / self.num_updates
+                self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.actor_lr
+                self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.critic_lr
 
             # Perform rollouts in the environments.
             for step in range(self.n_steps):
                 if global_step % self.log_freq == 0:
                     print(f'Global step: {global_step}')
-                global_step += self.num_envs  # The global step is 1 * the number of environments.
 
                 with torch.no_grad():
                     actions = self.select_action(aug_obs)
 
                 next_raw_obs, rewards, terminateds, truncateds, _ = self.envs.step(actions)
-                next_obs = torch.tensor(self.format_obs(next_raw_obs))
-                acs += (self.gamma ** timesteps) * rewards  # Update the accrued reward.
-                aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)
+                next_obs = self.format_obs(next_raw_obs)
+                acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
+                aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
+
                 self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs, dones, size=self.num_envs)
 
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)
+                global_step += self.num_envs  # The global step is 1 * the number of environments.
 
-            self.update_policy()
+            utility, v_s0, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
+            self.writer.add_scalar(f'losses/{self.iteration}/utility', utility, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
+            self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
+            self.estimated_values[global_step] = np.asarray(v_s0)
+            self.rollout_buffer.reset()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
         """Load the model that is closest to the given referent.
