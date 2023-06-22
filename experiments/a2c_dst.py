@@ -26,7 +26,7 @@ def parse_args():
                         help="if toggled, `torch.backends.cudnn.deterministic=False`")
     parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, cuda will be enabled by default")
-    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, this experiment will be tracked with Weights and Biases")
     parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0005, 0.0005),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.0007),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for A2C.")
+    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
     parser.add_argument("--max_grad_norm", type=float, default=50,
                         help="The maximum norm for the gradient clipping.")

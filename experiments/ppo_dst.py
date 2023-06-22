@@ -26,24 +26,25 @@ def parse_args():
                         help="if toggled, `torch.backends.cudnn.deterministic=False`")
     parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, cuda will be enabled by default")
-    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, this experiment will be tracked with Weights and Biases")
     parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
     parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
+    parser.add_argument("--window_size", type=int, default=20, help="the moving average window size")
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-PPO", help="The algorithm to use.")
-    parser.add_argument("--aug", type=float, default=0.002, help="The augmentation term in the utility function.")
+    parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=100000,
                         help="The total number of steps to run the experiment.")
-    parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
@@ -64,20 +65,20 @@ def parse_args():
                         help="The number of steps after which the model training is finished.")
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
-    # MO-A2C specific arguments.
-    parser.add_argument("--anneal_lr", type=bool, default=True, help="Whether to anneal the learning rate.")
-    parser.add_argument("--e_coef", type=float, default=0.05, help="The entropy coefficient for PPO.")
+    # MO-PPO specific arguments.
+    parser.add_argument("--anneal_lr", type=bool, default=False, help="Whether to anneal the learning rate.")
+    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for PPO.")
-    parser.add_argument("--num_envs", type=int, default=16, help="The number of environments to use.")
+    parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
     parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
     parser.add_argument("--update_epochs", type=int, default=4, help="The number of epochs to use for the update.")
     parser.add_argument("--max_grad_norm", type=float, default=0.5,
                         help="The maximum norm for the gradient clipping.")
-    parser.add_argument("--normalize_advantage", type=bool, default=True,
+    parser.add_argument("--normalize_advantage", type=bool, default=False,
                         help="Whether to normalize the advantages in A2C.")
-    parser.add_argument("--clip_coef", type=float, default=0.2, help="The clipping coefficient for PPO.")
+    parser.add_argument("--clip_coef", type=float, default=0.5, help="The clipping coefficient for PPO.")
     parser.add_argument("--clip_vloss", type=bool, default=True, help="Whether to clip the value loss in PPO.")
-    parser.add_argument("--n_steps", type=int, default=32, help="The number of steps for the n-step PPO.")
+    parser.add_argument("--n_steps", type=int, default=128, help="The number of steps for the n-step PPO.")
     parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
     parser.add_argument("--eps", type=float, default=1e-8, help="The epsilon parameter for the Adam optimizer.")
 
@@ -138,6 +139,7 @@ if __name__ == '__main__':
                          global_steps=args.global_steps,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
+                         window_size=args.window_size,
                          seed=args.seed,
                          )
 
