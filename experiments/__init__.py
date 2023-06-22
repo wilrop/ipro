@@ -17,13 +17,13 @@ def setup_env(args):
         env = mo_gym.make(args.env_id)
     if args.max_episode_steps is not None:
         env = TimeLimit(env, max_episode_steps=args.max_episode_steps)
+    env = mo_gym.MORecordEpisodeStatistics(env)
     return env, env.reward_space.shape[0]
 
 
 def make_env(env_id, idx, seed, run_name, capture_video, max_episode_steps=None):
     def thunk():
         env = gym.make(env_id)
-        env = mo_gym.MORecordEpisodeStatistics(env)
         if max_episode_steps is not None:
             env = TimeLimit(env, max_episode_steps=max_episode_steps)
         if capture_video:
@@ -51,4 +51,5 @@ def setup_vector_env(args, run_name):
         [make_env(args.env_id, i, args.seed + i, run_name, args.capture_video, max_episode_steps=args.max_episode_steps)
          for i in range(args.num_envs)]
     )
+    envs = mo_gym.MORecordEpisodeStatistics(envs)
     return envs, envs.reward_space.shape[0]
