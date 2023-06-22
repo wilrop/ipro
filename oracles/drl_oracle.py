@@ -12,7 +12,8 @@ class DRLOracle:
                  aug=0.2,
                  gamma=0.99,
                  one_hot=False,
-                 eval_episodes=100):
+                 eval_episodes=100,
+                 window_size=100):
         self.env = env
         self.aug = aug
 
@@ -37,7 +38,11 @@ class DRLOracle:
 
         self.iteration = 0
         self.writer = writer
-        self.estimated_values = {}
+        self.expected_returns = {}
+
+        self.window_size = window_size
+        self.episodic_returns = []
+        self.episodic_lengths = []
 
     @staticmethod
     def _compute_grad_norm(model):
@@ -95,7 +100,7 @@ class DRLOracle:
         else:
             return obs.flatten()
 
-    def evaluate(self, deterministic=True):
+    def evaluate(self, eval_episodes=100, deterministic=True):
         """Evaluate the agent on the environment.
 
         Args:
@@ -111,7 +116,7 @@ class DRLOracle:
 
         pareto_point = np.zeros(self.num_objectives)
 
-        for episode in range(self.eval_episodes):
+        for episode in range(eval_episodes):
             raw_obs, _ = self.env.reset()
             obs = self.format_obs(raw_obs)
             terminated = False
@@ -121,7 +126,8 @@ class DRLOracle:
 
             while not (terminated or truncated):
                 aug_obs = np.concatenate((obs, accrued_reward))
-                action = policy(torch.tensor(aug_obs, dtype=torch.float))
+                with torch.no_grad():
+                    action = policy(torch.tensor(aug_obs, dtype=torch.float))
                 next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
                 next_obs = self.format_obs(next_raw_obs)
                 accrued_reward += (self.gamma ** timestep) * reward
@@ -130,7 +136,7 @@ class DRLOracle:
 
             pareto_point += accrued_reward
 
-        return pareto_point / self.eval_episodes
+        return pareto_point / eval_episodes
 
     def train(self):
         """Train the algorithm on the given environment."""
@@ -142,9 +148,35 @@ class DRLOracle:
         Args:
             pareto_point (ndarray): The pareto point.
         """
-        distances = np.linalg.norm(np.array(list(self.estimated_values.values())) - pareto_point, axis=1)
-        for step, dist in zip(self.estimated_values.keys(), distances):
-            self.writer.add_scalar(f'losses/{self.iteration}/distance', dist, step)
+        distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
+        for step, dist in zip(self.expected_returns.keys(), distances):
+            self.writer.add_scalar(f'charts/{self.iteration}/distance', dist, step)
+
+    def log_single_stats(self, episodic_return, episodic_length, done, global_step):
+        if done:
+            self.episodic_returns.append(episodic_return)
+            self.episodic_lengths.append(episodic_length)
+
+            if len(self.episodic_returns) >= self.window_size:
+                curr_exp_ret = np.mean(self.episodic_returns, axis=0)
+                self.expected_returns[global_step] = curr_exp_ret
+                utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
+                episodic_length = np.mean(self.episodic_lengths)
+                self.writer.add_scalar(f'charts/{self.iteration}/utility', utility, global_step)
+                self.writer.add_scalar(f'charts/{self.iteration}/episodic_length', episodic_length, global_step)
+                self.episodic_returns = []
+                self.episodic_lengths = []
+
+    def log_episodic_stats(self, info, dones, global_step, vectorized=False):
+        for k, v in info.items():
+            if k == "episode":
+                episodic_returns = v["r"]
+                episodic_lengths = v["l"]
+                if vectorized:
+                    for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
+                        self.log_single_stats(episodic_return, episodic_length, done, global_step)
+                else:
+                    self.log_single_stats(episodic_returns, episodic_lengths, dones, global_step)
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.
@@ -168,8 +200,9 @@ class DRLOracle:
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, backend='torch')
+        # self.u_func = lambda x: torch.dot(x, torch.tensor([0.99, 0.01]))
         self.train()
-        pareto_point = self.evaluate()
+        pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
         self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
         self.log_distances(pareto_point)
         self.iteration += 1

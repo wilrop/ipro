@@ -155,40 +155,6 @@ class MODQN(DRLOracle):
                                                arch=self.model_hidden_layers,
                                                learning_rate=self.model_lr)
 
-    def _get_config(self):
-        """Get the configuration of the agent."""
-        return {
-            "seed": self.seed,
-            "lr": self.dqn_lr,
-            "hidden_layers": self.dqn_hidden_layers,
-            "one_hot": self.one_hot,
-            "learning_start": self.learning_start,
-            "train_freq": self.train_freq,
-            "target_update_freq": self.target_update_freq,
-            "gradient_steps": self.gradient_steps,
-            "epsilon_start": self.epsilon_start,
-            "epsilon_end": self.epsilon_end,
-            "exploration_frac": self.exploration_frac,
-            "gamma": self.gamma,
-            "tau": self.tau,
-            "model_based": self.model_based,
-            "model_lr": self.model_lr,
-            "model_hidden_layers": self.model_hidden_layers,
-            "pe_size": self.pe_size,
-            "model_steps": self.model_steps,
-            "buffer_size": self.buffer_size,
-            "per": self.per,
-            "alpha_per": self.alpha_per,
-            "min_priority": self.min_priority,
-            "batch_size": self.batch_size,
-            "init_real_frac": self.init_real_frac,
-            "final_real_frac": self.final_real_frac,
-            "model_train_finish": self.model_train_finish,
-            "global_steps": self.global_steps,
-            'eval_episodes': self.eval_episodes,
-            'log_freq': self.log_freq
-        }
-
     @staticmethod
     def init_weights(m):
         if isinstance(m, nn.Linear):

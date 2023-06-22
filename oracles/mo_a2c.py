@@ -113,31 +113,12 @@ class MOA2C(DRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
-        self.estimated_values = {}
 
     @staticmethod
     def init_weights(m, bias_const=0.01):
         if isinstance(m, nn.Linear):
             torch.nn.init.xavier_uniform_(m.weight)
             torch.nn.init.constant_(m.bias, bias_const)
-
-    def get_config(self):
-        return {
-            "aug": self.aug,
-            "lrs": (self.actor_lr, self.critic_lr),
-            "hidden_layers": (self.actor_layers, self.critic_layers),
-            "e_coef": self.e_coef,
-            "v_coef": self.v_coef,
-            "gamma": self.gamma,
-            "max_grad_norm": self.max_grad_norm,
-            "normalize_advantage": self.normalize_advantage,
-            "n_steps": self.n_steps,
-            "gae_lambda": self.gae_lambda,
-            "global_steps": self.global_steps,
-            "eval_episodes": self.eval_episodes,
-            "log_freq": self.log_freq,
-            "seed": self.seed
-        }
 
     def calc_generalised_advantages(self, rewards, dones, values, v_next):
         """Compute the advantages for the rollouts.
@@ -194,11 +175,7 @@ class MOA2C(DRLOracle):
         self.critic_optimizer.step()
         self.actor_optimizer.step()
 
-        with torch.no_grad():  # Compute utility of the policy estimated by the critic. Used for logging.
-            v_s0 = self.critic(self.s0)  # Value of s0.
-            utility = self.u_func(v_s0).item()  # Utility of the policy.
-
-        return utility, v_s0, loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
+        return loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
     def reset_env(self):
         """Reset the environment.
@@ -251,24 +228,24 @@ class MOA2C(DRLOracle):
             with torch.no_grad():
                 action = self.select_action(aug_obs)
 
-            next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+            next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
+            done = terminated or truncated
             next_obs = self.format_obs(next_raw_obs)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
-            self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated or truncated)
+            self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, done)
 
             if (global_step + 1) % self.n_steps == 0:
-                utility, v_s0, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-                self.writer.add_scalar(f'losses/{self.iteration}/utility', utility, global_step)
+                loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
                 self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
                 self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
                 self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
                 self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
                 self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
                 self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
-                self.estimated_values[global_step] = np.asarray(v_s0)
                 self.rollout_buffer.reset()
 
+            self.log_episodic_stats(info, done, global_step, vectorized=False)
             aug_obs = aug_next_obs
             timestep += 1
 

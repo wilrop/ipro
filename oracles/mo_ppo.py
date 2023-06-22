@@ -67,8 +67,15 @@ class MOPPO(DRLOracle):
                  global_steps=500000,
                  eval_episodes=100,
                  log_freq=1000,
+                 window_size=100,
                  seed=0):
-        super().__init__(envs.envs[0], writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(envs.envs[0],
+                         writer,
+                         aug=aug,
+                         gamma=gamma,
+                         one_hot=one_hot,
+                         eval_episodes=eval_episodes,
+                         window_size=window_size, )
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -128,7 +135,6 @@ class MOPPO(DRLOracle):
                                             aug_obs=True)
 
         self.log_freq = log_freq
-        self.capture_video = False
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
@@ -139,36 +145,14 @@ class MOPPO(DRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr, eps=self.eps)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr, eps=self.eps)
+        self.policy_returns = []
+        self.rollout_buffer.reset()
 
     @staticmethod
-    def init_weights(m, std=np.sqrt(2), bias_const=0.0):
+    def init_weights(m, std=np.sqrt(2), bias_const=0.01):
         if isinstance(m, nn.Linear):
-            torch.nn.init.orthogonal_(m.weight, std)
+            torch.nn.init.xavier_uniform_(m.weight, std)
             torch.nn.init.constant_(m.bias, bias_const)
-
-    def get_config(self):
-        return {
-            "aug": self.aug,
-            "gamma": self.gamma,
-            "lrs": (self.actor_lr, self.critic_lr),
-            "hidden_layers": (self.actor_layers, self.critic_layers),
-            "one_hot": self.one_hot,
-            "e_coef": self.e_coef,
-            "v_coef": self.v_coef,
-            "num_envs": self.num_envs,
-            "num_minibatches": self.num_minibatches,
-            "update_epochs": self.update_epochs,
-            "max_grad_norm": self.max_grad_norm,
-            "normalize_advantage": self.normalize_advantage,
-            "clip_coef": self.clip_coef,
-            "clip_vloss": self.clip_vloss,
-            "gae_lambda": self.gae_lambda,
-            "n_steps": self.n_steps,
-            "global_steps": self.global_steps,
-            "eval_episodes": self.eval_episodes,
-            "log_freq": self.log_freq,
-            "seed": self.seed
-        }
 
     def calc_generalised_advantages(self, rewards, dones, values):
         """Compute the advantages for the rollouts.
@@ -199,7 +183,8 @@ class MOPPO(DRLOracle):
             log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
 
         for epoch in range(self.update_epochs):
-            for mb_inds in torch.chunk(torch.randperm(self.batch_size, generator=self.torch_rng), self.num_minibatches):
+            shuffled_inds = torch.randperm(self.batch_size, generator=self.torch_rng)
+            for mb_inds in torch.chunk(shuffled_inds, self.num_minibatches):
                 # Get the minibatch data.
                 mb_aug_obs = aug_obs[mb_inds]
                 mb_actions = actions[mb_inds]
@@ -219,16 +204,17 @@ class MOPPO(DRLOracle):
                     mb_advantages = (mb_advantages - mb_advantages.mean(dim=0)) / (mb_advantages.std(dim=0) + 1e-8)
 
                 # Compute the policy loss.
-                pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)  # PPO loss.
-                pg_loss3 = torch.max(pg_loss1, pg_loss2).mean(dim=0)
+                pg_loss1 = mb_advantages * ratio
+                pg_loss2 = mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)  # PPO loss.
+                pg_loss3 = -torch.min(pg_loss1, pg_loss2).mean(dim=0)
 
                 with torch.no_grad():
                     v_s0 = self.critic(self.s0)  # Value of s0.
+
                 v_s0.requires_grad = True
                 self.u_func(v_s0).backward()  # Gradient of utility function w.r.t. values.
 
-                pg_loss = torch.dot(pg_loss3, v_s0.grad)  # The policy loss for nonlinear utility functions.
+                pg_loss = torch.dot(v_s0.grad, pg_loss3)  # The policy loss for nonlinear utility functions.
 
                 # Compute the value loss
                 if self.clip_vloss:
@@ -251,11 +237,7 @@ class MOPPO(DRLOracle):
                 self.actor_optimizer.step()
                 self.critic_optimizer.step()
 
-        with torch.no_grad():  # Compute utility of the policy estimated by the critic. Used for logging.
-            v_s0 = self.critic(self.s0)  # Value of s0.
-            utility = self.u_func(v_s0).item()  # Utility of the policy.
-
-        return utility, v_s0, loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
+        return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
     def select_action(self, aug_obs):
         """Select an action from the policy.
@@ -310,7 +292,7 @@ class MOPPO(DRLOracle):
                 with torch.no_grad():
                     actions = self.select_action(aug_obs)
 
-                next_raw_obs, rewards, terminateds, truncateds, _ = self.envs.step(actions)
+                next_raw_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)
                 next_obs = self.format_obs(next_raw_obs)
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
@@ -320,17 +302,18 @@ class MOPPO(DRLOracle):
 
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)
+
+                self.log_episodic_stats(info, dones, global_step, vectorized=True)
+
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
 
-            utility, v_s0, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-            self.writer.add_scalar(f'losses/{self.iteration}/utility', utility, global_step)
+            loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
             self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
             self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
             self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
             self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
             self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
             self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
-            self.estimated_values[global_step] = np.asarray(v_s0)
             self.rollout_buffer.reset()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
