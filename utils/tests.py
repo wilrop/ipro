@@ -24,7 +24,7 @@ def rank_points():
 
         print(f'Augmentation: {aug}')
         for i, (vec, val) in enumerate(order):
-            print(f'{i+1}. {vec} -> {val}')
+            print(f'{i + 1}. {vec} -> {val}')
 
 
 if __name__ == '__main__':
