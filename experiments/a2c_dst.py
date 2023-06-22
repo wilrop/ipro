@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.0007),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0006, 0.0006),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -65,9 +65,9 @@ def parse_args():
     parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
+    parser.add_argument("--e_coef", type=float, default=0.1, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
-    parser.add_argument("--max_grad_norm", type=float, default=50,
+    parser.add_argument("--max_grad_norm", type=float, default=0.5,
                         help="The maximum norm for the gradient clipping.")
     parser.add_argument("--normalize_advantage", type=bool, default=False,
                         help="Whether to normalize the advantages in A2C.")
