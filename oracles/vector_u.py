@@ -86,7 +86,7 @@ def aasf(vector, referent, nadir, ideal, aug=0., scale=100, backend='numpy'):
         return torch.min(frac_improvement) + aug * torch.mean(frac_improvement)
 
 
-def create_aasf(referent, nadir, ideal, aug=0., scale=100, backend='numpy'):
+def create_aasf(referent, nadir, ideal, aug=0., scale=1000, backend='numpy'):
     """Create a non-batched augmented achievement scalarizing function.
 
     Args:
@@ -103,7 +103,7 @@ def create_aasf(referent, nadir, ideal, aug=0., scale=100, backend='numpy'):
     return lambda vec: aasf(vec, referent, nadir, ideal, aug=aug, scale=scale, backend=backend)
 
 
-def create_batched_aasf(referent, nadir, ideal, aug=0., scale=100, backend='numpy'):
+def create_batched_aasf(referent, nadir, ideal, aug=0., scale=1000, backend='numpy'):
     """Create a batched augmented achievement scalarizing function.
 
     Args:
