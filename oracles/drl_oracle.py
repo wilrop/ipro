@@ -150,7 +150,7 @@ class DRLOracle:
         """
         distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
         for step, dist in zip(self.expected_returns.keys(), distances):
-            self.writer.add_scalar(f'charts/{self.iteration}/distance', dist, step)
+            self.writer.add_scalar(f'charts/distance_{self.iteration}', dist, step)
 
     def log_single_stats(self, episodic_return, episodic_length, done, global_step):
         if done:
@@ -162,8 +162,8 @@ class DRLOracle:
                 self.expected_returns[global_step] = curr_exp_ret
                 utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
                 episodic_length = np.mean(self.episodic_lengths)
-                self.writer.add_scalar(f'charts/{self.iteration}/utility', utility, global_step)
-                self.writer.add_scalar(f'charts/{self.iteration}/episodic_length', episodic_length, global_step)
+                self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
+                self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
                 self.episodic_returns = []
                 self.episodic_lengths = []
 
@@ -200,7 +200,6 @@ class DRLOracle:
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, backend='torch')
-        # self.u_func = lambda x: torch.dot(x, torch.tensor([0.99, 0.01]))
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
         self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
