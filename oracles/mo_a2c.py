@@ -233,16 +233,16 @@ class MOA2C(DRLOracle):
             next_obs = self.format_obs(next_raw_obs)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
-            self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, done)
+            self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
 
             if (global_step + 1) % self.n_steps == 0:
                 loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-                self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
-                self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
-                self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
-                self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
-                self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
-                self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
+                self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
+                self.writer.add_scalar(f'losses/policy_gradient_loss_{self.iteration}', pg_l, global_step)
+                self.writer.add_scalar(f'losses/value_loss_{self.iteration}', v_l, global_step)
+                self.writer.add_scalar(f'losses/entropy_loss_{self.iteration}', e_l, global_step)
+                self.writer.add_scalar(f'losses/actor_grad_norm_{self.iteration}', a_gnorm, global_step)
+                self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
                 self.rollout_buffer.reset()
 
             self.log_episodic_stats(info, done, global_step, vectorized=False)
