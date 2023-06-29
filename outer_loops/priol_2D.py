@@ -47,8 +47,7 @@ class Priol2D:
         if len(self.box_queue) == 0:
             self.error_estimates.append(0)
         else:
-            largest_box = self.box_queue[-1]
-            self.error_estimates.append(np.max(largest_box.ideal - largest_box.nadir))
+            self.error_estimates.append(max(box.max_dist for box in self.box_queue))
 
     def split_box(self, box, point):
         """Split a box into two new boxes.

@@ -13,6 +13,7 @@ class Box:
         self.ideal = np.max(self.bounds, axis=0)
         self.midpoint = (self.nadir + self.ideal) / 2
         self.volume = self.compute_volume()
+        self.max_dist = np.max(self.ideal - self.nadir)
 
     def compute_volume(self):
         """Compute the volume of the box.
