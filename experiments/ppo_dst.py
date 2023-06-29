@@ -42,14 +42,14 @@ def parse_args():
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=100000,
+    parser.add_argument("--global_steps", type=int, default=300000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0007, 0.0007),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0002, 0.0002),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -68,18 +68,19 @@ def parse_args():
     # MO-PPO specific arguments.
     parser.add_argument("--anneal_lr", type=bool, default=False, help="Whether to anneal the learning rate.")
     parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
-    parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for PPO.")
+    parser.add_argument("--v_coef", type=float, default=0.25, help="The value coefficient for PPO.")
     parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
     parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
     parser.add_argument("--update_epochs", type=int, default=4, help="The number of epochs to use for the update.")
     parser.add_argument("--max_grad_norm", type=float, default=0.5,
                         help="The maximum norm for the gradient clipping.")
+    parser.add_argument("--target_kl", type=float, default=None, help="The target KL divergence for PPO.")
     parser.add_argument("--normalize_advantage", type=bool, default=False,
-                        help="Whether to normalize the advantages in A2C.")
-    parser.add_argument("--clip_coef", type=float, default=0.5, help="The clipping coefficient for PPO.")
-    parser.add_argument("--clip_vloss", type=bool, default=True, help="Whether to clip the value loss in PPO.")
+                        help="Whether to normalize the advantages in PPO.")
+    parser.add_argument("--clip_coef", type=float, default=0.25, help="The clipping coefficient for PPO.")
+    parser.add_argument("--clip_range_vf", type=bool, default=0.25, help="Whether to clip the value loss in PPO.")
     parser.add_argument("--n_steps", type=int, default=128, help="The number of steps for the n-step PPO.")
-    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
+    parser.add_argument("--gae_lambda", type=float, default=.95, help="The lambda parameter for the GAE.")
     parser.add_argument("--eps", type=float, default=1e-8, help="The epsilon parameter for the Adam optimizer.")
 
     args = parser.parse_args()
@@ -131,9 +132,10 @@ if __name__ == '__main__':
                          num_minibatches=args.num_minibatches,
                          update_epochs=args.update_epochs,
                          max_grad_norm=args.max_grad_norm,
+                         target_kl=args.target_kl,
                          normalize_advantage=args.normalize_advantage,
                          clip_coef=args.clip_coef,
-                         clip_vloss=args.clip_vloss,
+                         clip_range_vf=args.clip_range_vf,
                          gae_lambda=args.gae_lambda,
                          n_steps=args.n_steps,
                          global_steps=args.global_steps,

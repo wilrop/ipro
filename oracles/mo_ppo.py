@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions.categorical import Categorical as CDist
 
 from oracles.policy import Categorical
 from oracles.drl_oracle import DRLOracle
@@ -59,9 +58,10 @@ class MOPPO(DRLOracle):
                  num_minibatches=4,
                  update_epochs=4,
                  max_grad_norm=0.5,
+                 target_kl=None,
                  normalize_advantage=True,
                  clip_coef=0.2,
-                 clip_vloss=False,
+                 clip_range_vf=None,
                  gae_lambda=0.95,
                  n_steps=128,
                  global_steps=500000,
@@ -95,9 +95,10 @@ class MOPPO(DRLOracle):
         self.num_minibatches = num_minibatches
         self.update_epochs = update_epochs
         self.max_grad_norm = max_grad_norm
+        self.target_kl = target_kl
         self.normalize_advantage = normalize_advantage
         self.clip_coef = clip_coef
-        self.clip_vloss = clip_vloss
+        self.clip_range_vf = clip_range_vf
         self.gae_lambda = gae_lambda
 
         self.n_steps = n_steps
@@ -217,8 +218,8 @@ class MOPPO(DRLOracle):
                 pg_loss = torch.dot(v_s0.grad, pg_loss3)  # The policy loss for nonlinear utility functions.
 
                 # Compute the value loss
-                if self.clip_vloss:
-                    values_pred = mb_values + torch.clamp(newvalue - mb_values, -self.clip_coef, self.clip_coef)
+                if self.clip_range_vf is not None:
+                    values_pred = mb_values + torch.clamp(newvalue - mb_values, -self.clip_range_vf, self.clip_range_vf)
                 else:
                     values_pred = newvalue
                 value_loss = F.mse_loss(mb_returns, values_pred)
@@ -236,6 +237,12 @@ class MOPPO(DRLOracle):
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.actor_optimizer.step()
                 self.critic_optimizer.step()
+
+            if self.target_kl is not None:
+                with torch.no_grad():
+                    approx_kl = ((ratio - 1) - logratio).mean()
+                if approx_kl > self.target_kl:
+                    break
 
         return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
@@ -298,7 +305,8 @@ class MOPPO(DRLOracle):
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
                 aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
 
-                self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs, dones, size=self.num_envs)
+                self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs,
+                                        np.expand_dims(terminateds, axis=-1), size=self.num_envs)
 
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)
@@ -308,12 +316,12 @@ class MOPPO(DRLOracle):
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
 
             loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-            self.writer.add_scalar(f'losses/{self.iteration}/loss', loss, global_step)
-            self.writer.add_scalar(f'losses/{self.iteration}/policy_gradient_loss', pg_l, global_step)
-            self.writer.add_scalar(f'losses/{self.iteration}/value_loss', v_l, global_step)
-            self.writer.add_scalar(f'losses/{self.iteration}/entropy_loss', e_l, global_step)
-            self.writer.add_scalar(f'losses/{self.iteration}/actor_grad_norm', a_gnorm, global_step)
-            self.writer.add_scalar(f'losses/{self.iteration}/critic_grad_norm', c_gnorm, global_step)
+            self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
+            self.writer.add_scalar(f'losses/policy_gradient_loss_{self.iteration}', pg_l, global_step)
+            self.writer.add_scalar(f'losses/value_loss_{self.iteration}', v_l, global_step)
+            self.writer.add_scalar(f'losses/entropy_loss_{self.iteration}', e_l, global_step)
+            self.writer.add_scalar(f'losses/actor_grad_norm_{self.iteration}', a_gnorm, global_step)
+            self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
             self.rollout_buffer.reset()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
