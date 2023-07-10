@@ -152,31 +152,28 @@ class DRLOracle:
         for step, dist in zip(self.expected_returns.keys(), distances):
             self.writer.add_scalar(f'charts/distance_{self.iteration}', dist, step)
 
-    def log_single_stats(self, episodic_return, episodic_length, done, global_step):
-        if done:
-            self.episodic_returns.append(episodic_return)
-            self.episodic_lengths.append(episodic_length)
+    def log_episode_stats(self, episodic_return, episodic_length, global_step):
+        self.episodic_returns.append(episodic_return)
+        self.episodic_lengths.append(episodic_length)
 
-            if len(self.episodic_returns) >= self.window_size:
-                curr_exp_ret = np.mean(self.episodic_returns, axis=0)
-                self.expected_returns[global_step] = curr_exp_ret
-                utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
-                episodic_length = np.mean(self.episodic_lengths)
-                self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
-                self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
-                self.episodic_returns = []
-                self.episodic_lengths = []
+        if len(self.episodic_returns) >= self.window_size:
+            curr_exp_ret = np.mean(self.episodic_returns, axis=0)
+            self.expected_returns[global_step] = curr_exp_ret
+            utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
+            episodic_length = np.mean(self.episodic_lengths)
+            self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
+            self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
+            self.episodic_returns = []
+            self.episodic_lengths = []
 
-    def log_episodic_stats(self, info, dones, global_step, vectorized=False):
+    def log_vectorized_episodic_stats(self, info, dones, global_step):
         for k, v in info.items():
             if k == "episode":
                 episodic_returns = v["r"]
                 episodic_lengths = v["l"]
-                if vectorized:
-                    for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
-                        self.log_single_stats(episodic_return, episodic_length, done, global_step)
-                else:
-                    self.log_single_stats(episodic_returns, episodic_lengths, dones, global_step)
+                for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
+                    if done:
+                        self.log_episode_stats(episodic_return, episodic_length, global_step)
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.

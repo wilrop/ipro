@@ -311,7 +311,7 @@ class MOPPO(DRLOracle):
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)
 
-                self.log_episodic_stats(info, dones, global_step, vectorized=True)
+                self.log_vectorized_episodic_stats(info, dones, global_step)
 
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
 

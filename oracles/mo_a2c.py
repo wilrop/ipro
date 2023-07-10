@@ -245,11 +245,11 @@ class MOA2C(DRLOracle):
                 self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
                 self.rollout_buffer.reset()
 
-            self.log_episodic_stats(info, done, global_step, vectorized=False)
             aug_obs = aug_next_obs
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
+                self.log_episode_stats(accrued_reward, timestep, global_step)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
