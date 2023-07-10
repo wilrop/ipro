@@ -164,10 +164,11 @@ class PrioritizedAccruedRewardReplayBuffer:
             self.rewards[idxes],
             self.next_obs[idxes],
             self.dones[idxes],
-            self.timesteps[idxes]
+            self.timesteps[idxes],
+            idxes
         )
         if to_tensor:
-            return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples)) + (idxes,)
+            return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
         else:
             return experience_tuples + (idxes,)
 
