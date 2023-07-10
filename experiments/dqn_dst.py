@@ -3,6 +3,7 @@ import random
 import torch
 import argparse
 import time
+import wandb
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from experiments import setup_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
+from torch.utils.tensorboard import SummaryWriter
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -41,14 +43,14 @@ def parse_args():
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=40000,
+    parser.add_argument("--global_steps", type=int, default=50000,
                         help="The total number of steps to run the experiment.")
-    parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lr", type=float, default=0.001, help="The learning rates for the models.")
+    parser.add_argument("--lr", type=float, default=0.0006, help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
     parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
 
@@ -98,6 +100,22 @@ if __name__ == '__main__':
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
+    if args.track:
+        wandb.init(
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
+            sync_tensorboard=True,
+            config=vars(args),
+            name=run_name,
+            monitor_gym=True,
+            save_code=True,
+        )
+    writer = SummaryWriter(f"runs/{run_name}")
+    writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+    )
+
     # Seeding
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -109,6 +127,7 @@ if __name__ == '__main__':
                                        ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
     oracle = init_oracle(args.oracle,
                          env,
+                         writer,
                          aug=args.aug,
                          lr=args.lr,
                          hidden_layers=args.hidden_layers,
@@ -145,6 +164,7 @@ if __name__ == '__main__':
                          num_objectives,
                          oracle,
                          linear_solver,
+                         writer,
                          warm_start=args.warm_start,
                          seed=args.seed)
     pf = ol.solve()
@@ -152,3 +172,5 @@ if __name__ == '__main__':
     print("Pareto front:")
     for point in pf:
         print(point)
+
+    writer.close()
