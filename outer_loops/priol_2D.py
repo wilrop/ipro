@@ -38,16 +38,16 @@ class Priol2D:
         self.dominated_hv = 0
         self.discarded_hv = 0
         self.coverage = 0
-        self.error_estimates = []
+        self.error = np.inf
 
         self.writer = writer
 
     def estimate_error(self):
         """Estimate the error of the algorithm."""
         if len(self.box_queue) == 0:
-            self.error_estimates.append(0)
+            self.error = 0
         else:
-            self.error_estimates.append(max(box.max_dist for box in self.box_queue))
+            self.error = max(box.max_dist for box in self.box_queue)
 
     def split_box(self, box, point):
         """Split a box into two new boxes.
@@ -119,13 +119,13 @@ class Priol2D:
 
     def is_done(self):
         """Check if the algorithm is done."""
-        return not self.box_queue or self.error_estimates[-1] <= self.tolerance
+        return not self.box_queue or 1 - self.coverage <= self.tolerance
 
     def log_step(self, step):
         self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
         self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
         self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+        self.writer.add_scalar(f'outer/error', self.error, step)
 
     def solve(self):
         """Solve the problem.
@@ -140,7 +140,7 @@ class Priol2D:
 
         while not self.is_done():
             begin_loop = time.time()
-            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
+            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             box = self.get_next_box()
             ideal = np.copy(box.ideal)

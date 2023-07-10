@@ -50,7 +50,7 @@ class Priol:
         self.upper_points = []
         self.dominated_hv = 0
         self.discarded_hv = 0
-        self.error_estimates = []
+        self.error = np.inf
         self.coverage = 0
 
         self.save_figs = save_figs
@@ -98,7 +98,7 @@ class Priol:
             self.update_lower_points(np.array(point))
 
         self.upper_points = np.array([ideal])  # Initialise the upper points.
-        self.error_estimates.append(max(ideal - nadir))
+        self.error = max(ideal - nadir)
         self.compute_hvis()
 
         return False
@@ -159,7 +159,7 @@ class Priol:
             pf = np.array(list(self.pf))
             diffs = self.upper_points[:, None, :] - pf[None, :, :]
             error = np.max(np.min(np.max(diffs, axis=2), axis=1))
-        self.error_estimates.append(error)
+        self.error = error
 
     def batched_strict_pareto_dominates(self, vec, points):
         """Check if a vector strictly dominates a set of points.
@@ -223,11 +223,15 @@ class Priol:
         else:
             raise ValueError(f'Unknown method {method}')
 
+    def is_done(self, step):
+        """Check if the algorithm is done."""
+        return 1 - self.coverage <= self.tol and step < self.max_steps
+
     def log_step(self, step):
         self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
         self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
         self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-        self.writer.add_scalar(f'outer/error', self.error_estimates[-1], step)
+        self.writer.add_scalar(f'outer/error', self.error, step)
 
     def solve(self, update_freq=1):
         """Solve the problem.
@@ -249,7 +253,7 @@ class Priol:
 
         self.log_step(step)
 
-        while self.error_estimates[-1] > self.tol and step < self.max_steps:
+        while not self.is_done(step):
             begin_loop = time.time()
             print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
 
