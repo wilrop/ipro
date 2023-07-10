@@ -57,11 +57,11 @@ class DRLOracle:
         """Reset the environment and the agent."""
         raise NotImplementedError
 
-    def select_greedy_action(self, aug_obs):
+    def select_greedy_action(self, aug_obs, accrued_reward):
         """Select the greedy action for the given observation."""
         raise NotImplementedError
 
-    def select_action(self, aug_obs):
+    def select_action(self, aug_obs, accrued_reward):
         """Select an action for the given observation."""
         raise NotImplementedError
 
@@ -125,9 +125,9 @@ class DRLOracle:
             timestep = 0
 
             while not (terminated or truncated):
-                aug_obs = np.concatenate((obs, accrued_reward))
+                aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
                 with torch.no_grad():
-                    action = policy(torch.tensor(aug_obs, dtype=torch.float))
+                    action = policy(aug_obs, accrued_reward)
                 next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
                 next_obs = self.format_obs(next_raw_obs)
                 accrued_reward += (self.gamma ** timestep) * reward

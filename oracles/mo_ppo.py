@@ -246,11 +246,12 @@ class MOPPO(DRLOracle):
 
         return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
 
-    def select_action(self, aug_obs):
+    def select_action(self, aug_obs, acs):
         """Select an action from the policy.
 
         Args:
             aug_obs (Tensor): The augmented observation.
+            acs (ndarray): The accrued rewards. This is not used in this algorithm.
 
         Returns:
             int: The action.
@@ -262,11 +263,12 @@ class MOPPO(DRLOracle):
         else:
             return np.array(actions.squeeze())
 
-    def select_greedy_action(self, aug_obs):
+    def select_greedy_action(self, aug_obs, accrued_reward):
         """Select a greedy action. Used by the solve method in the super class.
 
         Args:
             aug_obs (Tensor): The augmented observation.
+            accrued_reward (ndarray): The accrued reward. This is not used in this algorithm.
 
         Returns:
             int: The action.
@@ -297,7 +299,7 @@ class MOPPO(DRLOracle):
                     print(f'Global step: {global_step}')
 
                 with torch.no_grad():
-                    actions = self.select_action(aug_obs)
+                    actions = self.select_action(aug_obs, acs)
 
                 next_raw_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)

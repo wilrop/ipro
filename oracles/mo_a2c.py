@@ -190,11 +190,12 @@ class MOA2C(DRLOracle):
         timestep = 0
         return aug_obs, accrued_reward, timestep
 
-    def select_action(self, aug_obs):
+    def select_action(self, aug_obs, accrued_reward):
         """Select an action from the policy.
 
         Args:
             aug_obs (Tensor): The augmented observation.
+            accrued_reward (ndarray): The accrued reward. This is not used in this algorithm.
 
         Returns:
             int: The action.
@@ -203,11 +204,12 @@ class MOA2C(DRLOracle):
         action = self.policy(log_probs).item()  # Sample an action from the distribution.
         return action
 
-    def select_greedy_action(self, aug_obs):
+    def select_greedy_action(self, aug_obs, accrued_reward):
         """Select a greedy action. Used by the solve method in the super class.
 
         Args:
             aug_obs (Tensor): The augmented observation.
+            accrued_reward (ndarray): The accrued reward. This is not used in this algorithm.
 
         Returns:
             int: The action.
@@ -226,10 +228,9 @@ class MOA2C(DRLOracle):
                 print(f'Global step: {global_step}')
 
             with torch.no_grad():
-                action = self.select_action(aug_obs)
+                action = self.select_action(aug_obs, accrued_reward)
 
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            done = terminated or truncated
             next_obs = self.format_obs(next_raw_obs)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)

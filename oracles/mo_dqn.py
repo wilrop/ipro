@@ -116,23 +116,23 @@ class MODQN(DRLOracle):
         self.alpha_per = alpha_per
         self.min_priority = min_priority
         if self.per:
-            self.real_buffer = PrioritizedAccruedRewardReplayBuffer((self.obs_dim,),
+            self.real_buffer = PrioritizedAccruedRewardReplayBuffer((self.input_dim,),
                                                                     env.action_space.shape,
                                                                     rew_dim=self.num_objectives,
                                                                     max_size=self.buffer_size,
                                                                     action_dtype=np.uint8)
-            self.model_buffer = PrioritizedAccruedRewardReplayBuffer((self.obs_dim,),
+            self.model_buffer = PrioritizedAccruedRewardReplayBuffer((self.input_dim,),
                                                                      env.action_space.shape,
                                                                      rew_dim=self.num_objectives,
                                                                      max_size=self.buffer_size,
                                                                      action_dtype=np.uint8)
         else:
-            self.real_buffer = AccruedRewardReplayBuffer((self.obs_dim,),
+            self.real_buffer = AccruedRewardReplayBuffer((self.input_dim,),
                                                          env.action_space.shape,
                                                          rew_dim=self.num_objectives,
                                                          max_size=self.buffer_size,
                                                          action_dtype=np.uint8)
-            self.model_buffer = AccruedRewardReplayBuffer((self.obs_dim,),
+            self.model_buffer = AccruedRewardReplayBuffer((self.input_dim,),
                                                           env.action_space.shape,
                                                           rew_dim=self.num_objectives,
                                                           max_size=self.buffer_size,
@@ -179,18 +179,17 @@ class MODQN(DRLOracle):
         self.model_train_step = 0
         self._init_env_model()
 
-    def select_greedy_action(self, obs, accrued_reward, batched=False):
+    def select_greedy_action(self, aug_obs, accrued_reward, batched=False):
         """Select the greedy action.
 
         Args:
-            obs (np.ndarray): The current observation of the environment.
+            aug_obs (np.ndarray): The current augmented observation.
             accrued_reward (np.ndarray): The accrued reward so far.
 
         Returns:
             action (int): The action to take.
         """
-        augmented_obs = torch.as_tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
-        q_values = self.q_network(augmented_obs).view(-1, self.num_objectives)
+        q_values = self.q_network(aug_obs).view(-1, self.num_objectives)
         expected_returns = torch.tensor(accrued_reward) + self.gamma * q_values
         utilities = self.u_func(expected_returns)
         if batched:
@@ -198,11 +197,11 @@ class MODQN(DRLOracle):
         else:
             return torch.argmax(utilities).item()
 
-    def select_action(self, obs, accrued_reward, epsilon):
+    def select_action(self, aug_obs, accrued_reward, epsilon=0.1):
         """Select an action using epsilon-greedy exploration.
 
         Args:
-            obs (np.ndarray): The current observation of the environment.
+            aug_obs (np.ndarray): The current augmented observation of the environment.
             accrued_reward (np.ndarray): The accrued reward so far.
             epsilon (float): The probability of selecting a random action.
 
@@ -212,7 +211,7 @@ class MODQN(DRLOracle):
         if self.rng.uniform() < epsilon:
             return self.rng.integers(self.num_actions)
         else:
-            return self.select_greedy_action(obs, accrued_reward)
+            return self.select_greedy_action(aug_obs, accrued_reward)
 
     def get_batch_sizes(self):
         """Get the batch sizes for the real and model buffers.
@@ -261,47 +260,46 @@ class MODQN(DRLOracle):
         priority = max(td_errors ** self.alpha_per, self.min_priority)
         return priority
 
-    def add_to_real_buffer(self, obs, accrued_reward, action, reward, next_obs, done, timestep):
+    def add_to_real_buffer(self, aug_obs, accrued_reward, action, reward, aug_next_obs, done, timestep):
         """Add a transition to the real replay buffer.
 
         Args:
-            obs (np.ndarray): The current observation of the environment.
+            aug_obs (np.ndarray): The current observation of the environment.
             accrued_reward (np.ndarray): The accrued reward so far.
             action (int): The action taken.
             reward (np.ndarray): The reward received.
-            next_obs (np.ndarray): The next observation of the environment.
+            aug_next_obs (np.ndarray): The next observation of the environment.
             done (bool): Whether the episode was completed.
             timestep (int): The timestep of the transition.
         """
         if self.per:
-            t_obs = torch.as_tensor(obs, dtype=torch.float)
+            t_aug_obs = torch.as_tensor(aug_obs, dtype=torch.float)
             t_accrued_reward = torch.as_tensor(accrued_reward, dtype=torch.float)
             t_reward = torch.as_tensor(reward, dtype=torch.float)
-            t_next_obs = torch.as_tensor(next_obs, dtype=torch.float)
+            t_aug_next_obs = torch.as_tensor(aug_next_obs, dtype=torch.float)
 
             # Compute the Q-value and utility of the previous obs-action pair.
-            aug_obs = torch.cat((t_obs, t_accrued_reward))
-            q_pred = self.q_network(aug_obs)[action]
+            q_pred = self.q_network(t_aug_obs)[action]
             u_pred = self.u_func(t_accrued_reward + q_pred * self.gamma)
 
             # Compute the Q-value and utility of the current obs.
             next_accrued_reward = t_accrued_reward + t_reward * (self.gamma ** timestep)
-            aug_next_obs = torch.cat((t_next_obs, next_accrued_reward))
-            next_q_pred = self.q_network(aug_next_obs).view(-1, self.num_objectives)
+            next_q_pred = self.q_network(t_aug_next_obs).view(-1, self.num_objectives)
             next_u_pred = self.u_func(next_accrued_reward + next_q_pred * self.gamma)
 
             # Select the argmax action of the current obs.
             next_action = torch.argmax(next_u_pred).item()
 
             # Compute the target Q-value of the target network in the current obs using the argmax action.
-            q_target = self.target_network(aug_next_obs)[next_action]
+            q_target = self.target_network(t_aug_next_obs)[next_action]
             u_target = self.u_func(next_accrued_reward + q_target * self.gamma)
 
             # Compute the priority.
             priority = self.compute_priority(u_target, u_pred)
-            self.real_buffer.add(obs, accrued_reward, action, reward, next_obs, done, timestep, priority=priority)
+            self.real_buffer.add(aug_obs, accrued_reward, action, reward, aug_next_obs, done, timestep,
+                                 priority=priority)
         else:
-            self.real_buffer.add(obs, accrued_reward, action, reward, next_obs, done, timestep)
+            self.real_buffer.add(aug_obs, accrued_reward, action, reward, aug_next_obs, done, timestep)
 
     def update_priorities(self, target_u, pred_u, indices):
         """Update the priorities of the transitions in the replay buffer.
@@ -332,14 +330,13 @@ class MODQN(DRLOracle):
             batch = self.collect_train_batch(as_tensor=True)
 
             if self.per:
-                obs, accrued_rewards, actions, rewards, next_obs, dones, timesteps, indices = batch
+                aug_obs, accrued_rewards, actions, rewards, aug_next_obs, dones, timesteps, indices = batch
             else:
-                obs, accrued_rewards, actions, rewards, next_obs, dones, timesteps = batch
+                aug_obs, accrued_rewards, actions, rewards, aug_next_obs, dones, timesteps = batch
 
             with torch.no_grad():
                 next_accr_rews = accrued_rewards + rewards * (self.gamma ** timesteps)
-                augmented_obs = torch.cat((next_obs, next_accr_rews), dim=1)
-                target_pred = self.target_network(augmented_obs).view(-1, self.num_actions, self.num_objectives)
+                target_pred = self.target_network(aug_next_obs).view(-1, self.num_actions, self.num_objectives)
                 total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred
                 utilities = self.u_func(total_rewards)
                 best_actions = torch.argmax(utilities, dim=1)
@@ -347,8 +344,7 @@ class MODQN(DRLOracle):
                 q_maxs = target_pred[torch.arange(self.batch_size), best_actions]
                 td_target = rewards + self.gamma * q_maxs * (1 - dones)
 
-            augmented_obs = torch.cat((obs, accrued_rewards), dim=1)
-            preds = self.q_network(augmented_obs).view(-1, self.num_actions, self.num_objectives)
+            preds = self.q_network(aug_obs).view(-1, self.num_actions, self.num_objectives)
             action_preds = preds[torch.arange(self.batch_size), actions.type(torch.LongTensor)]
             loss = F.mse_loss(td_target, action_preds)
 
@@ -390,19 +386,23 @@ class MODQN(DRLOracle):
         obs = self.format_obs(raw_obs)
         timestep = 0
         accrued_reward = np.zeros(self.num_objectives)
+        aug_obs = np.hstack((obs, accrued_reward))
 
         for global_step in range(self.global_steps):
             if global_step % self.log_freq == 0:
                 print(f'Global step: {global_step}')
 
             epsilon = linear_schedule(self.epsilon_start, self.epsilon_end, self.exploration_steps, global_step)
-            action = self.select_action(obs, accrued_reward, epsilon)
+            with torch.no_grad():
+                action = self.select_action(torch.tensor(aug_obs, dtype=torch.float), accrued_reward, epsilon=epsilon)
+
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
             next_obs = self.format_obs(next_raw_obs)
-            done = terminated or truncated
-            self.add_to_real_buffer(obs, accrued_reward, action, reward, next_obs, done, timestep)
-            accrued_reward += (self.gamma ** timestep) * reward
-            obs = next_obs
+            next_accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
+            aug_next_obs = np.hstack((next_obs, next_accrued_reward))
+            self.add_to_real_buffer(aug_obs, accrued_reward, action, reward, aug_next_obs, terminated, timestep)
+            accrued_reward = next_accrued_reward
+            aug_obs = aug_next_obs
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
