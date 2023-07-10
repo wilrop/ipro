@@ -42,6 +42,7 @@ def linear_schedule(start_val: float, end_val: float, duration: int, t: int):
 class MODQN(DRLOracle):
     def __init__(self,
                  env,
+                 writer,
                  aug=0.2,
                  lr=0.001,
                  hidden_layers=(64, 64),
@@ -72,7 +73,7 @@ class MODQN(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env, writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         self.dqn_lr = lr
         self.learning_start = learning_start
@@ -359,6 +360,7 @@ class MODQN(DRLOracle):
             if self.per:
                 pred_utilities = self.u_func(rewards + self.gamma * action_preds).detach().numpy()
                 self.update_priorities(target_utilities, pred_utilities, indices.type(torch.int))
+            return loss.item()
 
     def update_model(self):
         """Update the environment model."""
@@ -395,9 +397,10 @@ class MODQN(DRLOracle):
 
             epsilon = linear_schedule(self.epsilon_start, self.epsilon_end, self.exploration_steps, global_step)
             action = self.select_action(obs, accrued_reward, epsilon)
-            next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+            next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
             next_obs = self.format_obs(next_raw_obs)
-            self.add_to_real_buffer(obs, accrued_reward, action, reward, next_obs, terminated or truncated, timestep)
+            done = terminated or truncated
+            self.add_to_real_buffer(obs, accrued_reward, action, reward, next_obs, done, timestep)
             accrued_reward += (self.gamma ** timestep) * reward
             obs = next_obs
             timestep += 1
@@ -405,6 +408,7 @@ class MODQN(DRLOracle):
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
                 raw_obs, _ = self.env.reset()
                 obs = self.format_obs(raw_obs)
+                self.log_episode_stats(accrued_reward, timestep, global_step)
                 timestep = 0
                 accrued_reward = np.zeros(self.num_objectives)
 
@@ -413,7 +417,8 @@ class MODQN(DRLOracle):
                     if self.model_based:
                         self.update_model()
                         self.generate_model_samples()
-                    self.train_network()
+                    loss = self.train_network()
+                    self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
