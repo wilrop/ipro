@@ -255,7 +255,7 @@ class Priol:
 
         while not self.is_done(step):
             begin_loop = time.time()
-            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error_estimates[-1]:.5f}')
+            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             referent = self.select_referent(method='first')
             vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal), warm_start=self.warm_start)
