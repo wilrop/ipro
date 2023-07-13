@@ -40,6 +40,7 @@ def parse_args():
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-PPO", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
+    parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=300000,
@@ -120,6 +121,7 @@ if __name__ == '__main__':
                          envs,
                          writer,
                          aug=args.aug,
+                         scale=args.scale,
                          gamma=args.gamma,
                          lrs=args.lrs,
                          eps=args.eps,
