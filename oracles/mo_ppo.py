@@ -151,12 +151,6 @@ class MOPPO(DRLOracle):
         self.policy_returns = []
         self.rollout_buffer.reset()
 
-    @staticmethod
-    def init_weights(m, std=np.sqrt(2), bias_const=0.01):
-        if isinstance(m, nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight, std)
-            torch.nn.init.constant_(m.bias, bias_const)
-
     def calc_generalised_advantages(self, rewards, dones, values):
         """Compute the advantages for the rollouts.
 

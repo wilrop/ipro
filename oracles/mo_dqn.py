@@ -115,12 +115,6 @@ class MODQN(DRLOracle):
 
         self.batch_size = batch_size
 
-    @staticmethod
-    def init_weights(m):
-        if isinstance(m, nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight)
-            m.bias.data.fill_(0.01)
-
     def reset(self):
         """Reset the class for a new round of the inner loop."""
         self.q_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim)

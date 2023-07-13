@@ -61,9 +61,17 @@ class MOA2C(DRLOracle):
                  gae_lambda=0.5,
                  global_steps=100000,
                  eval_episodes=100,
+                 window_size=500,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, writer, aug=aug, scale=scale, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env,
+                         writer,
+                         aug=aug,
+                         scale=scale,
+                         gamma=gamma,
+                         one_hot=one_hot,
+                         eval_episodes=eval_episodes,
+                         window_size=window_size)
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -118,12 +126,6 @@ class MOA2C(DRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
-
-    @staticmethod
-    def init_weights(m, std=np.sqrt(2), bias_const=0.01):
-        if isinstance(m, nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight, gain=std)
-            torch.nn.init.constant_(m.bias, bias_const)
 
     def calc_generalised_advantages(self, rewards, dones, values, v_next):
         """Compute the advantages for the rollouts.

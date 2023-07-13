@@ -1,9 +1,11 @@
 import torch
 import numpy as np
 
-from collections import deque
-from oracles.vector_u import create_batched_aasf
 from gymnasium.spaces import Box
+from collections import deque
+import torch.nn as nn
+
+from oracles.vector_u import create_batched_aasf
 
 
 class DRLOracle:
@@ -15,7 +17,7 @@ class DRLOracle:
                  gamma=0.99,
                  one_hot=False,
                  eval_episodes=100,
-                 window_size=500):
+                 window_size=100):
         self.env = env
         self.aug = aug
         self.scale = scale
@@ -55,6 +57,12 @@ class DRLOracle:
             param_norm = p.grad.data.norm(2)
             total_norm += param_norm.item() ** 2
         return total_norm ** (1. / 2)
+
+    @staticmethod
+    def init_weights(m, std=np.sqrt(2), bias_const=0.01):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight, gain=std)
+            torch.nn.init.constant_(m.bias, bias_const)
 
     def reset(self):
         """Reset the environment and the agent."""
