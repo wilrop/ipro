@@ -41,28 +41,19 @@ def parse_args():
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
+    parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=50000,
+    parser.add_argument("--global_steps", type=int, default=40000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lr", type=float, default=0.0006, help="The learning rates for the models.")
+    parser.add_argument("--lr", type=float, default=0.0007, help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
     parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
-
-    # Model based arguments.
-    parser.add_argument("--model_based", type=bool, default=False, help="Whether to use a model-based DQN.")
-    parser.add_argument("--model_lr", type=float, default=0.001, help="The learning rate for the model.")
-    parser.add_argument("--model_hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
-    parser.add_argument("--model_steps", type=int, default=32,
-                        help="The number of steps to take for each model training step.")
-    parser.add_argument("--model_train_finish", type=int, default=10000,
-                        help="The number of steps after which the model training is finished.")
-    parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-DQN specific arguments.
     parser.add_argument("--learning_start", type=int, default=2000,
@@ -75,11 +66,7 @@ def parse_args():
     parser.add_argument("--gradient_steps", type=int, default=1,
                         help="The number of gradient steps to take for each DQN training step.")
     parser.add_argument("--batch_size", type=int, default=32, help="The batch size for the DQN training.")
-    parser.add_argument("--init_real_frac", type=float, default=0.8,
-                        help="The initial fraction of real data to use for the model training.")
-    parser.add_argument("--final_real_frac", type=float, default=0.1,
-                        help="The final fraction of real data to use for the model training.")
-    parser.add_argument("--buffer_size", type=int, default=100000, help="The size of the replay buffer.")
+    parser.add_argument("--buffer_size", type=int, default=10000, help="The size of the replay buffer.")
     parser.add_argument("--per", type=bool, default=True, help="Whether to use prioritized experience replay.")
     parser.add_argument("--alpha_per", type=float, default=0.6,
                         help="The alpha parameter for prioritized experience replay.")
@@ -87,9 +74,9 @@ def parse_args():
                         help="The minimum priority for prioritized experience replay.")
     parser.add_argument("--epsilon_start", type=float, default=1.0,
                         help="The initial value of epsilon for the epsilon-greedy exploration.")
-    parser.add_argument("--epsilon_end", type=float, default=0.1,
+    parser.add_argument("--epsilon_end", type=float, default=0.05,
                         help="The final value of epsilon for the epsilon-greedy exploration.")
-    parser.add_argument("--exploration_frac", type=float, default=0.2,
+    parser.add_argument("--exploration_frac", type=float, default=0.5,
                         help="The fraction of the total number of steps during which epsilon is linearly decayed.")
 
     args = parser.parse_args()
@@ -129,6 +116,7 @@ if __name__ == '__main__':
                          env,
                          writer,
                          aug=args.aug,
+                         scale=args.scale,
                          lr=args.lr,
                          hidden_layers=args.hidden_layers,
                          one_hot=args.one_hot,
@@ -141,19 +129,11 @@ if __name__ == '__main__':
                          exploration_frac=args.exploration_frac,
                          gamma=args.gamma,
                          tau=args.tau,
-                         model_based=args.model_based,
-                         model_lr=args.model_lr,
-                         model_hidden_layers=args.model_hidden_layers,
-                         model_steps=args.model_steps,
-                         pe_size=args.pe_size,
                          buffer_size=args.buffer_size,
                          per=args.per,
                          alpha_per=args.alpha_per,
                          min_priority=args.min_priority,
                          batch_size=args.batch_size,
-                         init_real_frac=args.init_real_frac,
-                         final_real_frac=args.final_real_frac,
-                         model_train_finish=args.model_train_finish,
                          global_steps=args.global_steps,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
