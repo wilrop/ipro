@@ -43,6 +43,7 @@ class MODQN(DRLOracle):
                  env,
                  writer,
                  aug=0.2,
+                 scale=1000,
                  lr=0.001,
                  hidden_layers=(64, 64),
                  one_hot=False,
@@ -64,7 +65,7 @@ class MODQN(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env, writer, aug=aug, scale=scale, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         self.dqn_lr = lr
         self.learning_start = learning_start

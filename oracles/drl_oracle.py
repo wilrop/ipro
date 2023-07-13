@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+from collections import deque
 from oracles.vector_u import create_batched_aasf
 from gymnasium.spaces import Box
 
@@ -10,12 +11,14 @@ class DRLOracle:
                  env,
                  writer,
                  aug=0.2,
+                 scale=100,
                  gamma=0.99,
                  one_hot=False,
                  eval_episodes=100,
-                 window_size=100):
+                 window_size=500):
         self.env = env
         self.aug = aug
+        self.scale = scale
 
         self.num_actions = env.action_space.n
         self.num_objectives = env.reward_space.shape[0]
@@ -41,8 +44,8 @@ class DRLOracle:
         self.expected_returns = {}
 
         self.window_size = window_size
-        self.episodic_returns = []
-        self.episodic_lengths = []
+        self.episodic_returns = deque(maxlen=window_size)
+        self.episodic_lengths = deque(maxlen=window_size)
 
     @staticmethod
     def _compute_grad_norm(model):
@@ -56,6 +59,12 @@ class DRLOracle:
     def reset(self):
         """Reset the environment and the agent."""
         raise NotImplementedError
+
+    def reset_stats(self):
+        """Reset the agent's statistics."""
+        self.expected_returns = {}
+        self.episodic_returns.clear()
+        self.episodic_lengths.clear()
 
     def select_greedy_action(self, aug_obs, accrued_reward):
         """Select the greedy action for the given observation."""
@@ -156,15 +165,15 @@ class DRLOracle:
         self.episodic_returns.append(episodic_return)
         self.episodic_lengths.append(episodic_length)
 
-        if len(self.episodic_returns) >= self.window_size:
-            curr_exp_ret = np.mean(self.episodic_returns, axis=0)
-            self.expected_returns[global_step] = curr_exp_ret
+        curr_exp_ret = np.mean(self.episodic_returns, axis=0)
+        self.expected_returns[global_step] = curr_exp_ret
+        with torch.no_grad():
             utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
-            episodic_length = np.mean(self.episodic_lengths)
-            self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
-            self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
-            self.episodic_returns = []
-            self.episodic_lengths = []
+        episodic_length = np.mean(self.episodic_lengths)
+        self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
+        self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
+
+        return np.std(self.episodic_returns, axis=0)
 
     def log_vectorized_episodic_stats(self, info, dones, global_step):
         for k, v in info.items():
@@ -192,11 +201,12 @@ class DRLOracle:
 
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""
+        self.reset_stats()
         self.writer.add_text('referent', str(referent), self.iteration)
         self.writer.add_text('ideal', str(ideal), self.iteration)
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
-        self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, backend='torch')
+        self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
         self.writer.add_text('pareto_point', str(pareto_point), self.iteration)

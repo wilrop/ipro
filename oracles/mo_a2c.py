@@ -46,8 +46,11 @@ class MOA2C(DRLOracle):
                  env,
                  writer,
                  aug=0.2,
+                 scale=1000,
                  lrs=(0.001, 0.001),
                  hidden_layers=((64, 64), (64, 64)),
+                 early_stop_threshold=10000,
+                 early_stop_std=0.,
                  one_hot=False,
                  e_coef=0.01,
                  v_coef=0.5,
@@ -60,7 +63,7 @@ class MOA2C(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, writer, aug=aug, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env, writer, aug=aug, scale=scale, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
 
         if len(lrs) == 1:  # Use same learning rate for all models.
             lrs = (lrs[0], lrs[0])
@@ -95,6 +98,8 @@ class MOA2C(DRLOracle):
         self.max_grad_norm = max_grad_norm
         self.normalize_advantage = normalize_advantage
         self.gae_lambda = gae_lambda
+        self.early_stop_threshold = early_stop_threshold
+        self.early_stop_std = early_stop_std
 
         self.n_steps = n_steps
         self.rollout_buffer = RolloutBuffer((self.obs_dim,),
@@ -115,9 +120,9 @@ class MOA2C(DRLOracle):
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
 
     @staticmethod
-    def init_weights(m, bias_const=0.01):
+    def init_weights(m, std=np.sqrt(2), bias_const=0.01):
         if isinstance(m, nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight)
+            torch.nn.init.xavier_uniform_(m.weight, gain=std)
             torch.nn.init.constant_(m.bias, bias_const)
 
     def calc_generalised_advantages(self, rewards, dones, values, v_next):
@@ -159,8 +164,8 @@ class MOA2C(DRLOracle):
 
         actor_out = self.actor(aug_obs)  # Predict logits of actions.
         log_prob, entropy = self.policy.evaluate_actions(actor_out, actions)  # Evaluate actions.
-        pg_loss = -(advantages * log_prob).mean(dim=0)  # Policy gradient loss with advantage as baseline.
-        policy_loss = torch.dot(v_s0.grad, pg_loss)  # Gradient update rule for SER.
+        pg_loss = (advantages * log_prob).mean(dim=0)  # Policy gradient loss with advantage as baseline.
+        policy_loss = -torch.dot(v_s0.grad, pg_loss)  # Gradient update rule for SER.
         entropy_loss = -torch.mean(entropy)  # Compute entropy bonus.
         value_loss = F.mse_loss(returns, values)
 
@@ -250,7 +255,9 @@ class MOA2C(DRLOracle):
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                self.log_episode_stats(accrued_reward, timestep, global_step)
+                std = self.log_episode_stats(accrued_reward, timestep, global_step)
+                if global_step >= self.early_stop_threshold and np.all(std <= self.early_stop_std):
+                    break
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
