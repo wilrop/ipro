@@ -39,40 +39,35 @@ def parse_args():
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-A2C", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
+    parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
     parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=50000,
+    parser.add_argument("--global_steps", type=int, default=100000,
                         help="The total number of steps to run the experiment.")
-    parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0006, 0.0006),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.001, 0.001),
                         help="The learning rates for the models.")
-    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
+    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64,), (64, 64),),
                         help="The hidden layers for the model.")
+    parser.add_argument("--early_stop_threshold", type=int, default=10000,
+                        help="The threshold episode for early stopping.")
+    parser.add_argument("--early_stop_std", type=float, default=0.,
+                        help="The standard deviation threshold for early stopping.")
     parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
-
-    # Model based arguments.
-    parser.add_argument("--model_based", type=bool, default=False, help="Whether to use a model-based DQN.")
-    parser.add_argument("--model_lr", type=float, default=0.001, help="The learning rate for the model.")
-    parser.add_argument("--model_hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
-    parser.add_argument("--model_steps", type=int, default=32,
-                        help="The number of steps to take for each model training step.")
-    parser.add_argument("--model_train_finish", type=int, default=10000,
-                        help="The number of steps after which the model training is finished.")
-    parser.add_argument("--pe_size", type=int, default=5, help="The size of the policy ensemble.")
 
     # MO-A2C specific arguments.
     parser.add_argument("--e_coef", type=float, default=0.1, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
-    parser.add_argument("--max_grad_norm", type=float, default=0.5,
+    parser.add_argument("--max_grad_norm", type=float, default=5.,
                         help="The maximum norm for the gradient clipping.")
     parser.add_argument("--normalize_advantage", type=bool, default=False,
                         help="Whether to normalize the advantages in A2C.")
-    parser.add_argument("--n_steps", type=int, default=16, help="The number of steps for the n-step A2C.")
-    parser.add_argument("--gae_lambda", type=float, default=1., help="The lambda parameter for the GAE.")
+    parser.add_argument("--n_steps", type=int, default=10, help="The number of steps for the n-step A2C.")
+    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
 
     args = parser.parse_args()
     return args
@@ -111,8 +106,11 @@ if __name__ == '__main__':
                          env,
                          writer,
                          aug=args.aug,
+                         scale=args.scale,
                          lrs=args.lrs,
                          hidden_layers=args.hidden_layers,
+                         early_stop_threshold=args.early_stop_threshold,
+                         early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
