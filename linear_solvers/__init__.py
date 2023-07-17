@@ -7,8 +7,8 @@ def init_linear_solver(alg, *args, **kwargs):
 
     Args:
         alg (str): The algorithm to use.
-        *args (list): The arguments to pass to the algorithm.
-        **kwargs (dict): The keyword arguments to pass to the algorithm.
+        *args: The arguments to pass to the algorithm.
+        **kwargs: The keyword arguments to pass to the algorithm.
 
     Returns:
         LinearSolver: The linear solver.
