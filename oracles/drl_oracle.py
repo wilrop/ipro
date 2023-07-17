@@ -115,7 +115,7 @@ class DRLOracle:
         if self.one_hot:
             return self.one_hot_encode(obs)
         else:
-            return obs.flatten()
+            return obs
 
     def evaluate(self, eval_episodes=100, deterministic=True):
         """Evaluate the agent on the environment.
@@ -174,6 +174,7 @@ class DRLOracle:
         self.episodic_lengths.append(episodic_length)
 
         curr_exp_ret = np.mean(self.episodic_returns, axis=0)
+        print(f'Expected return: {curr_exp_ret}')
         self.expected_returns[global_step] = curr_exp_ret
         with torch.no_grad():
             utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
