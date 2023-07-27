@@ -298,7 +298,8 @@ class MODQN(DRLOracle):
             if global_step > self.learning_start:
                 if global_step % self.train_freq == 0:
                     loss = self.train_network()
-                    self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
+                    if self.writer is not None:
+                        self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)

@@ -165,22 +165,24 @@ class DRLOracle:
         Args:
             pareto_point (ndarray): The pareto point.
         """
-        distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
-        for step, dist in zip(self.expected_returns.keys(), distances):
-            self.writer.add_scalar(f'charts/distance_{self.iteration}', dist, step)
+        if self.writer is not None:
+            distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
+            for step, dist in zip(self.expected_returns.keys(), distances):
+                self.writer.add_scalar(f'charts/distance_{self.iteration}', dist, step)
 
     def log_episode_stats(self, episodic_return, episodic_length, global_step):
         self.episodic_returns.append(episodic_return)
         self.episodic_lengths.append(episodic_length)
 
         curr_exp_ret = np.mean(self.episodic_returns, axis=0)
-        print(f'Expected return: {curr_exp_ret}')
         self.expected_returns[global_step] = curr_exp_ret
         with torch.no_grad():
             utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
         episodic_length = np.mean(self.episodic_lengths)
-        self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
-        self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
+
+        if self.writer is not None:
+            self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
+            self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
 
         return np.std(self.episodic_returns, axis=0)
 
@@ -192,6 +194,16 @@ class DRLOracle:
                 for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
                     if done:
                         self.log_episode_stats(episodic_return, episodic_length, global_step)
+
+    def log_pg_stats(self, global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm):
+        """Log the policy gradient loss, value loss, entropy loss, and gradient norms."""
+        if self.writer is not None:
+            self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
+            self.writer.add_scalar(f'losses/policy_gradient_loss_{self.iteration}', pg_l, global_step)
+            self.writer.add_scalar(f'losses/value_loss_{self.iteration}', v_l, global_step)
+            self.writer.add_scalar(f'losses/entropy_loss_{self.iteration}', e_l, global_step)
+            self.writer.add_scalar(f'losses/actor_grad_norm_{self.iteration}', a_gnorm, global_step)
+            self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.
@@ -208,17 +220,28 @@ class DRLOracle:
         distances = np.array([np.linalg.norm(np.array(referent) - np.array(r)) for r in referents])
         return referents[np.argmin(distances)]
 
+    def log_points(self, referent, ideal, pareto_point):
+        """Log the referent, ideal, and pareto point.
+
+        Args:
+            referent (ndarray): The referent.
+            ideal (ndarray): The ideal.
+            pareto_point (ndarray): The pareto point.
+        """
+        if self.writer is not None:
+            self.writer.add_text('referent', str(referent), self.iteration)
+            self.writer.add_text('ideal', str(ideal), self.iteration)
+            self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
+
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
-        self.writer.add_text('referent', str(referent), self.iteration)
-        self.writer.add_text('ideal', str(ideal), self.iteration)
         referent = torch.tensor(referent)
         ideal = torch.tensor(ideal)
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
-        self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
+        self.log_points(referent, ideal, pareto_point)
         self.log_distances(pareto_point)
         self.iteration += 1
         return pareto_point

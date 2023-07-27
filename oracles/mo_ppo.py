@@ -314,12 +314,7 @@ class MOPPO(DRLOracle):
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
 
             loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-            self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
-            self.writer.add_scalar(f'losses/policy_gradient_loss_{self.iteration}', pg_l, global_step)
-            self.writer.add_scalar(f'losses/value_loss_{self.iteration}', v_l, global_step)
-            self.writer.add_scalar(f'losses/entropy_loss_{self.iteration}', e_l, global_step)
-            self.writer.add_scalar(f'losses/actor_grad_norm_{self.iteration}', a_gnorm, global_step)
-            self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
+            self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
             self.rollout_buffer.reset()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
