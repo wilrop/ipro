@@ -19,6 +19,7 @@ pip install --user highway-env
 pip install --user tensorboard
 pip install --user wandb
 pip install --user pygmo
+pip install --user optuna
 
 # Define the log directory.
 LOGDIR="${VSC_SCRATCH}/IPRO"
