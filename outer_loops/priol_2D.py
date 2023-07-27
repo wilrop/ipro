@@ -1,6 +1,8 @@
 import time
 
 import numpy as np
+import pygmo as pg
+
 from sortedcontainers import SortedKeyList
 
 from outer_loops.box import Box
@@ -110,6 +112,19 @@ class Priol2D:
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
 
+    def compute_hypervolume(self, points, ref, ref_offset=0.1):
+        """Compute the hypervolume of a set of points.
+
+        Args:
+            points (array_like): List of points.
+            ref (np.array): Reference point.
+
+        Returns:
+            float: The computed hypervolume.
+        """
+        ref = ref + ref_offset
+        return pg.hypervolume(points).compute(ref)
+
     def get_next_box(self):
         """Get the next box to search."""
         if self.box_queue:
@@ -164,7 +179,7 @@ class Priol2D:
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
-        pf = {tuple(vec) for vec in extreme_prune(np.vstack((self.pf, self.robust_points)))}
-
+        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
+        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
-        return pf
+        return self.pf

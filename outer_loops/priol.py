@@ -283,7 +283,7 @@ class Priol:
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
-        pf = {tuple(vec) for vec in extreme_prune(np.vstack((self.pf, self.robust_points)))}
-
+        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
+        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
-        return pf
+        return self.pf
