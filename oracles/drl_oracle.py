@@ -115,7 +115,7 @@ class DRLOracle:
         if self.one_hot:
             return self.one_hot_encode(obs)
         else:
-            return obs
+            return obs.reshape(obs.shape[:-2] + (-1,))
 
     def evaluate(self, eval_episodes=100, deterministic=True):
         """Evaluate the agent on the environment.
