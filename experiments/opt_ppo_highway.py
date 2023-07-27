@@ -1,10 +1,8 @@
 import os
-import random
-import torch
 import argparse
 import time
-import wandb
-
+import optuna
+import joblib
 import numpy as np
 
 from utils.helpers import strtobool
@@ -36,7 +34,7 @@ def parse_args():
     parser.add_argument("--window_size", type=int, default=20, help="the moving average window size")
 
     # General arguments.
-    parser.add_argument("--env_id", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
+    parser.add_argument("--env_id", type=str, default="mo-highway-v0", help="The game to use.")
     parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-PPO", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
@@ -47,14 +45,14 @@ def parse_args():
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
-    parser.add_argument("--max_episode_steps", type=int, default=50, help="The maximum number of steps per episode.")
+    parser.add_argument("--max_episode_steps", type=int, default=100, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
     parser.add_argument("--lrs", nargs='+', type=float, default=(0.0002, 0.0002),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
-    parser.add_argument("--one_hot", type=bool, default=True, help="Whether to use a one hot state encoding.")
+    parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
 
     # MO-PPO specific arguments.
     parser.add_argument("--anneal_lr", type=bool, default=False, help="Whether to anneal the learning rate.")
@@ -78,65 +76,64 @@ def parse_args():
     return args
 
 
-if __name__ == '__main__':
-    args = parse_args()
+def objective(trial):
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
 
-    # Seeding
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    aug = trial.suggest_float("aug", 0.001, 0.01, log=True)
+    scale = trial.suggest_float("scale", 10, 1000, log=True)
+    lr_actor = trial.suggest_float("lrs", 0.0001, 0.001, log=True)
+    lr_critic = trial.suggest_float("lrs", 0.0001, 0.001, log=True)
+    e_coef = trial.suggest_float("e_coef", 0.001, 0.1, log=True)
+    v_coef = trial.suggest_float("v_coef", 0.1, 1.0)
+    max_grad_norm = trial.suggest_float("max_grad_norm", 0.5, 50.0, log=True)
+    normalize_advantage = trial.suggest_categorical("normalize_advantage", [True, False])
+    anneal_lr = trial.suggest_categorical("anneal_lr", [True, False])
+    n_steps = trial.suggest_categorical("n_steps", [32, 64, 128])
+    num_envs = trial.suggest_categorical("num_envs", [4, 8, 16])
+    num_minibatches = trial.suggest_categorical("num_mini_batches", [4, 8, 16])
+    update_epochs = trial.suggest_categorical("update_epochs", [4, 8, 16])
+    clip_coef = trial.suggest_float("clip_coef", 0.1, 0.5)
+    clip_range_vf = trial.suggest_float("clip_range_vf", 0., 0.5)
+    args.num_envs = num_envs
 
     envs, num_objectives = setup_vector_env(args, run_name)
     linear_solver = init_linear_solver('known_box',
-                                       nadirs=[np.array([0., 0.]), np.array([124.0, -19.])],
-                                       ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
+                                       nadirs=[np.array([0., 100.0]), np.array([100.0, 0.])],
+                                       ideals=[np.array([100.0, 0.]), np.array([0., 100.0])])
     oracle = init_oracle(args.oracle,
                          envs,
                          writer,
-                         aug=args.aug,
-                         scale=args.scale,
+                         aug=aug,
+                         scale=scale,
                          gamma=args.gamma,
-                         lrs=args.lrs,
+                         lrs=(lr_actor, lr_critic),
                          eps=args.eps,
                          hidden_layers=args.hidden_layers,
                          one_hot=args.one_hot,
-                         anneal_lr=args.anneal_lr,
-                         e_coef=args.e_coef,
-                         v_coef=args.v_coef,
-                         num_envs=args.num_envs,
-                         num_minibatches=args.num_minibatches,
-                         update_epochs=args.update_epochs,
-                         max_grad_norm=args.max_grad_norm,
+                         anneal_lr=anneal_lr,
+                         e_coef=e_coef,
+                         v_coef=v_coef,
+                         num_envs=num_envs,
+                         num_minibatches=num_minibatches,
+                         update_epochs=update_epochs,
+                         max_grad_norm=max_grad_norm,
                          target_kl=args.target_kl,
-                         normalize_advantage=args.normalize_advantage,
-                         clip_coef=args.clip_coef,
-                         clip_range_vf=args.clip_range_vf,
+                         normalize_advantage=normalize_advantage,
+                         clip_coef=clip_coef,
+                         clip_range_vf=clip_range_vf,
                          gae_lambda=args.gae_lambda,
-                         n_steps=args.n_steps,
+                         n_steps=n_steps,
                          global_steps=args.global_steps,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
                          window_size=args.window_size,
                          seed=args.seed,
                          )
-
     ol = init_outer_loop(args.outer_loop,
                          envs,
                          num_objectives,
@@ -145,8 +142,14 @@ if __name__ == '__main__':
                          writer,
                          warm_start=args.warm_start,
                          seed=args.seed)
-    pf = ol.solve()
+    ol.solve()
+    return ol.dominated_hv
 
-    print("Pareto front:")
-    for point in pf:
-        print(point)
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=10)
+    joblib.dump(study, "opt/study_ppo_highway.pkl")
+    print(study.best_params)

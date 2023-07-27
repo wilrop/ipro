@@ -8,7 +8,7 @@ import wandb
 import numpy as np
 
 from utils.helpers import strtobool
-from experiments import setup_env
+from environments import setup_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    env, num_objectives = setup_env(args)
+    env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
     linear_solver = init_linear_solver('known_box',
                                        nadirs=[np.array([0., 0.]), np.array([124.0, -19.])],
                                        ideals=[np.array([124.0, -19.]), np.array([0., 0.])])

@@ -1,10 +1,8 @@
 import os
-import random
-import torch
 import argparse
 import time
-import wandb
-
+import optuna
+import joblib
 import numpy as np
 
 from utils.helpers import strtobool
@@ -13,8 +11,6 @@ from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
 from torch.utils.tensorboard import SummaryWriter
-
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
 def parse_args():
@@ -37,18 +33,18 @@ def parse_args():
     parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
 
     # General arguments.
-    parser.add_argument("--env_id", type=str, default="minecart-v0", help="The game to use.")
-    parser.add_argument('--outer_loop', type=str, default='PRIOL', help='The outer loop to use.')
+    parser.add_argument("--env_id", type=str, default="mo-highway-v0", help="The game to use.")
+    parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
-    parser.add_argument("--tolerance", type=float, default=0.1, help="The tolerance for the outer loop.")
+    parser.add_argument("--tolerance", type=float, default="1e-4", help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=100000,
+    parser.add_argument("--global_steps", type=int, default=40000,
                         help="The total number of steps to run the experiment.")
-    parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
-    parser.add_argument("--gamma", type=float, default=0.98, help="The discount factor.")
-    parser.add_argument("--max_episode_steps", type=int, default=1000, help="The maximum number of steps per episode.")
+    parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
+    parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
+    parser.add_argument("--max_episode_steps", type=int, default=100, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
     parser.add_argument("--lr", type=float, default=0.0007, help="The learning rates for the models.")
@@ -83,47 +79,30 @@ def parse_args():
     return args
 
 
-if __name__ == '__main__':
-    args = parse_args()
+def objective(trial):
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-
-    # 7 policies according to the paper.
-
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
 
-    # Seeding
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    aug = trial.suggest_float("aug", 0.001, 0.01, log=True)
+    scale = trial.suggest_float("scale", 10, 1000, log=True)
+    lr = trial.suggest_float("lrs", 0.0001, 0.001, log=True)
+    per = trial.suggest_categorical("normalize_advantage", [True, False])
+    batch_size = trial.suggest_categorical("n_steps", [32, 64])
 
     env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
     linear_solver = init_linear_solver('known_box',
-                                       nadirs=[np.array([0., 0., -3.1199985]),
-                                               np.array([0., 0., -3.1199985]),
-                                               np.array([0., 0., -3.1199985])],
-                                       ideals=[np.array([1.5, 0., -0.95999986]),
-                                               np.array([0., 1.5, -0.95999986]),
-                                               np.array([0., 0., -0.31999996])])
+                                       nadirs=[np.array([0., 100.0]), np.array([100.0, 0.])],
+                                       ideals=[np.array([100.0, 0.]), np.array([0., 100.0])])
     oracle = init_oracle(args.oracle,
                          env,
                          writer,
-                         aug=args.aug,
-                         scale=args.scale,
-                         lr=args.lr,
+                         aug=aug,
+                         scale=scale,
+                         lr=lr,
                          hidden_layers=args.hidden_layers,
                          one_hot=args.one_hot,
                          learning_start=args.learning_start,
@@ -136,10 +115,10 @@ if __name__ == '__main__':
                          gamma=args.gamma,
                          tau=args.tau,
                          buffer_size=args.buffer_size,
-                         per=args.per,
+                         per=per,
                          alpha_per=args.alpha_per,
                          min_priority=args.min_priority,
-                         batch_size=args.batch_size,
+                         batch_size=batch_size,
                          global_steps=args.global_steps,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
@@ -153,10 +132,14 @@ if __name__ == '__main__':
                          writer,
                          warm_start=args.warm_start,
                          seed=args.seed)
-    pf = ol.solve()
+    ol.solve()
+    return ol.dominated_hv
 
-    print("Pareto front:")
-    for point in pf:
-        print(point)
 
-    writer.close()
+if __name__ == '__main__':
+    args = parse_args()
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=10)
+    joblib.dump(study, "opt/study_dqn_highway.pkl")
+    print(study.best_params)

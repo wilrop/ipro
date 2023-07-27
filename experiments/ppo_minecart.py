@@ -8,7 +8,7 @@ import wandb
 import numpy as np
 
 from utils.helpers import strtobool
-from experiments import setup_vector_env
+from environments import setup_vector_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
@@ -40,7 +40,7 @@ def parse_args():
     parser.add_argument('--outer_loop', type=str, default='PRIOL', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-PPO", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
-    parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
+    parser.add_argument("--scale", type=float, default=100, help="The scale of the utility function.")
     parser.add_argument("--tolerance", type=float, default=0.1, help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
     parser.add_argument("--global_steps", type=int, default=300000,
@@ -50,7 +50,7 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=1000, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0002, 0.0002),
+    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0003, 0.0003),
                         help="The learning rates for the models.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
@@ -58,7 +58,7 @@ def parse_args():
 
     # MO-PPO specific arguments.
     parser.add_argument("--anneal_lr", type=bool, default=False, help="Whether to anneal the learning rate.")
-    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for PPO.")
+    parser.add_argument("--e_coef", type=float, default=0., help="The entropy coefficient for PPO.")
     parser.add_argument("--v_coef", type=float, default=0.25, help="The value coefficient for PPO.")
     parser.add_argument("--num_envs", type=int, default=4, help="The number of environments to use.")
     parser.add_argument("--num_minibatches", type=int, default=4, help="The number of minibatches to use.")
@@ -70,7 +70,7 @@ def parse_args():
                         help="Whether to normalize the advantages in PPO.")
     parser.add_argument("--clip_coef", type=float, default=0.25, help="The clipping coefficient for PPO.")
     parser.add_argument("--clip_range_vf", type=bool, default=0.25, help="Whether to clip the value loss in PPO.")
-    parser.add_argument("--n_steps", type=int, default=128, help="The number of steps for the n-step PPO.")
+    parser.add_argument("--n_steps", type=int, default=256, help="The number of steps for the n-step PPO.")
     parser.add_argument("--gae_lambda", type=float, default=.95, help="The lambda parameter for the GAE.")
     parser.add_argument("--eps", type=float, default=1e-8, help="The epsilon parameter for the Adam optimizer.")
 
@@ -105,9 +105,11 @@ if __name__ == '__main__':
 
     envs, num_objectives = setup_vector_env(args, run_name)
     linear_solver = init_linear_solver('known_box',
-                                       nadirs=[np.array([0., 0., -3.1199985]), np.array([0., 0., -3.1199985]),
+                                       nadirs=[np.array([0., 0., -3.1199985]),
+                                               np.array([0., 0., -3.1199985]),
                                                np.array([0., 0., -3.1199985])],
-                                       ideals=[np.array([1.5, 0., -0.95999986]), np.array([0., 1.5, -1.2199999]),
+                                       ideals=[np.array([1.5, 0., -0.95999986]),
+                                               np.array([0., 1.5, -0.95999986]),
                                                np.array([0., 0., -0.31999996])])
     oracle = init_oracle(args.oracle,
                          envs,

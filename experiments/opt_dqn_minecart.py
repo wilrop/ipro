@@ -1,10 +1,8 @@
 import os
-import random
-import torch
 import argparse
 import time
-import wandb
-
+import optuna
+import joblib
 import numpy as np
 
 from utils.helpers import strtobool
@@ -37,66 +35,63 @@ def parse_args():
     # General arguments.
     parser.add_argument("--env_id", type=str, default="minecart-v0", help="The game to use.")
     parser.add_argument('--outer_loop', type=str, default='PRIOL', help='The outer loop to use.')
-    parser.add_argument("--oracle", type=str, default="MO-A2C", help="The algorithm to use.")
+    parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
-    parser.add_argument("--scale", type=float, default=100, help="The scale of the utility function.")
+    parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
     parser.add_argument("--tolerance", type=float, default=0.1, help="The tolerance for the outer loop.")
     parser.add_argument("--warm_start", type=bool, default=False, help="Whether to warm start the inner loop.")
-    parser.add_argument("--global_steps", type=int, default=1500000,
+    parser.add_argument("--global_steps", type=int, default=100000,
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=100, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=0.98, help="The discount factor.")
     parser.add_argument("--max_episode_steps", type=int, default=1000, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0003, 0.0003),
-                        help="The learning rates for the models.")
-    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
-                        help="The hidden layers for the model.")
-    parser.add_argument("--early_stop_threshold", type=int, default=10000,
-                        help="The threshold episode for early stopping.")
-    parser.add_argument("--early_stop_std", type=float, default=0.,
-                        help="The standard deviation threshold for early stopping.")
+    parser.add_argument("--lr", type=float, default=0.0007, help="The learning rates for the models.")
+    parser.add_argument("--hidden_layers", type=tuple, default=(64, 64), help="The hidden layers for the model.")
     parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
 
-    # MO-A2C specific arguments.
-    parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
-    parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
-    parser.add_argument("--max_grad_norm", type=float, default=5.,
-                        help="The maximum norm for the gradient clipping.")
-    parser.add_argument("--normalize_advantage", type=bool, default=False,
-                        help="Whether to normalize the advantages in A2C.")
-    parser.add_argument("--n_steps", type=int, default=128, help="The number of steps for the n-step A2C.")
-    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
+    # MO-DQN specific arguments.
+    parser.add_argument("--learning_start", type=int, default=2000,
+                        help="The number of steps before starting to train the DQN.")
+    parser.add_argument("--train_freq", type=int, default=1, help="The number of steps between two DQN training steps.")
+    parser.add_argument("--target_update_freq", type=int, default=1,
+                        help="The number of steps between two DQN target network updates.")
+    parser.add_argument("--tau", type=float, default=.1,
+                        help="The fraction to copy the target network into the Q-network.")
+    parser.add_argument("--gradient_steps", type=int, default=1,
+                        help="The number of gradient steps to take for each DQN training step.")
+    parser.add_argument("--batch_size", type=int, default=32, help="The batch size for the DQN training.")
+    parser.add_argument("--buffer_size", type=int, default=10000, help="The size of the replay buffer.")
+    parser.add_argument("--per", type=bool, default=True, help="Whether to use prioritized experience replay.")
+    parser.add_argument("--alpha_per", type=float, default=0.6,
+                        help="The alpha parameter for prioritized experience replay.")
+    parser.add_argument("--min_priority", type=float, default=1e-3,
+                        help="The minimum priority for prioritized experience replay.")
+    parser.add_argument("--epsilon_start", type=float, default=1.0,
+                        help="The initial value of epsilon for the epsilon-greedy exploration.")
+    parser.add_argument("--epsilon_end", type=float, default=0.05,
+                        help="The final value of epsilon for the epsilon-greedy exploration.")
+    parser.add_argument("--exploration_frac", type=float, default=0.5,
+                        help="The fraction of the total number of steps during which epsilon is linearly decayed.")
 
     args = parser.parse_args()
     return args
 
 
-if __name__ == '__main__':
-    args = parse_args()
+def objective(trial):
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
 
-    # Seeding
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    aug = trial.suggest_float("aug", 0.001, 0.01, log=True)
+    scale = trial.suggest_float("scale", 10, 1000, log=True)
+    lr = trial.suggest_float("lrs", 0.0001, 0.001, log=True)
+    per = trial.suggest_categorical("normalize_advantage", [True, False])
+    batch_size = trial.suggest_categorical("n_steps", [32, 64])
 
     env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
     linear_solver = init_linear_solver('known_box',
@@ -109,24 +104,29 @@ if __name__ == '__main__':
     oracle = init_oracle(args.oracle,
                          env,
                          writer,
-                         aug=args.aug,
-                         scale=args.scale,
-                         lrs=args.lrs,
+                         aug=aug,
+                         scale=scale,
+                         lr=lr,
                          hidden_layers=args.hidden_layers,
-                         early_stop_threshold=args.early_stop_threshold,
-                         early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,
-                         e_coef=args.e_coef,
-                         v_coef=args.v_coef,
+                         learning_start=args.learning_start,
+                         train_freq=args.train_freq,
+                         target_update_freq=args.target_update_freq,
+                         gradient_steps=args.gradient_steps,
+                         epsilon_start=args.epsilon_start,
+                         epsilon_end=args.epsilon_end,
+                         exploration_frac=args.exploration_frac,
                          gamma=args.gamma,
-                         max_grad_norm=args.max_grad_norm,
-                         normalize_advantage=args.normalize_advantage,
-                         n_steps=args.n_steps,
-                         gae_lambda=args.gae_lambda,
+                         tau=args.tau,
+                         buffer_size=args.buffer_size,
+                         per=per,
+                         alpha_per=args.alpha_per,
+                         min_priority=args.min_priority,
+                         batch_size=batch_size,
                          global_steps=args.global_steps,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
-                         seed=args.seed
+                         seed=args.seed,
                          )
     ol = init_outer_loop(args.outer_loop,
                          env,
@@ -136,10 +136,14 @@ if __name__ == '__main__':
                          writer,
                          warm_start=args.warm_start,
                          seed=args.seed)
-    pf = ol.solve()
+    ol.solve()
+    return ol.dominated_hv
 
-    print("Pareto front:")
-    for point in pf:
-        print(point)
 
-    writer.close()
+if __name__ == '__main__':
+    args = parse_args()
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=50)
+    joblib.dump(study, "opt/study_dqn_minecart.pkl")
+    print(study.best_params)
