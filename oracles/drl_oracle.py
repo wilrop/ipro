@@ -103,19 +103,22 @@ class DRLOracle:
             one_hot_obs = np.squeeze(one_hot_obs, axis=0)
         return one_hot_obs
 
-    def format_obs(self, obs):
+    def format_obs(self, obs, vectorized=False):
         """Format the given observation.
 
         Args:
             obs (ndarray): The observation to format.
+            vectorized (bool): Whether the observation is vectorized or not. Defaults to False.
 
         Returns:
             ndarray: The formatted observation.
         """
         if self.one_hot:
             return self.one_hot_encode(obs)
+        elif vectorized:
+            return obs.reshape((obs.shape[0], -1))
         else:
-            return obs.reshape(obs.shape[:-2] + (-1,))
+            return obs.flatten()
 
     def evaluate(self, eval_episodes=100, deterministic=True):
         """Evaluate the agent on the environment.

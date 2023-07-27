@@ -277,7 +277,7 @@ class MOPPO(DRLOracle):
         """Train the agent."""
         global_step = 0
         raw_obs, _ = self.envs.reset()
-        obs = torch.tensor(self.format_obs(raw_obs), dtype=torch.float)
+        obs = torch.tensor(self.format_obs(raw_obs, vectorized=True), dtype=torch.float)
         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
@@ -299,7 +299,7 @@ class MOPPO(DRLOracle):
 
                 next_raw_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)
-                next_obs = self.format_obs(next_raw_obs)
+                next_obs = self.format_obs(next_raw_obs, vectorized=True)
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
                 aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
 
