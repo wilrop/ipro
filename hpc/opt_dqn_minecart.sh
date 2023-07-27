@@ -13,13 +13,14 @@
 module load Python/3.10.4-GCCcore-11.3.0
 module load SciPy-bundle/2022.05-foss-2022a
 module load PyTorch/1.12.0-foss-2022a
+module load pygmo/2.18.0-foss-2022a
+module load Optuna/2.10.0-foss-2021b
+module load tensorboard/2.10.0-foss-2022a
+
 pip install --user gymnasium
 pip install --user mo-gymnasium
 pip install --user highway-env
-pip install --user tensorboard
 pip install --user wandb
-pip install --user pygmo
-pip install --user optuna
 
 # Define the log directory.
 LOGDIR="${VSC_SCRATCH}/IPRO"
