@@ -24,6 +24,8 @@ pip install --user optuna
 # Define the log directory.
 LOGDIR="${VSC_SCRATCH}/IPRO"
 
+export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
+
 # Run the experiments.
 python3 $VSC_HOME/geohunt/experiments/opt_dqn_minecart.py \
   --log-dir "$LOGDIR"
