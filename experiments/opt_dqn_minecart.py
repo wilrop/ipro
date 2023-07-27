@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
     parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
+    parser.add_argument("--log_dir", type=str, default="opt", help="the logging folder")
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="minecart-v0", help="The game to use.")
@@ -145,5 +146,5 @@ if __name__ == '__main__':
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=50)
-    joblib.dump(study, "opt/study_dqn_minecart.pkl")
+    joblib.dump(study, f"{args.log_dir}/study_dqn_minecart.pkl")
     print(study.best_params)

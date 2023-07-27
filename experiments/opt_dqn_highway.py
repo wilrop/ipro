@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
     parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
+    parser.add_argument("--log_dir", type=str, default="opt", help="the logging folder")
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="mo-highway-v0", help="The game to use.")
@@ -44,7 +45,7 @@ def parse_args():
                         help="The total number of steps to run the experiment.")
     parser.add_argument("--eval_episodes", type=int, default=1, help="The number of episodes to use for evaluation.")
     parser.add_argument("--gamma", type=float, default=1., help="The discount factor.")
-    parser.add_argument("--max_episode_steps", type=int, default=100, help="The maximum number of steps per episode.")
+    parser.add_argument("--max_episode_steps", type=int, default=30, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
     parser.add_argument("--lr", type=float, default=0.0007, help="The learning rates for the models.")
@@ -94,9 +95,10 @@ def objective(trial):
     batch_size = trial.suggest_categorical("n_steps", [32, 64])
 
     env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
+    max_reward = args.max_episode_steps * 1.
     linear_solver = init_linear_solver('known_box',
-                                       nadirs=[np.array([0., 100.0]), np.array([100.0, 0.])],
-                                       ideals=[np.array([100.0, 0.]), np.array([0., 100.0])])
+                                       nadirs=[np.array([0., max_reward]), np.array([max_reward, 0.])],
+                                       ideals=[np.array([max_reward, 0.]), np.array([0., max_reward])])
     oracle = init_oracle(args.oracle,
                          env,
                          writer,
@@ -141,5 +143,5 @@ if __name__ == '__main__':
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=10)
-    joblib.dump(study, "opt/study_dqn_highway.pkl")
+    joblib.dump(study, f"{args.log_dir}/study_dqn_highway.pkl")
     print(study.best_params)
