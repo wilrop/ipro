@@ -28,4 +28,4 @@ LOGDIR="${VSC_SCRATCH}/IPRO"
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
 # Run the experiments.
-python3 $VSC_HOME/geohunt/experiments/opt_ppo_minecart.py -log_dir "$LOGDIR"
+python3 $VSC_HOME/geohunt/experiments/opt_ppo_minecart.py --log_dir "$LOGDIR"
