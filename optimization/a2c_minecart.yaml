@@ -8,7 +8,7 @@ study_name: a2c_minecart
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null
-track: False
+track: True
 warm_start: False
 n_trials: 100
 max_episode_steps: 30
