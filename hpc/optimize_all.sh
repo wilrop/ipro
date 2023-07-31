@@ -24,10 +24,10 @@ pip install --user highway-env
 pip install --user wandb
 
 # Define variables.
-YAML_FILE="yaml_files.txt"
-
+YAML_FILE="${VSC_HOME}/geohunt/hpc/yaml_files.txt"
+OPTIMIZATION_DIR="${VSC_HOME}/geohunt/optimization"
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
 # Run the experiments.
 python3 ${VSC_HOME}/geohunt/optimization/search.py \
-  --params $(head -${SLURM_ARRAY_TASK_ID} ${VSC_HOME}/geohunt/hpc/${YAML_FILE} | tail -1)
+  --params ${OPTIMIZATION_DIR}/(head -${SLURM_ARRAY_TASK_ID} ${YAML_FILE} | tail -1)
