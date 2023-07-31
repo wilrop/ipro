@@ -134,7 +134,7 @@ def search(
                 sync_tensorboard=True,
                 config=parameters,
                 name=run_name,
-                monitor_gym=True,
+                monitor_gym=False,
                 save_code=True,
             )
         writer = SummaryWriter(f"runs/{run_name}")
