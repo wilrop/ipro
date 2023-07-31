@@ -24,7 +24,7 @@ pip install --user mo-gymnasium
 pip install --user highway-env
 
 # Define variables.
-YAML_FILE=$(head -1 ${VSC_HOME}/geohunt/hpc/yaml_files.txt | tail -1)
+YAML_FILE=$(head -${SLURM_ARRAY_TASK_ID} ${VSC_HOME}/geohunt/hpc/yaml_files.txt | tail -1)
 OPTIMIZATION_DIR="${VSC_HOME}/geohunt/optimization"
 
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"

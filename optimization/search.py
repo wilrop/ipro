@@ -125,7 +125,7 @@ def search(
         oracle_name = parameters['oracle']
         outer_loop_name = parameters['outer_loop']
         max_episode_steps = parameters['max_episode_steps']
-        run_name = f"{env_id}__{seed}__{int(time.time())}"
+        run_name = f"{study_name}__{seed}__{int(time.time())}"
 
         if parameters['track']:
             wandb.init(
