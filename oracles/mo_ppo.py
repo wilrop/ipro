@@ -51,7 +51,8 @@ class MOPPO(DRLOracle):
                  lr_actor=2.5e-4,
                  lr_critic=2.5e-4,
                  eps=1e-5,
-                 hidden_layers=((64, 64), (64, 64)),
+                 actor_hidden=(64, 64),
+                 critic_hidden=(64, 64),
                  one_hot=False,
                  anneal_lr=False,
                  e_coef=0.01,
@@ -79,10 +80,6 @@ class MOPPO(DRLOracle):
                          one_hot=one_hot,
                          eval_episodes=eval_episodes,
                          window_size=window_size, )
-
-        if len(hidden_layers) == 1:  # Use same hidden layers for all models.
-            hidden_layers = (hidden_layers[0], hidden_layers[0])
-
         self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
@@ -119,7 +116,8 @@ class MOPPO(DRLOracle):
         self.input_dim = self.obs_dim + self.num_objectives
         self.actor_output_dim = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
-        self.actor_layers, self.critic_layers = hidden_layers
+        self.actor_hidden = actor_hidden
+        self.critic_hidden = critic_hidden
 
         self.actor = None
         self.critic = None
@@ -140,9 +138,9 @@ class MOPPO(DRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_layers, self.actor_output_dim)
+        self.actor = Actor(self.input_dim, self.actor_hidden, self.actor_output_dim)
         self.actor.apply(self.init_weights)
-        self.critic = Critic(self.input_dim, self.critic_layers, self.output_dim_critic)
+        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)
