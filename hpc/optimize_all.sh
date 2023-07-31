@@ -24,7 +24,7 @@ pip install --user highway-env
 pip install --user wandb
 
 # Define variables.
-YAML_FILE="${VSC_HOME}/geohunt/hpc/yaml_files.txt"
+YAML_FILE="yaml_files.txt"
 
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
