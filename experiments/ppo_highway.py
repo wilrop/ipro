@@ -158,3 +158,5 @@ if __name__ == '__main__':
     print("Pareto front:")
     for point in pf:
         print(point)
+
+    writer.close()

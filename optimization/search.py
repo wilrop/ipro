@@ -177,6 +177,7 @@ def search(
                              warm_start=parameters['warm_start'],
                              seed=seed)
         ol.solve()
+        writer.close()
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:
