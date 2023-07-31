@@ -17,11 +17,11 @@ module load PyTorch/1.12.0-foss-2022a
 module load pygmo/2.18.0-foss-2022a
 module load Optuna/2.10.0-foss-2021b
 module load tensorboard/2.10.0-foss-2022a
+module load wandb/0.13.4-GCCcore-11.3.0
 
 pip install --user gymnasium
 pip install --user mo-gymnasium
 pip install --user highway-env
-pip install --user wandb
 
 # Define variables.
 YAML_FILE=$(head -1 ${VSC_HOME}/geohunt/hpc/yaml_files.txt | tail -1)
