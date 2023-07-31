@@ -30,4 +30,4 @@ OPTIMIZATION_DIR="${VSC_HOME}/geohunt/optimization"
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
 # Run the experiments.
-python3 ${VSC_HOME}/geohunt/optimization/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE}
+python3 ${OPTIMIZATION_DIR}/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE}
