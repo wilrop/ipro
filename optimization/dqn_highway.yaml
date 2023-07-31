@@ -66,7 +66,7 @@ hyperparameters:
           choices: [ 0.6, 0.8, 1. ]
         min_priority:
           type: constant
-          value: 1e-3
+          value: 0.001
       else:
         alpha_per:
           type: constant
