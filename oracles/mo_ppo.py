@@ -44,11 +44,12 @@ class Critic(nn.Module):
 class MOPPO(DRLOracle):
     def __init__(self,
                  envs,
+                 gamma,
                  writer,
                  aug=0.2,
                  scale=1000,
-                 gamma=0.99,
-                 lrs=(2.5e-4, 2.5e-4),
+                 lr_actor=2.5e-4,
+                 lr_critic=2.5e-4,
                  eps=1e-5,
                  hidden_layers=((64, 64), (64, 64)),
                  one_hot=False,
@@ -79,14 +80,12 @@ class MOPPO(DRLOracle):
                          eval_episodes=eval_episodes,
                          window_size=window_size, )
 
-        if len(lrs) == 1:  # Use same learning rate for all models.
-            lrs = (lrs[0], lrs[0])
-
         if len(hidden_layers) == 1:  # Use same hidden layers for all models.
             hidden_layers = (hidden_layers[0], hidden_layers[0])
 
         self.envs = envs
-        self.actor_lr, self.critic_lr = lrs
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
         self.eps = eps
         self.s0 = None
 
@@ -146,8 +145,8 @@ class MOPPO(DRLOracle):
         self.critic = Critic(self.input_dim, self.critic_layers, self.output_dim_critic)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr, eps=self.eps)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr, eps=self.eps)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic, eps=self.eps)
         self.policy_returns = []
         self.rollout_buffer.reset()
 
@@ -286,8 +285,8 @@ class MOPPO(DRLOracle):
         for update in range(self.num_updates):
             if self.anneal_lr:  # Update the learning rate.
                 lr_frac = 1. - update / self.num_updates
-                self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.actor_lr
-                self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.critic_lr
+                self.actor_optimizer.param_groups[0]['lr'] = lr_frac * self.lr_actor
+                self.critic_optimizer.param_groups[0]['lr'] = lr_frac * self.lr_critic
 
             # Perform rollouts in the environments.
             for step in range(self.n_steps):

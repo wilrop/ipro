@@ -44,17 +44,18 @@ class Critic(nn.Module):
 class MOA2C(DRLOracle):
     def __init__(self,
                  env,
+                 gamma,
                  writer,
                  aug=0.2,
                  scale=1000,
-                 lrs=(0.001, 0.001),
+                 lr_actor=0.001,
+                 lr_critic=0.001,
                  hidden_layers=((64, 64), (64, 64)),
                  early_stop_threshold=10000,
                  early_stop_std=0.,
                  one_hot=False,
                  e_coef=0.01,
                  v_coef=0.5,
-                 gamma=0.99,
                  max_grad_norm=0.5,
                  normalize_advantage=True,
                  n_steps=10,
@@ -73,13 +74,11 @@ class MOA2C(DRLOracle):
                          eval_episodes=eval_episodes,
                          window_size=window_size)
 
-        if len(lrs) == 1:  # Use same learning rate for all models.
-            lrs = (lrs[0], lrs[0])
-
         if len(hidden_layers) == 1:  # Use same hidden layers for all models.
             hidden_layers = (hidden_layers[0], hidden_layers[0])
 
-        self.actor_lr, self.critic_lr = lrs
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
         self.e_coef = e_coef
         self.v_coef = v_coef
         self.gamma = gamma
@@ -124,8 +123,8 @@ class MOA2C(DRLOracle):
         self.actor.apply(self.init_weights)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic)
 
     def calc_generalised_advantages(self, rewards, dones, values, v_next):
         """Compute the advantages for the rollouts.

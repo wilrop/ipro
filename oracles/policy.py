@@ -93,6 +93,12 @@ class Categorical(Policy):
 
     def __call__(self, log_probs, log=None):
         probs = torch.exp(log_probs)
+        if probs.isnan().any():
+            print('Nan in log probs.')
+        if probs.isinf().any():
+            print('Inf in log probs.')
+        if (probs < 0).any():
+            print('Negative log probs.')
         actions = torch.multinomial(probs, 1)
         return actions
 
