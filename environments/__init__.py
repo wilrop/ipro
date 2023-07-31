@@ -10,7 +10,7 @@ from environments.highway_custom import HighwayCustom
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
-def setup_env(env_id, max_episode_steps):
+def setup_env(env_id, max_episode_steps, capture_video=False, run_name='run'):
     """Setup the environment."""
     if env_id == 'deep-sea-treasure-concave-v0':
         env = mo_gym.make('deep-sea-treasure-v0', dst_map=CONCAVE_MAP)
@@ -20,13 +20,15 @@ def setup_env(env_id, max_episode_steps):
         env = mo_gym.make(env_id)
     if max_episode_steps is not None:
         env = TimeLimit(env, max_episode_steps=max_episode_steps)
+    if capture_video:
+        env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
     env = mo_gym.MORecordEpisodeStatistics(env)
     return env, env.reward_space.shape[0]
 
 
 def make_env(env_id, idx, seed, run_name, capture_video, max_episode_steps=None):
     def thunk():
-        env, _ = setup_env(env_id, max_episode_steps)
+        env, _ = setup_env(env_id, max_episode_steps, capture_video=False)
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
@@ -47,10 +49,10 @@ def make_env(env_id, idx, seed, run_name, capture_video, max_episode_steps=None)
     return thunk
 
 
-def setup_vector_env(args, run_name):
+def setup_vector_env(env_id, num_envs, seed, run_name, capture_video, max_episode_steps=None):
     envs = mo_gym.MOSyncVectorEnv(
-        [make_env(args.env_id, i, args.seed + i, run_name, args.capture_video, max_episode_steps=args.max_episode_steps)
-         for i in range(args.num_envs)]
+        [make_env(env_id, i, seed + i, run_name, capture_video, max_episode_steps=max_episode_steps)
+         for i in range(num_envs)]
     )
     envs = mo_gym.MORecordEpisodeStatistics(envs)
     return envs, envs.reward_space.shape[0]
