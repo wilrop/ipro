@@ -29,4 +29,5 @@ YAML_FILE="${VSC_HOME}/geohunt/hpc/yaml_files.txt"
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
 # Run the experiments.
-python3 $VSC_HOME/geohunt/optimization/search.py --params $(head -${SLURM_ARRAY_TASK_ID} $YAML_FILE | tail -1)
+python3 ${VSC_HOME}/geohunt/optimization/search.py \
+  --params $(head -${SLURM_ARRAY_TASK_ID} ${VSC_HOME}/geohunt/hpc/${YAML_FILE} | tail -1)

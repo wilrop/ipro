@@ -1,6 +1,6 @@
-../optimization/a2c_highway.yaml
-../optimization/a2c_minecart.yaml
-../optimization/dqn_highway.yaml
-../optimization/dqn_minecart.yaml
-../optimization/ppo_highway.yaml
-../optimization/ppo_minecart.yaml
+a2c_highway.yaml
+a2c_minecart.yaml
+dqn_highway.yaml
+dqn_minecart.yaml
+ppo_highway.yaml
+ppo_minecart.yaml
