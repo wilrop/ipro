@@ -1,0 +1,74 @@
+env_id: mo-minecart-v0
+nadirs: [ [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ] ]
+ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.31999996 ] ]
+outer_loop: PRIOL
+oracle: MO-PPO
+gamma: 0.98
+study_name: ppo_minecart
+seed: 1
+wandb_project_name: IPRO
+wandb_entity: null
+track: False
+warm_start: False
+n_trials: 100
+max_episode_steps: 30
+
+hyperparameters:
+  aug:
+    type: categorical
+    choices: [ 0.001, 0.005, 0.01 ]
+  scale:
+    type: categorical
+    choices: [ 10, 100, 500, 1000 ]
+  global_steps:
+    type: constant
+    value: 100000
+  eval_episodes:
+    type: constant
+    value: 100
+  num_hidden_layers:
+    type: int
+    min: 1
+    max: 3
+  hidden_size:
+    type: categorical
+    choices: [ 32, 64, 128, 256 ]
+  lr_actor:
+    type: categorical
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+  lr_critic:
+    type: categorical
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+  e_coef:
+    type: categorical
+    choices: [ 0.001, 0.005, 0.01, 0.05, 0.1 ]
+  v_coef:
+    type: categorical
+    choices: [ 0.1, 0.5, 1.0 ]
+  max_grad_norm:
+    type: categorical
+    choices: [ 0.5, 1.0, 5.0, 10.0, 50.0 ]
+  normalize_advantage:
+    type: categorical
+    choices: [ True, False ]
+  n_steps:
+    type: categorical
+    choices: [ 32, 64, 128, 256 ]
+  gae_lambda:
+    type: categorical
+    choices: [ 0.5, 0.95, 0.99, 1. ]
+  num_envs:
+    type: categorical
+    choices: [ 1, 2, 4, 8, 16 ]
+  num_minibatches:
+    type: categorical
+    choices: [ 1, 2, 4, 8, 16 ]
+  update_epochs:
+    type: categorical
+    choices: [ 1, 2, 4, 8, 16 ]
+  clip_coef:
+    type: categorical
+    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
+  clip_range_vf:
+    type: categorical
+    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]

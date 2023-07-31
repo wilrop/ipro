@@ -1,0 +1,76 @@
+env_id: mo-highway-v0
+nadirs: [ [ 0, 100 ], [ 100, 0 ] ]
+ideals: [ [ 100, 0 ], [ 0, 100 ] ]
+outer_loop: 2D
+oracle: MO-DQN
+gamma: 0.99
+study_name: dqn_highway
+seed: 1
+wandb_project_name: IPRO
+wandb_entity: null
+track: False
+warm_start: False
+n_trials: 100
+max_episode_steps: 30
+
+hyperparameters:
+  aug:
+    type: categorical
+    choices: [ 0.001, 0.005, 0.01 ]
+  scale:
+    type: categorical
+    choices: [ 10, 100, 1000 ]
+  global_steps:
+    type: constant
+    value: 100000
+  eval_episodes:
+    type: constant
+    value: 100
+  num_hidden_layers:
+    type: int
+    min: 1
+    max: 3
+  hidden_size:
+    type: categorical
+    choices: [ 32, 64, 128, 256 ]
+  lr:
+    type: categorical
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+  buffer_size:
+    type: categorical
+    choices: [ 10000, 50000, 100000 ]
+  epsilon_start:
+    type: categorical
+    choices: [ 0.5, 0.7, 1.0 ]
+  learning_start:
+    type: categorical
+    choices: [ 1000, 5000, 10000 ]
+  epsilon_end:
+    type: categorical
+    choices: [ 0.05, 0.1, 0.2 ]
+  exploration_frac:
+    type: categorical
+    choices: [ 0.1, 0.3, 0.5, 0.7 ]
+  batch_size:
+    type: categorical
+    choices: [ 32, 64 ]
+  per:
+    type: categorical
+    choices: [ True, False ]
+  conditionals:
+    - vars: [ per ]
+      cond: per
+      if_cond:
+        alpha_per:
+          type: categorical
+          choices: [ 0.6, 0.8, 1. ]
+        min_priority:
+          type: constant
+          value: 1e-3
+      else:
+        alpha_per:
+          type: constant
+          value: 0.6
+        min_priority:
+          type: constant
+          value: 0.001
