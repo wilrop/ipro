@@ -49,8 +49,8 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=1000, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0003, 0.0003),
-                        help="The learning rates for the models.")
+    parser.add_argument("--lr_actor", type=float, default=0.0003, help="The learning rate for the actor.")
+    parser.add_argument("--lr_critic", type=float, default=0.0003, help="The learning rate for the critic.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
     parser.add_argument("--early_stop_threshold", type=int, default=10000,
@@ -108,17 +108,18 @@ if __name__ == '__main__':
                                                np.array([0., 0., -0.31999996])])
     oracle = init_oracle(args.oracle,
                          env,
+                         args.gamma,
                          writer,
                          aug=args.aug,
                          scale=args.scale,
-                         lrs=args.lrs,
+                         lr_actor=args.lr_actor,
+                         lr_critic=args.lr_critic,
                          hidden_layers=args.hidden_layers,
                          early_stop_threshold=args.early_stop_threshold,
                          early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
-                         gamma=args.gamma,
                          max_grad_norm=args.max_grad_norm,
                          normalize_advantage=args.normalize_advantage,
                          n_steps=args.n_steps,

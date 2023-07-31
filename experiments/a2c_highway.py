@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
-    parser.add_argument("--log-freq", type=int, default=1, help="the logging frequency")
+    parser.add_argument("--log-freq", type=int, default=1000, help="the logging frequency")
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="mo-highway-v0", help="The environment to use.")
@@ -49,8 +49,8 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=30, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.001, 0.001),
-                        help="The learning rates for the models.")
+    parser.add_argument("--lr_actor", type=float, default=0.001, help="The learning rate for the actor.")
+    parser.add_argument("--lr_critic", type=float, default=0.001, help="The learning rate for the critic.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64,), (64, 64),),
                         help="The hidden layers for the model.")
     parser.add_argument("--early_stop_threshold", type=int, default=10000,
@@ -105,17 +105,18 @@ if __name__ == '__main__':
                                        ideals=[np.array([max_reward, 0.]), np.array([0., max_reward])])
     oracle = init_oracle(args.oracle,
                          env,
+                         args.gamma,
                          writer,
                          aug=args.aug,
                          scale=args.scale,
-                         lrs=args.lrs,
+                         lr_actor=args.lr_actor,
+                         lr_critic=args.lr_critic,
                          hidden_layers=args.hidden_layers,
                          early_stop_threshold=args.early_stop_threshold,
                          early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
-                         gamma=args.gamma,
                          max_grad_norm=args.max_grad_norm,
                          normalize_advantage=args.normalize_advantage,
                          n_steps=args.n_steps,

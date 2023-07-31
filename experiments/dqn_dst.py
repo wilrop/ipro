@@ -114,6 +114,7 @@ if __name__ == '__main__':
                                        ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
     oracle = init_oracle(args.oracle,
                          env,
+                         args.gamma,
                          writer,
                          aug=args.aug,
                          scale=args.scale,
@@ -127,7 +128,6 @@ if __name__ == '__main__':
                          epsilon_start=args.epsilon_start,
                          epsilon_end=args.epsilon_end,
                          exploration_frac=args.exploration_frac,
-                         gamma=args.gamma,
                          tau=args.tau,
                          buffer_size=args.buffer_size,
                          per=args.per,

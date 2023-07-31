@@ -50,8 +50,8 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=30, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lrs", nargs='+', type=float, default=(0.0002, 0.0002),
-                        help="The learning rates for the models.")
+    parser.add_argument("--lr_actor", type=float, default=0.0002, help="The learning rate for the actor.")
+    parser.add_argument("--lr_critic", type=float, default=0.0002, help="The learning rate for the critic.")
     parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
                         help="The hidden layers for the model.")
     parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
@@ -103,18 +103,24 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    envs, num_objectives = setup_vector_env(args, run_name)
+    envs, num_objectives = setup_vector_env(args.env_id,
+                                            args.num_envs,
+                                            args.seed,
+                                            run_name,
+                                            args.capture_video,
+                                            max_episode_steps=args.max_episode_steps)
     max_reward = args.max_episode_steps * 1.
     linear_solver = init_linear_solver('known_box',
                                        nadirs=[np.array([0., max_reward]), np.array([max_reward, 0.])],
                                        ideals=[np.array([max_reward, 0.]), np.array([0., max_reward])])
     oracle = init_oracle(args.oracle,
                          envs,
+                         args.gamma,
                          writer,
                          aug=args.aug,
                          scale=args.scale,
-                         gamma=args.gamma,
-                         lrs=args.lrs,
+                         lr_actor=args.lr_actor,
+                         lr_critic=args.lr_critic,
                          eps=args.eps,
                          hidden_layers=args.hidden_layers,
                          one_hot=args.one_hot,
