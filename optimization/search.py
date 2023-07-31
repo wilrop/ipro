@@ -146,12 +146,17 @@ def search(
         nadirs = np.array(parameters['nadirs'])
         ideals = np.array(parameters['ideals'])
         hyperparameters = suggest_hyperparameters(trial, parameters)
-        hyperparameters['hidden_layers'] = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
+        hidden_layers = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
         hyperparameters.pop('hidden_size')
         hyperparameters.pop('num_hidden_layers')
+        if oracle_name == 'MO-DQN':
+            hyperparameters['hidden_layers'] = hidden_layers
+        else:
+            hyperparameters['actor_hidden'] = hidden_layers
+            hyperparameters['critic_hidden'] = hidden_layers
 
         if oracle_name == 'MO-PPO':
-            env, num_objectives = setup_vector_env(env_id, parameters['num_envs'], seed, run_name, False,
+            env, num_objectives = setup_vector_env(env_id, hyperparameters['num_envs'], seed, run_name, False,
                                                    max_episode_steps=max_episode_steps)
         else:
             env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
@@ -185,7 +190,7 @@ def search(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--params', type=str, default='dqn_highway.yaml',
+    parser.add_argument('--params', type=str, default='a2c_minecart.yaml',
                         help='path of a yaml file containing the parameters of this study')
     args = parser.parse_args()
 

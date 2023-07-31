@@ -50,7 +50,8 @@ class MOA2C(DRLOracle):
                  scale=1000,
                  lr_actor=0.001,
                  lr_critic=0.001,
-                 hidden_layers=((64, 64), (64, 64)),
+                 actor_hidden=(64, 64),
+                 critic_hidden=(64, 64),
                  early_stop_threshold=10000,
                  early_stop_std=0.,
                  one_hot=False,
@@ -73,10 +74,6 @@ class MOA2C(DRLOracle):
                          one_hot=one_hot,
                          eval_episodes=eval_episodes,
                          window_size=window_size)
-
-        if len(hidden_layers) == 1:  # Use same hidden layers for all models.
-            hidden_layers = (hidden_layers[0], hidden_layers[0])
-
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.e_coef = e_coef
@@ -95,7 +92,8 @@ class MOA2C(DRLOracle):
         self.input_dim = self.obs_dim + self.num_objectives
         self.actor_output_dim = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
-        self.actor_layers, self.critic_layers = hidden_layers
+        self.actor_hidden = actor_hidden
+        self.critic_hidden = critic_hidden
 
         self.actor = None
         self.critic = None
@@ -118,8 +116,8 @@ class MOA2C(DRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_layers, self.actor_output_dim)
-        self.critic = Critic(self.input_dim, self.critic_layers, self.output_dim_critic)
+        self.actor = Actor(self.input_dim, self.actor_hidden, self.actor_output_dim)
+        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
         self.actor.apply(self.init_weights)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()

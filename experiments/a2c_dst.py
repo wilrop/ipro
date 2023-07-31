@@ -51,8 +51,8 @@ def parse_args():
     # Oracle arguments.
     parser.add_argument("--lr_actor", type=float, default=0.001, help="The learning rate for the actor.")
     parser.add_argument("--lr_critic", type=float, default=0.001, help="The learning rate for the critic.")
-    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64,), (64, 64),),
-                        help="The hidden layers for the model.")
+    parser.add_argument("--actor_hidden", type=tuple, default=(64,), help="The hidden layers for the actor.")
+    parser.add_argument("--critic_hidden", type=tuple, default=(64, 64), help="The hidden layers for the critic.")
     parser.add_argument("--early_stop_threshold", type=int, default=10000,
                         help="The threshold episode for early stopping.")
     parser.add_argument("--early_stop_std", type=float, default=0.,
@@ -110,7 +110,8 @@ if __name__ == '__main__':
                          scale=args.scale,
                          lr_actor=args.lr_actor,
                          lr_critic=args.lr_critic,
-                         hidden_layers=args.hidden_layers,
+                         actor_hidden=args.actor_hidden,
+                         critic_hidden=args.critic_hidden,
                          early_stop_threshold=args.early_stop_threshold,
                          early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,

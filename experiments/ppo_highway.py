@@ -52,8 +52,8 @@ def parse_args():
     # Oracle arguments.
     parser.add_argument("--lr_actor", type=float, default=0.0002, help="The learning rate for the actor.")
     parser.add_argument("--lr_critic", type=float, default=0.0002, help="The learning rate for the critic.")
-    parser.add_argument("--hidden_layers", nargs='+', type=tuple, default=((64, 64), (64, 64),),
-                        help="The hidden layers for the model.")
+    parser.add_argument("--actor_hidden", type=tuple, default=(64, 64), help="The hidden layers for the actor.")
+    parser.add_argument("--critic_hidden", type=tuple, default=(64, 64), help="The hidden layers for the critic.")
     parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
 
     # MO-PPO specific arguments.
@@ -122,7 +122,8 @@ if __name__ == '__main__':
                          lr_actor=args.lr_actor,
                          lr_critic=args.lr_critic,
                          eps=args.eps,
-                         hidden_layers=args.hidden_layers,
+                         actor_hidden=args.actor_hidden,
+                         critic_hidden=args.critic_hidden,
                          one_hot=args.one_hot,
                          anneal_lr=args.anneal_lr,
                          e_coef=args.e_coef,
