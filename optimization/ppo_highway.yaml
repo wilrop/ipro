@@ -59,7 +59,7 @@ hyperparameters:
     choices: [ 0.5, 0.95, 0.99, 1. ]
   num_envs:
     type: categorical
-    choices: [ 1, 2, 4, 8, 16 ]
+    choices: [ 2, 4, 8, 16 ]
   num_minibatches:
     type: categorical
     choices: [ 1, 2, 4, 8, 16 ]
