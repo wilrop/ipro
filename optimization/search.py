@@ -185,7 +185,7 @@ def search(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--params', type=str, nargs=1, default='dqn_highway.yaml',
+    parser.add_argument('--params', type=str, default='dqn_highway.yaml',
                         help='path of a yaml file containing the parameters of this study')
     args = parser.parse_args()
 
