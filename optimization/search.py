@@ -178,6 +178,7 @@ def search(
                              seed=seed)
         ol.solve()
         writer.close()
+        wandb.finish()
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:

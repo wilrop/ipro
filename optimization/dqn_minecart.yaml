@@ -11,7 +11,7 @@ wandb_entity: null
 track: True
 warm_start: False
 n_trials: 100
-max_episode_steps: 30
+max_episode_steps: 1000
 
 hyperparameters:
   aug:
