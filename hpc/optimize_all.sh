@@ -3,12 +3,12 @@
 #SBATCH --job-name=optimize
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=2gb
+#SBATCH --mem=1gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/output-%A.out
 #SBATCH --error=logs/err-%A.err
-#SBATCH --array=1-6
+#SBATCH --array=1-100
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -24,10 +24,14 @@ pip install --user mo-gymnasium
 pip install --user highway-env
 
 # Define variables.
-YAML_FILE=$(head -${SLURM_ARRAY_TASK_ID} ${VSC_HOME}/geohunt/hpc/yaml_files.txt | tail -1)
+LINE=$(( ${SLURM_ARRAY_TASK_ID} % 6 ))
+YAML_FILE=$(head -${LINE} ${VSC_HOME}/geohunt/hpc/yaml_files.txt | tail -1)
 OPTIMIZATION_DIR="${VSC_HOME}/geohunt/optimization"
 
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
+
+# Sleep to avoid overloading the scheduler.
+sleep 10s
 
 # Run the experiments.
 python3 ${OPTIMIZATION_DIR}/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE}
