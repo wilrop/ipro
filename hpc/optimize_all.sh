@@ -36,4 +36,4 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 export WANDB_DIR=$VSC_SCRATCH
 
 # Run the experiments.
-python3 ${OPTIMIZATION_DIR}/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE}
+python3 ${OPTIMIZATION_DIR}/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE} --log_dir ${VSC_SCRATCH}

@@ -17,13 +17,14 @@ from oracles import init_oracle
 from outer_loops import init_outer_loop
 
 
-def optimize_hyperparameters(study_name, env_name, optimize_trial, storage=None, n_trials=100):
+def optimize_hyperparameters(study_name, env_name, optimize_trial, storage=None, n_trials=100, log_dir='.'):
     # Add stream handler of stdout to show the messages
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
     if storage is None:
-        if not os.path.exists(os.path.join('studies')):
-            os.makedirs(os.path.join('studies'))
+        studies_dir = os.path.join(log_dir, 'studies')
+        if not os.path.exists(studies_dir):
+            os.makedirs(studies_dir)
         storage = f'sqlite:///studies/{study_name}.db'
 
     sqlite_timeout = 300
@@ -118,6 +119,7 @@ def search(
         parameters,
         study_name='study',
         n_trials=100,
+        log_dir='.'
 ):
     def optimize_trial(trial):
         env_id = parameters['env_id']
@@ -137,7 +139,7 @@ def search(
                 monitor_gym=False,
                 save_code=True,
             )
-        writer = SummaryWriter(f"runs/{run_name}")
+        writer = SummaryWriter(f"{log_dir}/runs/{run_name}")
         writer.add_text(
             "hyperparameters",
             "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in parameters.items()])),
@@ -195,9 +197,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
     parser.add_argument('--params', type=str, default='ppo_highway.yaml',
                         help='path of a yaml file containing the parameters of this study')
+    parser.add_argument('--log_dir', type=str, default='.')
     args = parser.parse_args()
 
     with open(args.params, 'r') as file:
         parameters = yaml.safe_load(file)
 
-    search(parameters, parameters.get('study_name', 'IPRO_study'), parameters['n_trials'])
+    search(parameters,
+           study_name=parameters.get('study_name', 'IPRO_study'),
+           n_trials=parameters['n_trials'],
+           log_dir=args.log_dir)
