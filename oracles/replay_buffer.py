@@ -40,10 +40,6 @@ class SumTree:
             # so we subtract the sum of values in the left tree
             query_value -= left_sum * is_greater
 
-        if np.any(node_index > 10000):
-            print(node_index)
-            print(self.nodes)
-
         return node_index
 
     def set(self, node_index, new_priority):
