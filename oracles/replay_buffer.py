@@ -40,6 +40,10 @@ class SumTree:
             # so we subtract the sum of values in the left tree
             query_value -= left_sum * is_greater
 
+        if np.any(node_index > 10000):
+            print(node_index)
+            print(self.nodes)
+
         return node_index
 
     def set(self, node_index, new_priority):
@@ -115,9 +119,7 @@ class PrioritizedAccruedRewardReplayBuffer:
 
     def reset_priorities(self):
         """Reset the priorities of the buffer."""
-        if self.size > 0:
-            self.max_priority = self.start_max_priority
-            self.update_priorities(np.arange(self.size), np.full(self.size, self.max_priority))
+        self.tree = SumTree(self.max_size)
 
     def add(self, obs, accrued_reward, action, reward, next_obs, done, timestep, priority=None):
         """Add a new experience to memory.
