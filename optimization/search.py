@@ -175,6 +175,7 @@ def search(
                              linear_solver,
                              writer,
                              warm_start=parameters['warm_start'],
+                             tolerance=parameters['tolerance'],
                              seed=seed)
         ol.solve()
         writer.close()

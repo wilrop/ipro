@@ -2,6 +2,7 @@ env_id: minecart-v0
 nadirs: [ [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ] ]
 ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.31999996 ] ]
 outer_loop: PRIOL
+tolerance: 0.1
 oracle: MO-DQN
 gamma: 0.98
 study_name: dqn_minecart
