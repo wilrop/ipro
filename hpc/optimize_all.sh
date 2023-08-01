@@ -30,8 +30,5 @@ OPTIMIZATION_DIR="${VSC_HOME}/geohunt/optimization"
 
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
 
-# Sleep to avoid overloading the scheduler.
-sleep 10s
-
 # Run the experiments.
 python3 ${OPTIMIZATION_DIR}/search.py --params ${OPTIMIZATION_DIR}/${YAML_FILE}
