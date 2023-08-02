@@ -5,10 +5,8 @@ import yaml
 import time
 import argparse
 import optuna
-import wandb
 import numpy as np
 
-from torch.utils.tensorboard import SummaryWriter
 from optuna._callbacks import RetryFailedTrialCallback
 
 from environments import setup_env, setup_vector_env
@@ -25,7 +23,7 @@ def optimize_hyperparameters(study_name, env_name, optimize_trial, storage=None,
         studies_dir = os.path.join(log_dir, 'studies')
         if not os.path.exists(studies_dir):
             os.makedirs(studies_dir)
-        storage = f'sqlite:///studies/{study_name}.db'
+        storage = f'sqlite:///{studies_dir}/{study_name}.db'
 
     sqlite_timeout = 300
     storage = optuna.storages.RDBStorage(
@@ -181,7 +179,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
     parser.add_argument('--params', type=str, default='ppo_highway.yaml',
                         help='path of a yaml file containing the parameters of this study')
-    parser.add_argument('--log_dir', type=str, default='.')
+    parser.add_argument('--log_dir', type=str, default='/Users/willemropke/Desktop')
     args = parser.parse_args()
 
     with open(args.params, 'r') as file:
