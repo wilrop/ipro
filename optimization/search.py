@@ -129,22 +129,6 @@ def search(
         max_episode_steps = parameters['max_episode_steps']
         run_name = f"{study_name}__{seed}__{int(time.time())}"
 
-        if parameters['track']:
-            wandb.init(
-                project=parameters['wandb_project_name'],
-                entity=parameters['wandb_entity'],
-                sync_tensorboard=True,
-                config=parameters,
-                name=run_name,
-                monitor_gym=False,
-                save_code=True,
-            )
-        writer = SummaryWriter(f"{log_dir}/runs/{run_name}")
-        writer.add_text(
-            "hyperparameters",
-            "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in parameters.items()])),
-        )
-
         nadirs = np.array(parameters['nadirs'])
         ideals = np.array(parameters['ideals'])
         hyperparameters = suggest_hyperparameters(trial, parameters)
@@ -167,7 +151,6 @@ def search(
         oracle = init_oracle(oracle_name,
                              env,
                              parameters['gamma'],
-                             writer,
                              seed=seed,
                              **hyperparameters)
         ol = init_outer_loop(outer_loop_name,
@@ -175,13 +158,14 @@ def search(
                              num_objectives,
                              oracle,
                              linear_solver,
-                             writer,
+                             track=parameters['track'],
+                             exp_name=run_name,
+                             wandb_project_name=parameters['wandb_project_name'],
+                             wandb_entity=parameters['wandb_entity'],
                              warm_start=parameters['warm_start'],
                              tolerance=parameters['tolerance'],
                              seed=seed)
         ol.solve()
-        writer.close()
-        wandb.finish()
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:

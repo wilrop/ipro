@@ -17,10 +17,10 @@ max_episode_steps: 1000
 hyperparameters:
   aug:
     type: categorical
-    choices: [ 0.001, 0.005, 0.01 ]
+    choices: [ 0, 0.001, 0.005, 0.01, 0.1 ]
   scale:
     type: categorical
-    choices: [ 10, 100, 1000 ]
+    choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
     value: 1000000
