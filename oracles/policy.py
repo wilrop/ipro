@@ -110,7 +110,7 @@ class Categorical(Policy):
 
     def evaluate_actions(self, log_probs, actions):
         dist = CDist(logits=log_probs)  # Distribution over actions.
-        return dist.log_prob(actions).unsqueeze(1), dist.entropy()
+        return dist.log_prob(actions).unsqueeze(-1), dist.entropy()
 
 
 class MultiCategorical(Policy):

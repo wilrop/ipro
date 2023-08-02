@@ -109,7 +109,7 @@ class MOA2C(DRLOracle):
         self.n_steps = n_steps
         self.rollout_buffer = RolloutBuffer((self.obs_dim,),
                                             env.action_space.shape,
-                                            rew_dim=self.num_objectives,
+                                            rew_dim=(self.num_objectives,),
                                             max_size=self.n_steps,
                                             action_dtype=int,
                                             aug_obs=True)

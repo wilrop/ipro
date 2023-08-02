@@ -127,9 +127,10 @@ class MOPPO(DRLOracle):
         self.actor_scheduler = None
         self.critic_scheduler = None
 
-        self.rollout_buffer = RolloutBuffer((self.obs_dim,),
-                                            envs.single_action_space.shape,
-                                            rew_dim=self.num_objectives,
+        self.rollout_buffer = RolloutBuffer((self.num_envs, self.obs_dim),
+                                            (self.num_envs,) + envs.single_action_space.shape,
+                                            rew_dim=(self.num_envs, self.num_objectives),
+                                            dones_dim=(self.num_envs, 1),
                                             max_size=self.batch_size,
                                             action_dtype=int,
                                             aug_obs=True)
@@ -207,6 +208,14 @@ class MOPPO(DRLOracle):
             returns = advantages + values[:-1]  # Calculate the returns.
             actor_out = self.actor(aug_obs)
             log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
+
+            # Flatten the data.
+            aug_obs = aug_obs.view(-1, self.input_dim)
+            actions = actions.view(-1)
+            log_prob = log_prob.view(-1, 1)
+            values = values.view(-1, self.num_objectives)
+            advantages = advantages.view(-1, self.num_objectives)
+            returns = returns.view(-1, self.num_objectives)
 
         for epoch in range(self.update_epochs):
             shuffled_inds = torch.randperm(self.batch_size, generator=self.torch_rng)
@@ -332,8 +341,7 @@ class MOPPO(DRLOracle):
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
                 aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
 
-                self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs,
-                                        np.expand_dims(terminateds, axis=-1), size=self.num_envs)
+                self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs, np.expand_dims(terminateds, axis=-1))
 
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)

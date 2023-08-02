@@ -368,7 +368,8 @@ class RolloutBuffer:
             self,
             obs_shape,
             action_shape,
-            rew_dim=1,
+            rew_dim=(1,),
+            dones_dim=(1,),
             max_size=100,
             obs_dtype=np.float32,
             action_dtype=np.float32,
@@ -385,17 +386,17 @@ class RolloutBuffer:
             action_dtype: Data type of the actions
         """
         if aug_obs:
-            obs_shape = (obs_shape[0] + rew_dim,)
+            obs_shape = obs_shape[:-1] + (obs_shape[-1] + rew_dim[-1],)
 
         self.max_size = max_size
         self.ptr, self.size = 0, 0
         self.obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.next_obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.actions = np.zeros((max_size,) + action_shape, dtype=action_dtype)
-        self.rewards = np.zeros((max_size, rew_dim), dtype=np.float32)
-        self.dones = np.zeros((max_size, 1), dtype=np.float32)
+        self.rewards = np.zeros((max_size,) + rew_dim, dtype=np.float32)
+        self.dones = np.zeros((max_size,) + dones_dim, dtype=np.float32)
 
-    def add(self, obs, action, reward, next_obs, done, size=1):
+    def add(self, obs, action, reward, next_obs, done):
         """Add a new experience to memory.
 
         Args:
@@ -405,14 +406,14 @@ class RolloutBuffer:
             next_obs: Next observation
             done: Done
         """
-        self.obs[self.ptr:self.ptr + size] = np.array(obs).copy()
-        self.next_obs[self.ptr:self.ptr + size] = np.array(next_obs).copy()
-        self.actions[self.ptr:self.ptr + size] = np.array(action).copy()
-        self.rewards[self.ptr:self.ptr + size] = np.array(reward).copy()
-        self.dones[self.ptr:self.ptr + size] = np.array(done).copy()
+        self.obs[self.ptr] = np.array(obs).copy()
+        self.next_obs[self.ptr] = np.array(next_obs).copy()
+        self.actions[self.ptr] = np.array(action).copy()
+        self.rewards[self.ptr] = np.array(reward).copy()
+        self.dones[self.ptr] = np.array(done).copy()
 
-        self.ptr = (self.ptr + size) % self.max_size
-        self.size = min(self.size + size, self.max_size)
+        self.ptr = (self.ptr + 1) % self.max_size
+        self.size = min(self.size + 1, self.max_size)
 
     def sample(self, batch_size, replace=True, use_cer=False, to_tensor=False, device=None):
         """Sample a batch of experiences.
