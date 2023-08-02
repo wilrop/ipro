@@ -149,6 +149,7 @@ def search(
         oracle = init_oracle(oracle_name,
                              env,
                              parameters['gamma'],
+                             track=parameters['track'],
                              seed=seed,
                              **hyperparameters)
         ol = init_outer_loop(outer_loop_name,

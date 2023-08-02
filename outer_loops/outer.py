@@ -15,13 +15,15 @@ class OuterLoop:
         self.wandb_project_name = wandb_project_name
         self.wandb_entity = wandb_entity
 
-    def setup_wandb(self):
+    def setup_wandb(self, config):
+        """Setup wandb."""
         if self.track:
+            config.update(self.oracle.config())
             wandb.init(
                 project=self.wandb_project_name,
                 entity=self.wandb_entity,
                 sync_tensorboard=False,
-                config=self.oracle.config(),
+                config=config,
                 name=self.exp_name,
                 monitor_gym=False,
                 save_code=True,
@@ -34,10 +36,12 @@ class OuterLoop:
             wandb.define_metric('outer/error', step_metric='iteration')
 
     def close_wandb(self):
+        """Close wandb."""
         if self.track:
             wandb.finish()
 
     def log_iteration(self, iteration, dominated_hv, discarded_hv, coverage, error):
+        """Log the iteration."""
         if self.track:
             wandb.log({
                 'outer/dominated_hv': dominated_hv,

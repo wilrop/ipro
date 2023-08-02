@@ -68,7 +68,23 @@ class Priol(OuterLoop):
         self.seed = seed
         self.rng = rng if rng is not None else np.random.default_rng(seed)
 
-        self.setup_wandb()
+        self.setup_wandb(self.config())
+
+    def config(self):
+        """Get the config of the algorithm."""
+        return {
+            "method": "priol",
+            "env_id": self.problem.spec.id,
+            "dimensions": self.dim,
+            "warm_start": self.warm_start,
+            "tolerance": self.tol,
+            "max_steps": self.max_steps,
+            "seed": self.seed,
+            "approx": self.approx,
+            "ref_offset": self.ref_offset,
+            "hv_eps": self.approx_hv.eps,
+            "hv_delta": self.approx_hv.delta,
+        }
 
     def init_phase(self):
         """Run the initialisation phase of the algorithm.

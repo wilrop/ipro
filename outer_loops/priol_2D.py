@@ -53,7 +53,17 @@ class Priol2D(OuterLoop):
         self.coverage = 0
         self.error = np.inf
 
-        self.setup_wandb()
+        self.setup_wandb(self.config())
+
+    def config(self):
+        """Get the config of the algorithm."""
+        return {
+            "method": "priol_2D",
+            "env_id": self.problem.spec.id,
+            "warm_start": self.warm_start,
+            "tolerance": self.tolerance,
+            "seed": self.seed
+        }
 
     def estimate_error(self):
         """Estimate the error of the algorithm."""
