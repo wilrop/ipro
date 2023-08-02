@@ -43,6 +43,8 @@ class Priol(OuterLoop):
 
         self.approx = approx
         self.ref_offset = ref_offset
+        self.hv_eps = hv_eps
+        self.hv_delta = hv_delta
         self.approx_hv = pg.bf_fpras(eps=hv_eps, delta=hv_delta, seed=seed)  # Polynomial time approx hypervolume.
 
         self.warm_start = warm_start
@@ -74,7 +76,7 @@ class Priol(OuterLoop):
         """Get the config of the algorithm."""
         return {
             "method": "priol",
-            "env_id": self.problem.spec.id,
+            "env_id": self.problem.env_id,
             "dimensions": self.dim,
             "warm_start": self.warm_start,
             "tolerance": self.tol,
@@ -82,8 +84,8 @@ class Priol(OuterLoop):
             "seed": self.seed,
             "approx": self.approx,
             "ref_offset": self.ref_offset,
-            "hv_eps": self.approx_hv.eps,
-            "hv_delta": self.approx_hv.delta,
+            "hv_eps": self.hv_eps,
+            "hv_delta": self.hv_delta,
         }
 
     def init_phase(self):

@@ -59,7 +59,7 @@ class Priol2D(OuterLoop):
         """Get the config of the algorithm."""
         return {
             "method": "priol_2D",
-            "env_id": self.problem.spec.id,
+            "env_id": self.problem.env_id,
             "warm_start": self.warm_start,
             "tolerance": self.tolerance,
             "seed": self.seed

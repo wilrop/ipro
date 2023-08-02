@@ -23,6 +23,7 @@ def setup_env(env_id, max_episode_steps, capture_video=False, run_name='run'):
     if capture_video:
         env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
     env = mo_gym.MORecordEpisodeStatistics(env)
+    env.env_id = env_id
     return env, env.reward_space.shape[0]
 
 
@@ -55,4 +56,5 @@ def setup_vector_env(env_id, num_envs, seed, run_name, capture_video, max_episod
          for i in range(num_envs)]
     )
     envs = mo_gym.MORecordEpisodeStatistics(envs)
+    envs.env_id = env_id
     return envs, envs.reward_space.shape[0]
