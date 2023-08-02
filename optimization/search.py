@@ -174,7 +174,7 @@ def search(
         parameters['env_name'] = np.random.choice(parameters['env_id'])
         env_name = None
 
-    return optimize_hyperparameters(study_name, env_name, optimize_trial, n_trials=n_trials)
+    return optimize_hyperparameters(study_name, env_name, optimize_trial, n_trials=n_trials, log_dir=log_dir)
 
 
 if __name__ == '__main__':
