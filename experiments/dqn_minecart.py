@@ -87,24 +87,6 @@ if __name__ == '__main__':
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
-    # 7 policies according to the paper.
-
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
-
     # Seeding
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -121,7 +103,7 @@ if __name__ == '__main__':
     oracle = init_oracle(args.oracle,
                          env,
                          args.gamma,
-                         writer,
+                         track=args.track,
                          aug=args.aug,
                          scale=args.scale,
                          lr=args.lr,
@@ -150,7 +132,10 @@ if __name__ == '__main__':
                          num_objectives,
                          oracle,
                          linear_solver,
-                         writer,
+                         track=args.track,
+                         exp_name=run_name,
+                         wandb_project_name=args.wandb_project_name,
+                         wandb_entity=args.wandb_entity,
                          warm_start=args.warm_start,
                          seed=args.seed)
     pf = ol.solve()
@@ -158,5 +143,3 @@ if __name__ == '__main__':
     print("Pareto front:")
     for point in pf:
         print(point)
-
-    writer.close()

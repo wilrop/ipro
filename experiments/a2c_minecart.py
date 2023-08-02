@@ -3,7 +3,6 @@ import random
 import torch
 import argparse
 import time
-import wandb
 
 import numpy as np
 
@@ -12,7 +11,6 @@ from environments import setup_env
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
-from torch.utils.tensorboard import SummaryWriter
 
 
 def parse_args():
@@ -49,10 +47,10 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=1000, help="The maximum number of steps per episode.")
 
     # Oracle arguments.
-    parser.add_argument("--lr_actor", type=float, default=0.0003, help="The learning rate for the actor.")
-    parser.add_argument("--lr_critic", type=float, default=0.0003, help="The learning rate for the critic.")
-    parser.add_argument("--actor_hidden", type=tuple, default=(64, 64), help="The hidden layers for the actor.")
-    parser.add_argument("--critic_hidden", type=tuple, default=(64, 64), help="The hidden layers for the critic.")
+    parser.add_argument("--lr_actor", type=float, default=0.0001, help="The learning rate for the actor.")
+    parser.add_argument("--lr_critic", type=float, default=0.0005, help="The learning rate for the critic.")
+    parser.add_argument("--actor_hidden", type=tuple, default=(64, 64, 64), help="The hidden layers for the actor.")
+    parser.add_argument("--critic_hidden", type=tuple, default=(64, 64, 64), help="The hidden layers for the critic.")
     parser.add_argument("--early_stop_threshold", type=int, default=10000,
                         help="The threshold episode for early stopping.")
     parser.add_argument("--early_stop_std", type=float, default=0.,
@@ -62,12 +60,12 @@ def parse_args():
     # MO-A2C specific arguments.
     parser.add_argument("--e_coef", type=float, default=0.01, help="The entropy coefficient for A2C.")
     parser.add_argument("--v_coef", type=float, default=0.5, help="The value coefficient for A2C.")
-    parser.add_argument("--max_grad_norm", type=float, default=5.,
+    parser.add_argument("--max_grad_norm", type=float, default=50.,
                         help="The maximum norm for the gradient clipping.")
     parser.add_argument("--normalize_advantage", type=bool, default=False,
                         help="Whether to normalize the advantages in A2C.")
-    parser.add_argument("--n_steps", type=int, default=128, help="The number of steps for the n-step A2C.")
-    parser.add_argument("--gae_lambda", type=float, default=0.95, help="The lambda parameter for the GAE.")
+    parser.add_argument("--n_steps", type=int, default=32, help="The number of steps for the n-step A2C.")
+    parser.add_argument("--gae_lambda", type=float, default=1., help="The lambda parameter for the GAE.")
 
     args = parser.parse_args()
     return args
@@ -76,22 +74,6 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
 
     # Seeding
     torch.manual_seed(args.seed)
@@ -109,7 +91,7 @@ if __name__ == '__main__':
     oracle = init_oracle(args.oracle,
                          env,
                          args.gamma,
-                         writer,
+                         track=args.track,
                          aug=args.aug,
                          scale=args.scale,
                          lr_actor=args.lr_actor,
@@ -135,7 +117,10 @@ if __name__ == '__main__':
                          num_objectives,
                          oracle,
                          linear_solver,
-                         writer,
+                         track=args.track,
+                         exp_name=run_name,
+                         wandb_project_name=args.wandb_project_name,
+                         wandb_entity=args.wandb_entity,
                          warm_start=args.warm_start,
                          seed=args.seed)
     pf = ol.solve()
@@ -143,5 +128,3 @@ if __name__ == '__main__':
     print("Pareto front:")
     for point in pf:
         print(point)
-
-    writer.close()
