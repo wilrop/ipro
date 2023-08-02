@@ -45,7 +45,7 @@ class MOA2C(DRLOracle):
     def __init__(self,
                  env,
                  gamma,
-                 writer,
+                 track=False,
                  aug=0.2,
                  scale=1000,
                  lr_actor=0.001,
@@ -67,7 +67,7 @@ class MOA2C(DRLOracle):
                  log_freq=1000,
                  seed=0):
         super().__init__(env,
-                         writer,
+                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
@@ -113,6 +113,32 @@ class MOA2C(DRLOracle):
                                             max_size=self.n_steps,
                                             action_dtype=int,
                                             aug_obs=True)
+
+    def config(self):
+        return {
+            "gamma": self.gamma,
+            "track": self.track,
+            "aug": self.aug,
+            "scale": self.scale,
+            "lr_actor": self.lr_actor,
+            "lr_critic": self.lr_critic,
+            "actor_hidden": self.actor_hidden,
+            "critic_hidden": self.critic_hidden,
+            "early_stop_threshold": self.early_stop_threshold,
+            "early_stop_std": self.early_stop_std,
+            "one_hot": self.one_hot,
+            "e_coef": self.e_coef,
+            "v_coef": self.v_coef,
+            "max_grad_norm": self.max_grad_norm,
+            "normalize_advantage": self.normalize_advantage,
+            "n_steps": self.n_steps,
+            "gae_lambda": self.gae_lambda,
+            "global_steps": self.global_steps,
+            "eval_episodes": self.eval_episodes,
+            "window_size": self.window_size,
+            "log_freq": self.log_freq,
+            "seed": self.seed
+        }
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
@@ -275,6 +301,7 @@ class MOA2C(DRLOracle):
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
+        self.setup_ac_metrics()
         if warm_start:
             self.load_model(referent)
         pareto_point = super().solve(referent, ideal)

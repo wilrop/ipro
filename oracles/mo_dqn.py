@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import wandb
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -42,7 +43,7 @@ class MODQN(DRLOracle):
     def __init__(self,
                  env,
                  gamma,
-                 writer,
+                 track=False,
                  aug=0.2,
                  scale=1000,
                  lr=0.001,
@@ -65,7 +66,13 @@ class MODQN(DRLOracle):
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
-        super().__init__(env, writer, aug=aug, scale=scale, gamma=gamma, one_hot=one_hot, eval_episodes=eval_episodes)
+        super().__init__(env,
+                         track=track,
+                         aug=aug,
+                         scale=scale,
+                         gamma=gamma,
+                         one_hot=one_hot,
+                         eval_episodes=eval_episodes)
 
         self.dqn_lr = lr
         self.learning_start = learning_start
@@ -114,6 +121,34 @@ class MODQN(DRLOracle):
                                                            action_dtype=np.uint8)
 
         self.batch_size = batch_size
+
+    def config(self):
+        return {
+            "gamma": self.gamma,
+            "track": self.track,
+            "aug": self.aug,
+            "scale": self.scale,
+            "lr": self.dqn_lr,
+            "hidden_layers": self.dqn_hidden_layers,
+            "one_hot": self.one_hot,
+            "learning_start": self.learning_start,
+            "train_freq": self.train_freq,
+            "target_update_freq": self.target_update_freq,
+            "gradient_steps": self.gradient_steps,
+            "epsilon_start": self.epsilon_start,
+            "epsilon_end": self.epsilon_end,
+            "exploration_frac": self.exploration_frac,
+            "tau": self.tau,
+            "buffer_size": self.buffer_size,
+            "per": self.per,
+            "alpha_per": self.alpha_per,
+            "min_priority": self.min_priority,
+            "batch_size": self.batch_size,
+            "global_steps": self.global_steps,
+            "eval_episodes": self.eval_episodes,
+            "log_freq": self.log_freq,
+            "seed": self.seed
+        }
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
@@ -298,8 +333,11 @@ class MODQN(DRLOracle):
             if global_step > self.learning_start:
                 if global_step % self.train_freq == 0:
                     loss = self.train_network()
-                    if self.writer is not None:
-                        self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
+                    if self.track:
+                        wandb.log({
+                            f'losses/loss_{self.iteration}': loss,
+                            f'global_step_{self.iteration}': global_step,
+                        })
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
@@ -327,6 +365,7 @@ class MODQN(DRLOracle):
             list: The solution to the problem.
         """
         self.reset()
+        self.setup_dqn_metrics()
         if warm_start:
             self.load_model(referent)
         pareto_point = super().solve(referent, ideal)

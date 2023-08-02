@@ -1,4 +1,5 @@
 import torch
+import wandb
 import numpy as np
 
 from gymnasium.spaces import Box
@@ -11,13 +12,13 @@ from oracles.vector_u import create_batched_aasf
 class DRLOracle:
     def __init__(self,
                  env,
-                 writer,
                  aug=0.2,
                  scale=100,
                  gamma=0.99,
                  one_hot=False,
                  eval_episodes=100,
-                 window_size=100):
+                 window_size=100,
+                 track=False):
         self.env = env
         self.aug = aug
         self.scale = scale
@@ -42,12 +43,13 @@ class DRLOracle:
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
         self.iteration = 0
-        self.writer = writer
         self.expected_returns = {}
 
         self.window_size = window_size
         self.episodic_returns = deque(maxlen=window_size)
         self.episodic_lengths = deque(maxlen=window_size)
+
+        self.track = track
 
     @staticmethod
     def _compute_grad_norm(model):
@@ -63,6 +65,10 @@ class DRLOracle:
         if isinstance(m, nn.Linear):
             torch.nn.init.xavier_uniform_(m.weight, gain=std)
             torch.nn.init.constant_(m.bias, bias_const)
+
+    def config(self):
+        """Return the configuration of the algorithm."""
+        raise NotImplementedError
 
     def reset(self):
         """Reset the environment and the agent."""
@@ -81,6 +87,33 @@ class DRLOracle:
     def select_action(self, aug_obs, accrued_reward):
         """Select an action for the given observation."""
         raise NotImplementedError
+
+    def setup_chart_metrics(self):
+        """Set up the chart metrics for logging."""
+        if self.track:
+            wandb.define_metric(f'charts/utility_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'charts/episodic_length_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'charts/distance_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+
+    def setup_dqn_metrics(self):
+        """Set up the metrics for logging."""
+        if self.track:
+            wandb.define_metric(f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/loss_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            self.setup_chart_metrics()
+
+    def setup_ac_metrics(self):
+        """Set up the metrics for logging."""
+        if self.track:
+            wandb.define_metric(f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/loss_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/pg_loss_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/value_loss_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/entropy_loss_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/actor_grad_norm_{self.iteration}', step_metric=f'global_step_{self.iteration}')
+            wandb.define_metric(f'losses/critic_grad_norm_{self.iteration}',
+                                step_metric=f'global_step_{self.iteration}')
+            self.setup_chart_metrics()
 
     def one_hot_encode(self, obs):
         """One-hot encode the given observation.
@@ -168,10 +201,13 @@ class DRLOracle:
         Args:
             pareto_point (ndarray): The pareto point.
         """
-        if self.writer is not None:
+        if self.track:
             distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
             for step, dist in zip(self.expected_returns.keys(), distances):
-                self.writer.add_scalar(f'charts/distance_{self.iteration}', dist, step)
+                wandb.log({
+                    f'charts/distance_{self.iteration}': dist,
+                    f'global_step': step
+                })
 
     def log_episode_stats(self, episodic_return, episodic_length, global_step):
         self.episodic_returns.append(episodic_return)
@@ -183,9 +219,12 @@ class DRLOracle:
             utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
         episodic_length = np.mean(self.episodic_lengths)
 
-        if self.writer is not None:
-            self.writer.add_scalar(f'charts/utility_{self.iteration}', utility, global_step)
-            self.writer.add_scalar(f'charts/episodic_length_{self.iteration}', episodic_length, global_step)
+        if self.track:
+            wandb.log({
+                f'charts/utility_{self.iteration}': utility,
+                f'charts/episodic_length_{self.iteration}': episodic_length,
+                f'global_step_{self.iteration}': global_step,
+            })
 
         return np.std(self.episodic_returns, axis=0)
 
@@ -200,13 +239,16 @@ class DRLOracle:
 
     def log_pg_stats(self, global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm):
         """Log the policy gradient loss, value loss, entropy loss, and gradient norms."""
-        if self.writer is not None:
-            self.writer.add_scalar(f'losses/loss_{self.iteration}', loss, global_step)
-            self.writer.add_scalar(f'losses/policy_gradient_loss_{self.iteration}', pg_l, global_step)
-            self.writer.add_scalar(f'losses/value_loss_{self.iteration}', v_l, global_step)
-            self.writer.add_scalar(f'losses/entropy_loss_{self.iteration}', e_l, global_step)
-            self.writer.add_scalar(f'losses/actor_grad_norm_{self.iteration}', a_gnorm, global_step)
-            self.writer.add_scalar(f'losses/critic_grad_norm_{self.iteration}', c_gnorm, global_step)
+        if self.track:
+            wandb.log({
+                f'losses/loss_{self.iteration}': loss,
+                f'losses/policy_gradient_loss_{self.iteration}': pg_l,
+                f'losses/value_loss_{self.iteration}': v_l,
+                f'losses/entropy_loss_{self.iteration}': e_l,
+                f'losses/actor_grad_norm_{self.iteration}': a_gnorm,
+                f'losses/critic_grad_norm_{self.iteration}': c_gnorm,
+                f'global_step_{self.iteration}': global_step,
+            })
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.
@@ -231,10 +273,10 @@ class DRLOracle:
             ideal (ndarray): The ideal.
             pareto_point (ndarray): The pareto point.
         """
-        if self.writer is not None:
-            self.writer.add_text('referent', str(referent), self.iteration)
-            self.writer.add_text('ideal', str(ideal), self.iteration)
-            self.writer.add_text('pareto_point', str(pareto_point), self.iteration)
+        if self.track:
+            wandb.run.summary[f"referent_{self.iteration}"] = referent
+            wandb.run.summary[f"ideal_{self.iteration}"] = ideal
+            wandb.run.summary[f"pareto_point_{self.iteration}"] = pareto_point
 
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""

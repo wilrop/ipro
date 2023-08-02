@@ -45,7 +45,7 @@ class MOPPO(DRLOracle):
     def __init__(self,
                  envs,
                  gamma,
-                 writer,
+                 track=False,
                  aug=0.2,
                  scale=1000,
                  lr_actor=2.5e-4,
@@ -73,7 +73,7 @@ class MOPPO(DRLOracle):
                  window_size=100,
                  seed=0):
         super().__init__(envs.envs[0],
-                         writer,
+                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
@@ -135,6 +135,38 @@ class MOPPO(DRLOracle):
                                             aug_obs=True)
 
         self.log_freq = log_freq
+
+    def config(self):
+        return {
+            "gamma": self.gamma,
+            "track": self.track,
+            "aug": self.aug,
+            "scale": self.scale,
+            "lr_actor": self.lr_actor,
+            "lr_critic": self.lr_critic,
+            "eps": self.eps,
+            "actor_hidden": self.actor_hidden,
+            "critic_hidden": self.critic_hidden,
+            "one_hot": self.one_hot,
+            "anneal_lr": self.anneal_lr,
+            "e_coef": self.e_coef,
+            "v_coef": self.v_coef,
+            "num_envs": self.num_envs,
+            "num_minibatches": self.num_minibatches,
+            "update_epochs": self.update_epochs,
+            "max_grad_norm": self.max_grad_norm,
+            "target_kl": self.target_kl,
+            "normalize_advantage": self.normalize_advantage,
+            "clip_coef": self.clip_coef,
+            "clip_range_vf": self.clip_range_vf,
+            "gae_lambda": self.gae_lambda,
+            "n_steps": self.n_steps,
+            "global_steps": self.global_steps,
+            "eval_episodes": self.eval_episodes,
+            "log_freq": self.log_freq,
+            "window_size": self.window_size,
+            "seed": self.seed
+        }
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
@@ -335,6 +367,7 @@ class MOPPO(DRLOracle):
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
+        self.setup_ac_metrics()
         if warm_start:
             self.load_model(referent)
         pareto_point = super().solve(referent, ideal)

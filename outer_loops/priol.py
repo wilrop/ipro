@@ -1,12 +1,13 @@
 import time
-
+import wandb
 import numpy as np
 import pygmo as pg
+from outer_loops.outer import OuterLoop
 from outer_loops.box import Box
 from utils.pareto import strict_pareto_dominates, extreme_prune
 
 
-class Priol:
+class Priol(OuterLoop):
     """An inner-outer loop method for solving multi-objective problems."""
 
     def __init__(self,
@@ -14,7 +15,10 @@ class Priol:
                  dimensions,
                  oracle,
                  linear_solver,
-                 writer,
+                 track=False,
+                 exp_name=None,
+                 wandb_project_name=None,
+                 wandb_entity=None,
                  warm_start=False,
                  tolerance=1e-1,
                  max_steps=5000,
@@ -26,6 +30,12 @@ class Priol:
                  hv_delta=0.1,
                  save_figs=False,
                  ):
+        super().__init__(oracle,
+                         track=track,
+                         exp_name=exp_name,
+                         wandb_project_name=wandb_project_name,
+                         wandb_entity=wandb_entity)
+
         self.problem = problem
         self.dim = dimensions
         self.oracle = oracle
@@ -58,7 +68,7 @@ class Priol:
         self.seed = seed
         self.rng = rng if rng is not None else np.random.default_rng(seed)
 
-        self.writer = writer
+        self.setup_wandb()
 
     def init_phase(self):
         """Run the initialisation phase of the algorithm.
@@ -227,12 +237,6 @@ class Priol:
         """Check if the algorithm is done."""
         return 1 - self.coverage <= self.tol and step < self.max_steps
 
-    def log_step(self, step):
-        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
-        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
-        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-        self.writer.add_scalar(f'outer/error', self.error, step)
-
     def solve(self, update_freq=1):
         """Solve the problem.
 
@@ -244,18 +248,18 @@ class Priol:
         """
         start = time.time()
         done = self.init_phase()
-        step = 0
+        iteration = 0
 
         if done:
             print('The problem is solved in the initial phase.')
             print(self.pf)
             return {tuple(vec) for vec in self.pf}
 
-        self.log_step(step)
+        self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
 
-        while not self.is_done(step):
+        while not self.is_done(iteration):
             begin_loop = time.time()
-            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
+            print(f'Iter {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             referent = self.select_referent(method='first')
             vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal), warm_start=self.warm_start)
@@ -270,7 +274,7 @@ class Priol:
                 self.update_upper_points(referent)
                 self.robust_points = np.vstack((self.robust_points, vec))
 
-            if step % update_freq == 0:
+            if iteration % update_freq == 0:
                 self.compute_hvis()
 
             self.update_dominated_hv()
@@ -278,12 +282,15 @@ class Priol:
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
 
-            step += 1
-            self.log_step(step)
+            iteration += 1
+            self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
         self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.log_iteration(iteration + 1, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.close_wandb()
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
+
         return self.pf

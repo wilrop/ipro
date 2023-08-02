@@ -1,25 +1,36 @@
 import time
+import wandb
 
 import numpy as np
 import pygmo as pg
 
 from sortedcontainers import SortedKeyList
 
+from outer_loops.outer import OuterLoop
 from outer_loops.box import Box
 from utils.pareto import extreme_prune, strict_pareto_dominates
 
 
-class Priol2D:
+class Priol2D(OuterLoop):
     """An inner-outer loop method for solving 2D multi-objective problems."""
 
     def __init__(self,
                  problem,
                  oracle,
                  linear_solver,
-                 writer,
+                 track=False,
+                 exp_name=None,
+                 wandb_project_name=None,
+                 wandb_entity=None,
                  warm_start=False,
                  tolerance=1e-6,
                  seed=None):
+        super().__init__(oracle,
+                         track=track,
+                         exp_name=exp_name,
+                         wandb_project_name=wandb_project_name,
+                         wandb_entity=wandb_entity)
+
         self.problem = problem
         self.dim = 2
         self.oracle = oracle
@@ -42,7 +53,7 @@ class Priol2D:
         self.coverage = 0
         self.error = np.inf
 
-        self.writer = writer
+        self.setup_wandb()
 
     def estimate_error(self):
         """Estimate the error of the algorithm."""
@@ -136,12 +147,6 @@ class Priol2D:
         """Check if the algorithm is done."""
         return not self.box_queue or 1 - self.coverage <= self.tolerance
 
-    def log_step(self, step):
-        self.writer.add_scalar(f'outer/dominated_hv', self.dominated_hv, step)
-        self.writer.add_scalar(f'outer/discarded_hv', self.discarded_hv, step)
-        self.writer.add_scalar(f'outer/coverage', self.coverage, step)
-        self.writer.add_scalar(f'outer/error', self.error, step)
-
     def solve(self):
         """Solve the problem.
 
@@ -150,12 +155,12 @@ class Priol2D:
         """
         start = time.time()
         self.init_phase()
-        step = 0
-        self.log_step(step)
+        iteration = 0
+        self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
 
         while not self.is_done():
             begin_loop = time.time()
-            print(f'Step {step} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
+            print(f'Step {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             box = self.get_next_box()
             ideal = np.copy(box.ideal)
@@ -173,13 +178,16 @@ class Priol2D:
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
 
-            step += 1
+            iteration += 1
 
-            self.log_step(step)
+            self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
         self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.log_iteration(iteration + 1, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.close_wandb()
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
+
         return self.pf
