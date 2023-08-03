@@ -304,6 +304,7 @@ class MODQN(DRLOracle):
         timestep = 0
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = np.hstack((obs, accrued_reward))
+        loss = 0
 
         for global_step in range(self.global_steps):
             if global_step % self.log_freq == 0:
@@ -333,11 +334,11 @@ class MODQN(DRLOracle):
             if global_step > self.learning_start:
                 if global_step % self.train_freq == 0:
                     loss = self.train_network()
-                    if self.track:
-                        wandb.log({
-                            f'losses/loss_{self.iteration}': loss,
-                            f'global_step_{self.iteration}': global_step,
-                        })
+                if self.track and global_step % self.log_freq == 0:
+                    wandb.log({
+                        f'losses/loss_{self.iteration}': loss,
+                        f'global_step_{self.iteration}': global_step,
+                    })
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)

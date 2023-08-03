@@ -252,6 +252,12 @@ class MOA2C(DRLOracle):
         """Train the agent."""
         aug_obs, accrued_reward, timestep = self.reset_env()
         self.s0 = aug_obs
+        loss = 0
+        pg_l = 0
+        v_l = 0
+        e_l = 0
+        a_gnorm = 0
+        c_gnorm = 0
 
         for global_step in range(self.global_steps):
             if global_step % self.log_freq == 0:
@@ -268,8 +274,10 @@ class MOA2C(DRLOracle):
 
             if (global_step + 1) % self.n_steps == 0:
                 loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-                self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
                 self.rollout_buffer.reset()
+
+            if (global_step + 1) % self.log_freq == 0:
+                self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
 
             aug_obs = aug_next_obs
             timestep += 1

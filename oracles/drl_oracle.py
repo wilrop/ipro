@@ -195,20 +195,6 @@ class DRLOracle:
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
-    def log_distances(self, pareto_point):
-        """Log the distance of the estimated values to the retrieved pareto point.
-
-        Args:
-            pareto_point (ndarray): The pareto point.
-        """
-        if self.track:
-            distances = np.linalg.norm(np.array(list(self.expected_returns.values())) - pareto_point, axis=1)
-            for step, dist in zip(self.expected_returns.keys(), distances):
-                wandb.log({
-                    f'charts/distance_{self.iteration}': dist,
-                    f'global_step': step
-                })
-
     def log_episode_stats(self, episodic_return, episodic_length, global_step):
         self.episodic_returns.append(episodic_return)
         self.episodic_lengths.append(episodic_length)
@@ -287,6 +273,5 @@ class DRLOracle:
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
         self.log_points(referent, ideal, pareto_point)
-        self.log_distances(pareto_point)
         self.iteration += 1
         return pareto_point

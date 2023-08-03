@@ -320,6 +320,13 @@ class MOPPO(DRLOracle):
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
         timesteps = torch.zeros((self.num_envs, 1))
+        loss = 0
+        pg_l = 0
+        v_l = 0
+        e_l = 0
+        a_gnorm = 0
+        c_gnorm = 0
+        steps_since_log = 0
 
         for update in range(self.num_updates):
             if self.anneal_lr:  # Update the learning rate.
@@ -349,9 +356,12 @@ class MOPPO(DRLOracle):
                 self.log_vectorized_episodic_stats(info, dones, global_step)
 
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
+                steps_since_log += self.num_envs
 
             loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
-            self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
+            if steps_since_log - self.log_freq >= 0:
+                self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
+                steps_since_log = 0
             self.rollout_buffer.reset()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
