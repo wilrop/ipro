@@ -117,6 +117,7 @@ def search(
         parameters,
         study_name='study',
         n_trials=100,
+        report_intermediate=True,
         log_dir='.'
 ):
     def optimize_trial(trial):
@@ -150,6 +151,7 @@ def search(
                              env,
                              parameters['gamma'],
                              track=parameters['track'],
+                             log_freq=parameters['log_freq'],
                              seed=seed,
                              **hyperparameters)
         ol = init_outer_loop(outer_loop_name,
@@ -164,7 +166,14 @@ def search(
                              warm_start=parameters['warm_start'],
                              tolerance=parameters['tolerance'],
                              seed=seed)
-        ol.solve()
+        if report_intermediate:
+            def callback(step, dominated_hv, discarded_hv, coverage, error):
+                trial.report(dominated_hv, step)
+                if trial.should_prune():
+                    raise optuna.TrialPruned()
+        else:
+            callback = None
+        ol.solve(callback=callback)
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:
@@ -178,8 +187,9 @@ def search(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--params', type=str, default='ppo_highway.yaml',
+    parser.add_argument('--params', type=str, default='test.yaml',
                         help='path of a yaml file containing the parameters of this study')
+    parser.add_argument('--report_intermediate', default=True, action='store_true')
     parser.add_argument('--log_dir', type=str, default='/Users/willemropke/Desktop')
     args = parser.parse_args()
 
@@ -189,4 +199,6 @@ if __name__ == '__main__':
     search(parameters,
            study_name=parameters.get('study_name', 'IPRO_study'),
            n_trials=parameters['n_trials'],
-           log_dir=args.log_dir)
+           report_intermediate=args.report_intermediate,
+           log_dir=args.log_dir
+           )
