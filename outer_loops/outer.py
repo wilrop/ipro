@@ -22,11 +22,8 @@ class OuterLoop:
             wandb.init(
                 project=self.wandb_project_name,
                 entity=self.wandb_entity,
-                sync_tensorboard=False,
                 config=config,
                 name=self.exp_name,
-                monitor_gym=False,
-                save_code=True,
             )
 
             wandb.define_metric('iteration')

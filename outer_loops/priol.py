@@ -255,7 +255,7 @@ class Priol(OuterLoop):
         """Check if the algorithm is done."""
         return 1 - self.coverage <= self.tol and step < self.max_steps
 
-    def solve(self, update_freq=1):
+    def solve(self, update_freq=1, callback=None):
         """Solve the problem.
 
         Args:
@@ -302,6 +302,8 @@ class Priol(OuterLoop):
 
             iteration += 1
             self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+            if callback is not None:
+                callback(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 

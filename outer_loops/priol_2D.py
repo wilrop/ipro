@@ -157,11 +157,11 @@ class Priol2D(OuterLoop):
         """Check if the algorithm is done."""
         return not self.box_queue or 1 - self.coverage <= self.tolerance
 
-    def solve(self):
+    def solve(self, callback=None):
         """Solve the problem.
 
         Returns:
-            set: The Pareto front.
+            ndarray: The Pareto front.
         """
         start = time.time()
         self.init_phase()
@@ -191,6 +191,8 @@ class Priol2D(OuterLoop):
             iteration += 1
 
             self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+            if callback is not None:
+                callback(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
