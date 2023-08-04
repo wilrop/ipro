@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import sys
 import yaml
 import time
@@ -30,6 +31,7 @@ def optimize_hyperparameters(study_name, env_name, optimize_trial, storage=None,
         storage,
         engine_kwargs={
             'connect_args': {'timeout': sqlite_timeout},
+            'pool_size': 1,
         },
         heartbeat_interval=60,
         grace_period=120,
@@ -113,12 +115,22 @@ def suggest_hyperparameters(trial, parameters):
     return hyperparams
 
 
+def del_run_dir(run_id, log_dir):
+    wandb_path = os.path.join(log_dir, 'wandb')
+    dirs = os.listdir(wandb_path)
+    for run_dir in dirs:
+        if run_dir.endswith(run_id):
+            shutil.rmtree(os.path.join(wandb_path, run_dir))
+            break
+
+
 def search(
         parameters,
         study_name='study',
         n_trials=100,
         report_intermediate=True,
-        log_dir='.'
+        log_dir='.',
+        delete_local=False
 ):
     def optimize_trial(trial):
         env_id = parameters['env_id']
@@ -174,6 +186,11 @@ def search(
         else:
             callback = None
         ol.solve(callback=callback)
+
+        if delete_local:
+            run_id = 0
+            del_run_dir(run_name, log_dir)
+
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:
@@ -189,8 +206,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
     parser.add_argument('--params', type=str, default='test.yaml',
                         help='path of a yaml file containing the parameters of this study')
-    parser.add_argument('--report_intermediate', default=True, action='store_true')
+    parser.add_argument('--report_intermediate', default=False, action='store_true')
     parser.add_argument('--log_dir', type=str, default='/Users/willemropke/Desktop')
+    parser.add_argument('--delete_local', default=False, action='store_true')
     args = parser.parse_args()
 
     with open(args.params, 'r') as file:
@@ -200,5 +218,6 @@ if __name__ == '__main__':
            study_name=parameters.get('study_name', 'IPRO_study'),
            n_trials=parameters['n_trials'],
            report_intermediate=args.report_intermediate,
-           log_dir=args.log_dir
+           log_dir=args.log_dir,
+           delete_local=args.delete_local
            )

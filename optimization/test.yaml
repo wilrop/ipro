@@ -13,6 +13,7 @@ track: True
 warm_start: False
 n_trials: 100
 max_episode_steps: 1000
+log_freq: 1000
 
 hyperparameters:
   aug:
@@ -23,10 +24,10 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
-    value: 100000
+    value: 10000
   eval_episodes:
     type: constant
-    value: 100
+    value: 10
   num_hidden_layers:
     type: int
     min: 1
