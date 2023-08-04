@@ -1,5 +1,4 @@
 import time
-import wandb
 import numpy as np
 import pygmo as pg
 from outer_loops.outer import OuterLoop
@@ -310,7 +309,8 @@ class Priol(OuterLoop):
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
         self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
         self.log_iteration(iteration + 1, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
-        self.close_wandb()
+
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
 
+        self.close_wandb()
         return self.pf
