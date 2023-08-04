@@ -23,6 +23,8 @@ pip install --user gymnasium
 pip install --user mo-gymnasium
 pip install --user highway-env
 
+export OMP_NUM_THREADS=1
+
 # Define variables.
 NUM_LINES=$(wc -l < ${VSC_HOME}/geohunt/hpc/yaml_files.txt)
 LINE=$(( ${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1 ))
