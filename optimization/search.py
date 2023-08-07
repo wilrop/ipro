@@ -207,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('--params', type=str, default='test.yaml',
                         help='path of a yaml file containing the parameters of this study')
     parser.add_argument('--report_intermediate', default=False, action='store_true')
-    parser.add_argument('--log_dir', type=str, default='/Users/willemropke/Desktop')
+    parser.add_argument('--log_dir', type=str, default='./')
     parser.add_argument('--delete_local', default=False, action='store_true')
     args = parser.parse_args()
 
