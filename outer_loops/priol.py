@@ -206,6 +206,7 @@ class Priol(OuterLoop):
         Returns:
             set: The Pareto front.
         """
+        self.setup_wandb()
         start = time.time()
         done = self.init_phase()
         iteration = 0

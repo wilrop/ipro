@@ -128,6 +128,7 @@ class Priol2D(OuterLoop):
         Returns:
             ndarray: The Pareto front.
         """
+        self.setup_wandb()
         start = time.time()
         self.init_phase()
         iteration = 0
