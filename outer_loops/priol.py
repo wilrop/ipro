@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import pygmo as pg
 from outer_loops.outer import OuterLoop
 from outer_loops.box import Box
 from utils.pareto import strict_pareto_dominates, extreme_prune
@@ -14,78 +13,35 @@ class Priol(OuterLoop):
                  dimensions,
                  oracle,
                  linear_solver,
+                 ref_point=None,
+                 tolerance=1e-1,
+                 max_steps=None,
+                 warm_start=False,
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
                  wandb_entity=None,
-                 warm_start=False,
-                 tolerance=1e-1,
-                 max_steps=5000,
                  rng=None,
                  seed=None,
-                 approx=False,
-                 ref_offset=0.1,
-                 hv_eps=0.1,
-                 hv_delta=0.1,
-                 save_figs=False,
                  ):
-        super().__init__(oracle,
+        super().__init__(problem,
+                         dimensions,
+                         oracle,
+                         linear_solver,
+                         method="priol",
+                         ref_point=ref_point,
+                         tolerance=tolerance,
+                         max_steps=max_steps,
+                         warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
-                         wandb_entity=wandb_entity)
-
-        self.problem = problem
-        self.dim = dimensions
-        self.oracle = oracle
-        self.linear_solver = linear_solver
-
-        self.approx = approx
-        self.ref_offset = ref_offset
-        self.hv_eps = hv_eps
-        self.hv_delta = hv_delta
-        self.approx_hv = pg.bf_fpras(eps=hv_eps, delta=hv_delta, seed=seed)  # Polynomial time approx hypervolume.
-
-        self.warm_start = warm_start
-        self.tol = tolerance
-        self.max_steps = max_steps
-
-        self.bounding_box = None
-        self.total_hv = 0
-        self.nadir = None
-        self.ideal = None
-        self.pf = np.empty((0, self.dim))
-        self.robust_points = np.empty((0, self.dim))
-        self.completed = np.empty((0, self.dim))
+                         wandb_entity=wandb_entity,
+                         seed=seed)
         self.lower_points = []
         self.upper_points = []
-        self.dominated_hv = 0
-        self.discarded_hv = 0
-        self.error = np.inf
-        self.coverage = 0
 
-        self.save_figs = save_figs
-
-        self.seed = seed
         self.rng = rng if rng is not None else np.random.default_rng(seed)
-
-        self.setup_wandb(self.config())
-
-    def config(self):
-        """Get the config of the algorithm."""
-        return {
-            "method": "priol",
-            "env_id": self.problem.env_id,
-            "dimensions": self.dim,
-            "warm_start": self.warm_start,
-            "tolerance": self.tol,
-            "max_steps": self.max_steps,
-            "seed": self.seed,
-            "approx": self.approx,
-            "ref_offset": self.ref_offset,
-            "hv_eps": self.hv_eps,
-            "hv_delta": self.hv_delta,
-        }
 
     def init_phase(self):
         """Run the initialisation phase of the algorithm.
@@ -111,13 +67,16 @@ class Priol(OuterLoop):
             pf.append(max_i)
 
         self.pf = extreme_prune(np.array(pf))
+        nadir = nadir - self.offset  # Necessary to ensure every Pareto optimal point strictly dominates the nadir.
+        ideal = ideal + self.offset
+        self.nadir = np.copy(nadir)
+        self.ideal = np.copy(ideal)
+        self.ref_point = np.copy(nadir) if self.ref_point is None else self.ref_point
+
         if len(self.pf) == 1:  # If the Pareto front is the ideal.
             return True
 
-        nadir = nadir - 1  # Necessary to ensure every Pareto optimal point strictly dominates the nadir.
-        self.bounding_box = Box(nadir - self.ref_offset, ideal + self.ref_offset)
-        self.nadir = np.copy(nadir)
-        self.ideal = np.copy(ideal)
+        self.bounding_box = Box(nadir, ideal)
         self.total_hv = self.bounding_box.volume
         self.lower_points = np.array([nadir])
 
@@ -129,22 +88,6 @@ class Priol(OuterLoop):
         self.compute_hvis()
 
         return False
-
-    def compute_hypervolume(self, points, ref):
-        """Compute the hypervolume of a set of points.
-
-        Args:
-            points (array_like): List of points.
-            ref (np.array): Reference point.
-
-        Returns:
-            float: The computed hypervolume.
-        """
-        ref = ref + self.ref_offset
-        if self.approx:
-            return pg.hypervolume(points).compute(ref, hv_algo=self.approx_hv)
-        else:
-            return pg.hypervolume(points).compute(ref)
 
     def compute_hvis(self, num=50):
         """Compute the hypervolume improvements of the lower points.
@@ -252,7 +195,7 @@ class Priol(OuterLoop):
 
     def is_done(self, step):
         """Check if the algorithm is done."""
-        return 1 - self.coverage <= self.tol and step < self.max_steps
+        return 1 - self.coverage <= self.tolerance or step > self.max_steps
 
     def solve(self, update_freq=1, callback=None):
         """Solve the problem.
@@ -298,6 +241,7 @@ class Priol(OuterLoop):
             self.update_discarded_hv()
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
+            self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
             self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)

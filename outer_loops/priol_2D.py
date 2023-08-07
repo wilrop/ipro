@@ -1,7 +1,6 @@
 import time
 
 import numpy as np
-import pygmo as pg
 
 from sortedcontainers import SortedKeyList
 
@@ -17,52 +16,31 @@ class Priol2D(OuterLoop):
                  problem,
                  oracle,
                  linear_solver,
+                 ref_point=None,
+                 tolerance=1e-6,
+                 max_steps=None,
+                 warm_start=False,
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
                  wandb_entity=None,
-                 warm_start=False,
-                 tolerance=1e-6,
                  seed=None):
-        super().__init__(oracle,
+        super().__init__(problem,
+                         2,
+                         oracle,
+                         linear_solver,
+                         method="priol_2D",
+                         ref_point=ref_point,
+                         tolerance=tolerance,
+                         max_steps=max_steps,
+                         warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
-                         wandb_entity=wandb_entity)
+                         wandb_entity=wandb_entity,
+                         seed=seed)
 
-        self.problem = problem
-        self.dim = 2
-        self.oracle = oracle
-        self.linear_solver = linear_solver
-        self.warm_start = warm_start
-        self.tolerance = tolerance
-        self.seed = seed  # Not used in this algorithm.
-
-        self.bounding_box = None
-        self.ideal = None
-        self.nadir = None
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
-        self.pf = np.empty((0, self.dim))
-        self.robust_points = np.empty((0, self.dim))
-        self.completed = np.empty((0, self.dim))
-
-        self.total_hv = 0
-        self.dominated_hv = 0
-        self.discarded_hv = 0
-        self.coverage = 0
-        self.error = np.inf
-
-        self.setup_wandb(self.config())
-
-    def config(self):
-        """Get the config of the algorithm."""
-        return {
-            "method": "priol_2D",
-            "env_id": self.problem.env_id,
-            "warm_start": self.warm_start,
-            "tolerance": self.tolerance,
-            "seed": self.seed
-        }
 
     def estimate_error(self):
         """Estimate the error of the algorithm."""
@@ -124,26 +102,14 @@ class Priol2D(OuterLoop):
     def init_phase(self):
         """The initial phase in solving the problem."""
         outer_points = self.get_outer_points()
-        self.bounding_box = Box(np.min(outer_points, axis=0), np.max(outer_points, axis=0))
-        self.ideal = np.copy(self.bounding_box.ideal)
-        self.nadir = np.copy(self.bounding_box.nadir)
+        self.nadir = np.min(outer_points, axis=0) - self.offset
+        self.ideal = np.max(outer_points, axis=0) + self.offset
+        self.ref_point = np.copy(self.nadir) if self.ref_point is None else self.ref_point
+        self.bounding_box = Box(self.nadir, self.ideal)
         self.pf = np.vstack((self.pf, outer_points))
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
-
-    def compute_hypervolume(self, points, ref, ref_offset=0.1):
-        """Compute the hypervolume of a set of points.
-
-        Args:
-            points (array_like): List of points.
-            ref (np.array): Reference point.
-
-        Returns:
-            float: The computed hypervolume.
-        """
-        ref = ref + ref_offset
-        return pg.hypervolume(points).compute(ref)
 
     def get_next_box(self):
         """Get the next box to search."""
@@ -152,9 +118,9 @@ class Priol2D(OuterLoop):
         else:
             raise Exception('No more boxes to split.')
 
-    def is_done(self):
+    def is_done(self, step):
         """Check if the algorithm is done."""
-        return not self.box_queue or 1 - self.coverage <= self.tolerance
+        return not self.box_queue or 1 - self.coverage <= self.tolerance or step > self.max_steps
 
     def solve(self, callback=None):
         """Solve the problem.
@@ -167,7 +133,7 @@ class Priol2D(OuterLoop):
         iteration = 0
         self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
 
-        while not self.is_done():
+        while not self.is_done(iteration):
             begin_loop = time.time()
             print(f'Step {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
@@ -186,6 +152,7 @@ class Priol2D(OuterLoop):
 
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
+            self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
 
