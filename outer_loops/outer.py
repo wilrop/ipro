@@ -1,6 +1,7 @@
 import wandb
 import numpy as np
 import pygmo as pg
+from pathlib import Path
 
 
 class OuterLoop:
@@ -70,6 +71,7 @@ class OuterLoop:
             config = self.config()
             config.update(self.oracle.config())
             wandb.init(
+                settings=wandb.Settings(log_internal=str(Path(__file__).parent / 'wandb' / 'null'), ),
                 project=self.wandb_project_name,
                 entity=self.wandb_entity,
                 config=config,
