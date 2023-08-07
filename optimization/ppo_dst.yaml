@@ -1,4 +1,4 @@
-env_id: mo-highway-v0
+env_id: deep-sea-treasure-concave-v0
 nadirs: [ [ 0 , 0 ], [ 124, -19 ] ]
 ideals: [ [ 124, -19 ], [ 0 , 0 ] ]
 outer_loop: 2D
