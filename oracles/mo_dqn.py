@@ -161,7 +161,7 @@ class MODQN(DRLOracle):
             self.replay_buffer.reset_priorities()
         self.u_func = None
 
-    def select_greedy_action(self, aug_obs, accrued_reward, batched=False):
+    def select_greedy_action(self, aug_obs, accrued_reward):
         """Select the greedy action.
 
         Args:
@@ -174,10 +174,7 @@ class MODQN(DRLOracle):
         q_values = self.q_network(aug_obs).view(-1, self.num_objectives)
         expected_returns = torch.tensor(accrued_reward) + self.gamma * q_values
         utilities = self.u_func(expected_returns)
-        if batched:
-            return torch.argmax(utilities.view(-1, self.num_actions, self.num_objectives), dim=-1)
-        else:
-            return torch.argmax(utilities).item()
+        return torch.argmax(utilities).item()
 
     def select_action(self, aug_obs, accrued_reward, epsilon=0.1):
         """Select an action using epsilon-greedy exploration.
@@ -234,15 +231,12 @@ class MODQN(DRLOracle):
 
                 # Compute the Q-value and utility of the current obs.
                 next_accrued_reward = t_accrued_reward + t_reward * (self.gamma ** timestep)
-                next_q_pred = self.q_network(t_aug_next_obs).view(-1, self.num_objectives)
+                next_q_pred = self.target_network(t_aug_next_obs).view(-1, self.num_objectives)
                 next_u_pred = self.u_func(next_accrued_reward + next_q_pred * self.gamma)
 
-                # Select the argmax action of the current obs.
+                # Select the argmax action of the current obs and take its utility.
                 next_action = torch.argmax(next_u_pred).item()
-
-                # Compute the target Q-value of the target network in the current obs using the argmax action.
-                q_target = self.target_network(t_aug_next_obs)[next_action]
-                u_target = self.u_func(next_accrued_reward + q_target * self.gamma)
+                u_target = next_u_pred[next_action]
 
                 # Compute the priority.
                 priority = self.compute_priority(u_target, u_pred)
@@ -293,7 +287,7 @@ class MODQN(DRLOracle):
             self.optimizer.step()
 
             if self.per:
-                pred_utilities = self.u_func(rewards + self.gamma * action_preds).detach().numpy()
+                pred_utilities = self.u_func(accrued_rewards + self.gamma * action_preds).detach().numpy()
                 self.update_priorities(target_utilities, pred_utilities, indices.type(torch.int))
             return loss.item()
 
