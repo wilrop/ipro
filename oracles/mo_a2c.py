@@ -52,8 +52,6 @@ class MOA2C(DRLOracle):
                  lr_critic=0.001,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
-                 early_stop_threshold=10000,
-                 early_stop_std=0.,
                  one_hot=False,
                  e_coef=0.01,
                  v_coef=0.5,
@@ -103,8 +101,6 @@ class MOA2C(DRLOracle):
         self.max_grad_norm = max_grad_norm
         self.normalize_advantage = normalize_advantage
         self.gae_lambda = gae_lambda
-        self.early_stop_threshold = early_stop_threshold
-        self.early_stop_std = early_stop_std
 
         self.n_steps = n_steps
         self.rollout_buffer = RolloutBuffer((self.obs_dim,),
@@ -124,8 +120,6 @@ class MOA2C(DRLOracle):
             "lr_critic": self.lr_critic,
             "actor_hidden": self.actor_hidden,
             "critic_hidden": self.critic_hidden,
-            "early_stop_threshold": self.early_stop_threshold,
-            "early_stop_std": self.early_stop_std,
             "one_hot": self.one_hot,
             "e_coef": self.e_coef,
             "v_coef": self.v_coef,
@@ -283,9 +277,7 @@ class MOA2C(DRLOracle):
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                std = self.log_episode_stats(accrued_reward, timestep, global_step)
-                if global_step >= self.early_stop_threshold and np.all(std <= self.early_stop_std):
-                    break
+                self.log_episode_stats(accrued_reward, timestep, global_step)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
