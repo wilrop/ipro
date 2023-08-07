@@ -1,8 +1,8 @@
 env_id: minecart-v0
 nadirs: [ [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ] ]
-ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.31999996 ] ]
+ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.24923698 ] ]
 outer_loop: PRIOL
-tolerance: 0.1
+tolerance: 0.05
 oracle: MO-DQN
 gamma: 0.98
 study_name: dqn_minecart
@@ -37,7 +37,7 @@ hyperparameters:
     choices: [ 32, 64, 128, 256 ]
   lr:
     type: categorical
-    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 7.e-4, 1.e-3 ]
   buffer_size:
     type: categorical
     choices: [ 10000, 50000, 100000 ]
@@ -46,7 +46,7 @@ hyperparameters:
     choices: [ 0.5, 0.7, 1.0 ]
   learning_start:
     type: categorical
-    choices: [ 1000, 5000, 10000 ]
+    choices: [ 1000, 2000, 5000, 10000 ]
   epsilon_end:
     type: categorical
     choices: [ 0.05, 0.1, 0.2 ]

@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
-    parser.add_argument("--log-freq", type=int, default=1000, help="the logging frequency")
+    parser.add_argument("--log-freq", type=int, default=10000, help="the logging frequency")
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="mo-highway-v0", help="The environment to use.")
@@ -51,10 +51,6 @@ def parse_args():
     parser.add_argument("--lr_critic", type=float, default=0.001, help="The learning rate for the critic.")
     parser.add_argument("--actor_hidden", type=tuple, default=(64, 64), help="The hidden layers for the actor.")
     parser.add_argument("--critic_hidden", type=tuple, default=(64, 64), help="The hidden layers for the critic.")
-    parser.add_argument("--early_stop_threshold", type=int, default=10000,
-                        help="The threshold episode for early stopping.")
-    parser.add_argument("--early_stop_std", type=float, default=0.,
-                        help="The standard deviation threshold for early stopping.")
     parser.add_argument("--one_hot", type=bool, default=False, help="Whether to use a one hot state encoding.")
 
     # MO-A2C specific arguments.
@@ -95,8 +91,6 @@ if __name__ == '__main__':
                          lr_critic=args.lr_critic,
                          actor_hidden=args.actor_hidden,
                          critic_hidden=args.critic_hidden,
-                         early_stop_threshold=args.early_stop_threshold,
-                         early_stop_std=args.early_stop_std,
                          one_hot=args.one_hot,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,

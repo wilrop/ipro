@@ -1,18 +1,18 @@
-env_id: mo-highway-v0
-nadirs: [ [ 0, 100 ], [ 100, 0 ] ]
-ideals: [ [ 100, 0 ], [ 0, 100 ] ]
+env_id: deep-sea-treasure-concave-v0
+nadirs: [ [ 0 , 0 ], [ 124, -19 ] ]
+ideals: [ [ 124, -19 ], [ 0 , 0 ] ]
 outer_loop: 2D
-tolerance: 0.05
+tolerance: 0
 oracle: MO-DQN
-gamma: 0.99
-study_name: dqn_highway
+gamma: 1.0
+study_name: dqn_dst
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null
 track: True
 warm_start: False
 n_trials: 100
-max_episode_steps: 30
+max_episode_steps: 50
 log_freq: 1000
 
 hyperparameters:
@@ -24,10 +24,13 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
-    value: 200000
+    value: 50000
   eval_episodes:
     type: constant
-    value: 100
+    value: 1
+  one_hot:
+    type: constant
+    value: True
   num_hidden_layers:
     type: int
     min: 1

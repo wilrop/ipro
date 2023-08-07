@@ -2,7 +2,7 @@ env_id: mo-highway-v0
 nadirs: [ [ 0, 100 ], [ 100, 0 ] ]
 ideals: [ [ 100, 0 ], [ 0, 100 ] ]
 outer_loop: 2D
-tolerance: 0.1
+tolerance: 0.05
 oracle: MO-A2C
 gamma: 0.99
 study_name: a2c_highway
@@ -37,19 +37,19 @@ hyperparameters:
     choices: [ 32, 64, 128, 256 ]
   lr_actor:
     type: categorical
-    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 7.e-4, 1.e-3 ]
   lr_critic:
     type: categorical
-    choices: [ 1.e-4, 3.e-4, 5.e-4, 1.e-3 ]
+    choices: [ 1.e-4, 3.e-4, 5.e-4, 7.e-4, 1.e-3 ]
   e_coef:
     type: categorical
     choices: [ 0.001, 0.005, 0.01, 0.05, 0.1 ]
   v_coef:
     type: categorical
-    choices: [ 0.1, 0.5, 1.0 ]
+    choices: [ 0.1, 0.3, 0.5 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0, 10.0, 50.0 ]
+    choices: [ 0.25,  0.5, 1.0, 5.0, 10.0, 50.0 ]
   normalize_advantage:
     type: categorical
     choices: [ True, False ]
@@ -58,4 +58,4 @@ hyperparameters:
     choices: [ 32, 64, 128 ]
   gae_lambda:
     type: categorical
-    choices: [ 0.5, 0.95, 0.99, 1. ]
+    choices: [ 0.5, 0.95, 1. ]

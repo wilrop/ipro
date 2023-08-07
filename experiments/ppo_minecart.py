@@ -97,7 +97,7 @@ if __name__ == '__main__':
                                                np.array([0., 0., -3.1199985])],
                                        ideals=[np.array([1.5, 0., -0.95999986]),
                                                np.array([0., 1.5, -0.95999986]),
-                                               np.array([0., 0., -0.31999996])])
+                                               np.array([0., 0., -0.24923698])])
     oracle = init_oracle(args.oracle,
                          envs,
                          args.gamma,

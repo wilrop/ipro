@@ -1,18 +1,18 @@
-env_id: mo-highway-v0
-nadirs: [ [ 0, 100 ], [ 100, 0 ] ]
-ideals: [ [ 100, 0 ], [ 0, 100 ] ]
+env_id: deep-sea-treasure-concave-v0
+nadirs: [ [ 0 , 0 ], [ 124, -19 ] ]
+ideals: [ [ 124, -19 ], [ 0 , 0 ] ]
 outer_loop: 2D
-tolerance: 0.05
-oracle: MO-PPO
-gamma: 0.99
-study_name: ppo_highway
+tolerance: 0
+oracle: MO-A2C
+gamma: 1.0
+study_name: a2c_dst
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null
 track: True
 warm_start: False
 n_trials: 100
-max_episode_steps: 30
+max_episode_steps: 50
 log_freq: 1000
 
 hyperparameters:
@@ -24,10 +24,13 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
-    value: 300000
+    value: 100000
   eval_episodes:
     type: constant
-    value: 100
+    value: 1
+  one_hot:
+    type: constant
+    value: True
   num_hidden_layers:
     type: int
     min: 1
@@ -55,22 +58,7 @@ hyperparameters:
     choices: [ True, False ]
   n_steps:
     type: categorical
-    choices: [ 32, 64, 128, 256 ]
+    choices: [ 32, 64, 128 ]
   gae_lambda:
     type: categorical
     choices: [ 0.5, 0.95, 1. ]
-  num_envs:
-    type: categorical
-    choices: [ 2, 4, 8, 16 ]
-  num_minibatches:
-    type: categorical
-    choices: [ 1, 2, 4, 8, 16 ]
-  update_epochs:
-    type: categorical
-    choices: [ 1, 2, 4, 8, 16 ]
-  clip_coef:
-    type: categorical
-    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
-  clip_range_vf:
-    type: categorical
-    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
