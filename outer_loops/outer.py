@@ -79,6 +79,7 @@ class OuterLoop:
             )
 
             wandb.define_metric('iteration')
+            wandb.define_metric('outer/hypervolume', step_metric='iteration')
             wandb.define_metric('outer/dominated_hv', step_metric='iteration')
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
@@ -89,15 +90,15 @@ class OuterLoop:
         if self.track:
             wandb.finish()
 
-    def log_iteration(self, iteration, dominated_hv, discarded_hv, coverage, error):
+    def log_iteration(self, iteration):
         """Log the iteration."""
         if self.track:
             wandb.log({
                 'outer/hypervolume': self.hv,
-                'outer/dominated_hv': dominated_hv,
-                'outer/discarded_hv': discarded_hv,
-                'outer/coverage': coverage,
-                'outer/error': error,
+                'outer/dominated_hv': self.dominated_hv,
+                'outer/discarded_hv': self.discarded_hv,
+                'outer/coverage': self.coverage,
+                'outer/error': self.error,
                 'iteration': iteration
             })
 

@@ -110,6 +110,7 @@ class Priol2D(OuterLoop):
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
     def get_next_box(self):
         """Get the next box to search."""
@@ -132,7 +133,7 @@ class Priol2D(OuterLoop):
         start = time.time()
         self.init_phase()
         iteration = 0
-        self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.log_iteration(iteration)
 
         while not self.is_done(iteration):
             begin_loop = time.time()
@@ -157,15 +158,16 @@ class Priol2D(OuterLoop):
 
             iteration += 1
 
-            self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+            self.log_iteration(iteration)
             if callback is not None:
-                callback(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+                callback(iteration, self.hv, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
         self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.log_iteration(iteration + 1, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.log_iteration(iteration + 1)
 
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
 

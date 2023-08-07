@@ -72,6 +72,7 @@ class Priol(OuterLoop):
         self.nadir = np.copy(nadir)
         self.ideal = np.copy(ideal)
         self.ref_point = np.copy(nadir) if self.ref_point is None else self.ref_point
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
         if len(self.pf) == 1:  # If the Pareto front is the ideal.
             return True
@@ -216,7 +217,7 @@ class Priol(OuterLoop):
             print(self.pf)
             return {tuple(vec) for vec in self.pf}
 
-        self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.log_iteration(iteration)
 
         while not self.is_done(iteration):
             begin_loop = time.time()
@@ -245,15 +246,16 @@ class Priol(OuterLoop):
             self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
-            self.log_iteration(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+            self.log_iteration(iteration)
             if callback is not None:
-                callback(iteration, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+                callback(iteration, self.hv, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
         self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.log_iteration(iteration + 1, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.log_iteration(iteration + 1)
 
         print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
 

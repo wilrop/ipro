@@ -179,8 +179,8 @@ def search(
                              tolerance=parameters['tolerance'],
                              seed=seed)
         if report_intermediate:
-            def callback(step, dominated_hv, discarded_hv, coverage, error):
-                trial.report(dominated_hv, step)
+            def callback(step, hypervolume, dominated_hv, discarded_hv, coverage, error):
+                trial.report(hypervolume, step)
                 if trial.should_prune():
                     raise optuna.TrialPruned()
         else:
