@@ -13,7 +13,7 @@ track: True
 warm_start: False
 n_trials: 100
 max_episode_steps: 1000
-log_freq: 1000
+log_freq: 10000
 
 hyperparameters:
   aug:
@@ -24,7 +24,7 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
-    value: 1500000
+    value: 1000000
   eval_episodes:
     type: constant
     value: 100
