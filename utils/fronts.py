@@ -19,7 +19,7 @@ def minecart_fronts():
 
     computed_vecs = []
 
-    nadir = np.array([0., 0., -3.1199985]) - 1 - 0.1
+    nadir = np.array([0., 0., -3.1199985]) - 2
 
     with open("minecart.json", "r") as f:
         data = json.load(f)
@@ -35,9 +35,22 @@ def minecart_fronts():
     hv_true = pg.hypervolume(-correct_vecs).compute(-nadir)
     hv_computed = pg.hypervolume(-computed_vecs).compute(-nadir)
 
+    print("Minecart")
     print(f"True HV: {hv_true}")
     print(f"Computed HV: {hv_computed}")
+    print("----------")
+
+
+def dst_fronts():
+    vecs = np.array([[0.0, 0.0], [1.0, -1.0], [2.0, -3.0], [3.0, -5.0], [5.0, -7.0], [8.0, -8.0], [16.0, -9.0],
+                     [24.0, -13.0], [50.0, -14.0], [74.0, -17.0], [124.0, -19.0]])
+    nadir = np.array([0, -19.0]) - 2
+    hv = pg.hypervolume(-vecs).compute(-nadir)
+    print("Deep Sea Treasure")
+    print(f"HV: {hv}")
+    print("----------")
 
 
 if __name__ == '__main__':
     minecart_fronts()
+    dst_fronts()
