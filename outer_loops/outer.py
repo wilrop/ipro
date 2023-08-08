@@ -115,4 +115,4 @@ class OuterLoop:
         Returns:
             float: The computed hypervolume.
         """
-        return pg.hypervolume(points).compute(ref + self.offset)
+        return pg.hypervolume(points).compute(ref)
