@@ -1,7 +1,6 @@
 import wandb
 import numpy as np
 import pygmo as pg
-from pathlib import Path
 
 
 class OuterLoop:
