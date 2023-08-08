@@ -65,18 +65,26 @@ class OuterLoop:
             "seed": self.seed,
         }
 
-    def setup_wandb(self):
+    def setup_wandb(self, cluster=True):
         """Setup wandb."""
         if self.track:
             config = self.config()
             config.update(self.oracle.config())
-            wandb.init(
-                settings=wandb.Settings(log_internal=str(Path(__file__).parent / 'wandb' / 'null'), ),
-                project=self.wandb_project_name,
-                entity=self.wandb_entity,
-                config=config,
-                name=self.exp_name,
-            )
+            if cluster:
+                wandb.init(
+                    settings=wandb.Settings(log_internal=str('/scratch/brussel/103/vsc10340/wandb/null'), ),
+                    project=self.wandb_project_name,
+                    entity=self.wandb_entity,
+                    config=config,
+                    name=self.exp_name,
+                )
+            else:
+                wandb.init(
+                    project=self.wandb_project_name,
+                    entity=self.wandb_entity,
+                    config=config,
+                    name=self.exp_name,
+                )
 
             wandb.define_metric('iteration')
             wandb.define_metric('outer/hypervolume', step_metric='iteration')
