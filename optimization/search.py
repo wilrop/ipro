@@ -188,8 +188,8 @@ def search(
         ol.solve(callback=callback)
 
         if delete_local:
-            run_id = 0  # Todo: fix this
-            del_run_dir(run_name, log_dir)
+            run_id = ol.run_id
+            del_run_dir(run_id, log_dir)
 
         return ol.dominated_hv
 
