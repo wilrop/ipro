@@ -4,7 +4,7 @@ import pygmo as pg
 
 
 def minecart_fronts():
-    ideals = np.array([[1.5, 0., -0.95999986], [0., 1.5, -0.95999986], [0., 0., -0.31999996]])
+    ideals = np.array([[1.5, 0., -0.95999986], [0., 1.5, -0.95999986], [0., 0., -0.24923698]])
     correct_vecs = np.array(
         [np.array([0.55612687, 0.11092755, -0.65061296]), np.array([0.85192097, 0.16992796, -0.81650404]),
          np.array([0.60293373, 0.12026385, -0.77743027]), np.array([0.92362357, 0.18423008, -0.94917702]),
@@ -19,7 +19,7 @@ def minecart_fronts():
 
     computed_vecs = []
 
-    nadir = np.array([0., 0., -3.1199985]) - 2
+    nadir = np.array([0., 0., -3.1199985]) - 1
 
     with open("minecart.json", "r") as f:
         data = json.load(f)
@@ -44,7 +44,7 @@ def minecart_fronts():
 def dst_fronts():
     vecs = np.array([[0.0, 0.0], [1.0, -1.0], [2.0, -3.0], [3.0, -5.0], [5.0, -7.0], [8.0, -8.0], [16.0, -9.0],
                      [24.0, -13.0], [50.0, -14.0], [74.0, -17.0], [124.0, -19.0]])
-    nadir = np.array([0, -19.0]) - 2
+    nadir = np.array([0, -19.0]) - 1
     hv = pg.hypervolume(-vecs).compute(-nadir)
     print("Deep Sea Treasure")
     print(f"HV: {hv}")
