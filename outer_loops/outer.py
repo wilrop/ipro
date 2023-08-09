@@ -46,6 +46,7 @@ class OuterLoop:
         self.error = np.inf
 
         self.track = track
+        self.run_id = None
         self.exp_name = exp_name
         self.wandb_project_name = wandb_project_name
         self.wandb_entity = wandb_entity
@@ -55,7 +56,7 @@ class OuterLoop:
     def config(self):
         """Get the config of the algorithm."""
         return {
-            "method": "priol",
+            "method": self.method,
             "env_id": self.problem.env_id,
             "dimensions": self.dim,
             "warm_start": self.warm_start,
@@ -91,6 +92,7 @@ class OuterLoop:
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
             wandb.define_metric('outer/error', step_metric='iteration')
+            self.run_id = wandb.run.id
 
     def close_wandb(self):
         """Close wandb."""
