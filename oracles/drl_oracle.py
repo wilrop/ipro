@@ -206,11 +206,16 @@ class DRLOracle:
         episodic_length = np.mean(self.episodic_lengths)
 
         if self.track:
-            wandb.log({
+            log_dict = {
                 f'charts/utility_{self.iteration}': utility,
                 f'charts/episodic_length_{self.iteration}': episodic_length,
                 f'global_step_{self.iteration}': global_step,
-            })
+            }
+            try:
+                wandb.log(log_dict)
+            except Exception as e:
+                print(e)
+                print(log_dict)
 
         return np.std(self.episodic_returns, axis=0)
 
@@ -226,15 +231,20 @@ class DRLOracle:
     def log_pg_stats(self, global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm):
         """Log the policy gradient loss, value loss, entropy loss, and gradient norms."""
         if self.track:
-            wandb.log({
-                f'losses/loss_{self.iteration}': loss,
-                f'losses/policy_gradient_loss_{self.iteration}': pg_l,
-                f'losses/value_loss_{self.iteration}': v_l,
-                f'losses/entropy_loss_{self.iteration}': e_l,
-                f'losses/actor_grad_norm_{self.iteration}': a_gnorm,
-                f'losses/critic_grad_norm_{self.iteration}': c_gnorm,
-                f'global_step_{self.iteration}': global_step,
-            })
+            log_dict = {
+                    f'losses/loss_{self.iteration}': loss,
+                    f'losses/policy_gradient_loss_{self.iteration}': pg_l,
+                    f'losses/value_loss_{self.iteration}': v_l,
+                    f'losses/entropy_loss_{self.iteration}': e_l,
+                    f'losses/actor_grad_norm_{self.iteration}': a_gnorm,
+                    f'losses/critic_grad_norm_{self.iteration}': c_gnorm,
+                    f'global_step_{self.iteration}': global_step,
+                }
+            try:
+                wandb.log(log_dict)
+            except Exception as e:
+                print(e)
+                print(log_dict)
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.

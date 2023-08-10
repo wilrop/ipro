@@ -329,10 +329,15 @@ class MODQN(DRLOracle):
                 if global_step % self.train_freq == 0:
                     loss = self.train_network()
                 if self.track and global_step % self.log_freq == 0:
-                    wandb.log({
+                    log_dict = {
                         f'losses/loss_{self.iteration}': loss,
                         f'global_step_{self.iteration}': global_step,
-                    })
+                    }
+                    try:
+                        wandb.log(log_dict)
+                    except Exception as e:
+                        print(e)
+                        print(log_dict)
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
