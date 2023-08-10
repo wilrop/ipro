@@ -3,7 +3,7 @@
 #SBATCH --job-name=optimize
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=1gb
+#SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/output-%A.out
