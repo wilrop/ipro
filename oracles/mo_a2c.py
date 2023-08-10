@@ -225,7 +225,7 @@ class MOA2C(DRLOracle):
             int: The action.
         """
         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
-        action = self.policy(log_probs).item()  # Sample an action from the distribution.
+        action = self.policy(log_probs, aug_obs=aug_obs).item()  # Sample an action from the distribution.
         return action
 
     def select_greedy_action(self, aug_obs, accrued_reward):

@@ -291,7 +291,7 @@ class MOPPO(DRLOracle):
             int: The action.
         """
         log_probs = self.actor(aug_obs)  # Logprobs for the actions.
-        actions = self.policy(log_probs)  # Sample an action from the distribution.
+        actions = self.policy(log_probs, aug_obs=aug_obs)  # Sample an action from the distribution.
         if len(actions) == 1:
             return actions.item()
         else:

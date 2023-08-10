@@ -91,7 +91,7 @@ class Normal(Policy):
 
 class Categorical(Policy):
 
-    def __call__(self, log_probs, log=None):
+    def __call__(self, log_probs, log=None, aug_obs=None):
         probs = torch.exp(log_probs)
         try:
             actions = torch.multinomial(probs, 1)
@@ -99,6 +99,7 @@ class Categorical(Policy):
             print(e)
             print(probs)
             print(log_probs)
+            print(aug_obs)
             raise e
         return actions
 
