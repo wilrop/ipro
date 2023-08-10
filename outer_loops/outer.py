@@ -97,6 +97,7 @@ class OuterLoop:
     def close_wandb(self):
         """Close wandb."""
         if self.track:
+            wandb.run.summary['PF_size'] = len(self.pf)
             wandb.finish()
 
     def log_iteration(self, iteration):
