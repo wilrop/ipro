@@ -24,7 +24,7 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: constant
-    value: 1000000
+    value: 1500000
   eval_episodes:
     type: constant
     value: 100

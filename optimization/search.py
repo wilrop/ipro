@@ -187,6 +187,8 @@ def search(
             callback = None
         ol.solve(callback=callback)
 
+        time.sleep(10)  # Sleep to allow wandb to sync.
+
         if delete_local:
             run_id = ol.run_id
             del_run_dir(run_id, log_dir)
