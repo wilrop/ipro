@@ -23,8 +23,8 @@ hyperparameters:
     type: categorical
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
-    type: constant
-    value: 5000000
+    type: categorical
+    value: [ 1e6, 3e6, 5e6 ]
   eval_episodes:
     type: constant
     value: 100
