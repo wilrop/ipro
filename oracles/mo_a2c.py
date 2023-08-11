@@ -79,7 +79,7 @@ class MOA2C(DRLOracle):
         self.gamma = gamma
         self.s0 = None
 
-        self.global_steps = global_steps
+        self.global_steps = int(global_steps)
         self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 

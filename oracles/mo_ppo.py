@@ -100,7 +100,7 @@ class MOPPO(DRLOracle):
         self.gae_lambda = gae_lambda
 
         self.n_steps = n_steps
-        self.global_steps = global_steps
+        self.global_steps = int(global_steps)
         self.eval_episodes = eval_episodes
 
         self.batch_size = int(self.num_envs * self.n_steps)

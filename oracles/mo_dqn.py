@@ -86,7 +86,7 @@ class MODQN(DRLOracle):
         self.gamma = gamma
         self.tau = tau
 
-        self.global_steps = global_steps
+        self.global_steps = int(global_steps)
         self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
