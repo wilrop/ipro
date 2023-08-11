@@ -50,7 +50,7 @@ class MOPPO(DRLOracle):
                  scale=1000,
                  lr_actor=2.5e-4,
                  lr_critic=2.5e-4,
-                 eps=1e-5,
+                 eps=1e-8,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
                  one_hot=False,
