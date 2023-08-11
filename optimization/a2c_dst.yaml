@@ -24,7 +24,7 @@ hyperparameters:
     choices: [ 1, 10, 100, 500, 1000 ]
   global_steps:
     type: categorical
-    value: [ 1e5, 2e5, 3e5 ]
+    choices: [ 1e5, 2e5, 3e5 ]
   eval_episodes:
     type: constant
     value: 1
