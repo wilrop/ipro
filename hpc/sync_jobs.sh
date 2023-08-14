@@ -8,13 +8,8 @@
 
 module load wandb/0.13.4-GCCcore-11.3.0
 
-shopt -s expand_aliases
-cd "$HOME/dev/pcn-covid"
-
-ulimit -c 0
 wandb login 8966d6039f5932959dbc2d8d40621f3da0952c48
 export WANDB_DIR=$VSC_SCRATCH
-
 export OMP_NUM_THREADS=1
 
 while read -r l1; do
@@ -38,4 +33,4 @@ while read -r l1; do
   wandb sync $l9 &
   wandb sync $l10
   wait
-done <finished_logs.txt
+done <${VSC_SCRATCH}/finished_logs.txt
