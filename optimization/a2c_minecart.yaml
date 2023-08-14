@@ -2,7 +2,7 @@ env_id: minecart-v0
 nadirs: [ [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ] ]
 ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.24923698 ] ]
 outer_loop: PRIOL
-tolerance: 0.001
+tolerance: 0.0001
 oracle: MO-A2C
 gamma: 0.98
 study_name: a2c_minecart
