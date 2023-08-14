@@ -12,6 +12,8 @@ wandb login 8966d6039f5932959dbc2d8d40621f3da0952c48
 export WANDB_DIR=$VSC_SCRATCH
 export OMP_NUM_THREADS=1
 
+FILE_LIST="${VSC_SCRATCH}/finished_logs.txt"
+
 while read -r l1; do
   read -r l2
   read -r l3
@@ -33,4 +35,4 @@ while read -r l1; do
   wandb sync $l9 &
   wandb sync $l10
   wait
-done <${VSC_SCRATCH}/finished_logs.txt
+done <${FILE_LIST}
