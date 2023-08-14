@@ -2,7 +2,7 @@ env_id: mo-highway-v0
 nadirs: [ [ 0, 100 ], [ 100, 0 ] ]
 ideals: [ [ 100, 0 ], [ 0, 100 ] ]
 outer_loop: 2D
-tolerance: 0.05
+tolerance: 0.001
 oracle: MO-A2C
 gamma: 0.99
 study_name: a2c_highway
