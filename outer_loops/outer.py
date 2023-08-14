@@ -65,7 +65,7 @@ class OuterLoop:
             "seed": self.seed,
         }
 
-    def setup_wandb(self, cluster=True):
+    def setup_wandb(self, mode='offline', cluster=True):
         """Setup wandb."""
         if self.track:
             config = self.config()
@@ -77,6 +77,7 @@ class OuterLoop:
                     entity=self.wandb_entity,
                     config=config,
                     name=self.exp_name,
+                    mode=mode,
                 )
             else:
                 wandb.init(
@@ -84,6 +85,7 @@ class OuterLoop:
                     entity=self.wandb_entity,
                     config=config,
                     name=self.exp_name,
+                    mode=mode,
                 )
 
             wandb.define_metric('iteration')
