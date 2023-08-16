@@ -5,6 +5,10 @@
 #SBATCH --partition=skylake,skylake_mpi
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=1G
+#SBATCH --mail-user=willem.ropke@vub.be
+#SBATCH --mail-type=ALL
+#SBATCH --output=logs/output-%A.out
+#SBATCH --error=logs/err-%A.err
 
 module load wandb/0.13.4-GCCcore-11.3.0
 
