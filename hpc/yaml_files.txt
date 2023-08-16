@@ -3,7 +3,6 @@ a2c_highway.yaml
 a2c_minecart.yaml
 a2c_highway.yaml
 a2c_minecart.yaml
-dqn_dst.yaml
 dqn_highway.yaml
 dqn_minecart.yaml
 dqn_highway.yaml
