@@ -31,11 +31,18 @@ hyperparameters:
   one_hot:
     type: constant
     value: True
-  num_hidden_layers:
+  num_hidden_layers_actor:
     type: int
     min: 1
     max: 3
-  hidden_size:
+  hidden_size_actor:
+    type: categorical
+    choices: [ 32, 64, 128, 256 ]
+  num_hidden_layers_critic:
+    type: int
+    min: 1
+    max: 3
+  hidden_size_critic:
     type: categorical
     choices: [ 32, 64, 128, 256 ]
   lr_actor:
@@ -52,25 +59,28 @@ hyperparameters:
     choices: [ 0.1, 0.3, 0.5 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.25, 0.5, 1.0, 5.0, 10.0, 50.0 ]
+    choices: [ 0.5, 1.0, 5.0, 10.0, 50.0 ]
   normalize_advantage:
+    type: categorical
+    choices: [ True, False ]
+  anneal_lr:
     type: categorical
     choices: [ True, False ]
   n_steps:
     type: categorical
-    choices: [ 32, 64, 128, 256 ]
+    choices: [ 16, 32, 64, 128, 256 ]
   gae_lambda:
     type: categorical
     choices: [ 0.5, 0.95, 1. ]
   num_envs:
     type: categorical
-    choices: [ 2, 4, 8, 16 ]
+    choices: [ 2, 4, 8 ]
   num_minibatches:
     type: categorical
-    choices: [ 1, 2, 4, 8, 16 ]
+    choices: [ 1, 2, 4, 8 ]
   update_epochs:
     type: categorical
-    choices: [ 1, 2, 4, 8, 16 ]
+    choices: [ 1, 2, 4, 8 ]
   clip_coef:
     type: categorical
     choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]

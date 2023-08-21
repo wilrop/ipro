@@ -52,13 +52,13 @@ hyperparameters:
     choices: [ 0.1, 0.3, 0.5 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.25, 0.5, 1.0, 5.0, 10.0, 50.0 ]
+    choices: [ 0.5, 1.0, 5.0, 10.0, 50.0 ]
   normalize_advantage:
     type: categorical
     choices: [ True, False ]
   n_steps:
     type: categorical
-    choices: [ 32, 64, 128 ]
+    choices: [ 8, 16, 32, 64, 128 ]
   gae_lambda:
     type: categorical
     choices: [ 0.5, 0.95, 1. ]

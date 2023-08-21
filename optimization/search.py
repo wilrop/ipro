@@ -143,14 +143,24 @@ def search(
         nadirs = np.array(parameters['nadirs'])
         ideals = np.array(parameters['ideals'])
         hyperparameters = suggest_hyperparameters(trial, parameters)
-        hidden_layers = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
-        hyperparameters.pop('hidden_size')
-        hyperparameters.pop('num_hidden_layers')
-        if oracle_name == 'MO-DQN':
-            hyperparameters['hidden_layers'] = hidden_layers
+        if 'hidden_size' in hyperparameters:
+            hl_actor = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
+            hl_critic = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
+            hyperparameters.pop('hidden_size')
+            hyperparameters.pop('num_hidden_layers')
         else:
-            hyperparameters['actor_hidden'] = hidden_layers
-            hyperparameters['critic_hidden'] = hidden_layers
+            hl_actor = (hyperparameters['hidden_size_actor'],) * hyperparameters['num_hidden_layers_actor']
+            hl_critic = (hyperparameters['hidden_size_critic'],) * hyperparameters['num_hidden_layers_critic']
+            hyperparameters.pop('hidden_size_actor')
+            hyperparameters.pop('hidden_size_critic')
+            hyperparameters.pop('num_hidden_layers_actor')
+            hyperparameters.pop('num_hidden_layers_critic')
+
+        if oracle_name == 'MO-DQN':
+            hyperparameters['hidden_layers'] = hl_critic
+        else:
+            hyperparameters['actor_hidden'] = hl_actor
+            hyperparameters['critic_hidden'] = hl_critic
 
         if oracle_name == 'MO-PPO':
             env, num_objectives = setup_vector_env(env_id, hyperparameters['num_envs'], seed, run_name, False,
