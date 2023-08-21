@@ -152,7 +152,8 @@ class Priol2D(OuterLoop):
             else:
                 self.discarded_hv += box.volume
                 self.completed = np.vstack((self.completed, referent))
-                self.robust_points = np.vstack((self.robust_points, vec))
+                if strict_pareto_dominates(vec, self.nadir):
+                    self.robust_points = np.vstack((self.robust_points, vec))
 
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv

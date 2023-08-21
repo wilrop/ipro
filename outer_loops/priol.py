@@ -236,7 +236,8 @@ class Priol(OuterLoop):
                 self.completed = np.vstack((self.completed, referent))
                 self.lower_points = self.lower_points[np.any(self.lower_points != referent, axis=1)]
                 self.update_upper_points(referent)
-                self.robust_points = np.vstack((self.robust_points, vec))
+                if strict_pareto_dominates(vec, self.nadir):
+                    self.robust_points = np.vstack((self.robust_points, vec))
 
             if iteration % update_freq == 0:
                 self.compute_hvis()
