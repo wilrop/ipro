@@ -31,19 +31,30 @@ def strict_pareto_dominates(a, b):
     return np.all(a > b)
 
 
-def weak_pareto_dominates(a, b):
-    """Check if the vector in a Pareto weakly dominates vector b.
+def batched_strict_pareto_dominates(p1, p2):
+    """Check if a vector Pareto dominates a set of points.
 
     Args:
-        a (ndarray): A numpy array.
-        b (ndarray): A numpy array.
+        p1 (np.array): An array of points.
+        p2 (np.array): An array of points
 
     Returns:
-        bool: Whether vector a weakly dominates vector b.
+        np.array: A boolean array indicating whether each point is dominated.
     """
-    a = np.array(a)
-    b = np.array(b)
-    return np.any(a > b)
+    return np.all(p1 > p2, axis=-1)
+
+
+def batched_pareto_dominates(p1, p2):
+    """Check if a vector Pareto dominates a set of points.
+
+    Args:
+        p1 (np.array): An array of points.
+        p2 (np.array): An array of points
+
+    Returns:
+        np.array: A boolean array indicating whether each point is dominated.
+    """
+    return np.logical_and(np.all(p1 >= p2, axis=-1), np.any(p1 > p2, axis=-1))
 
 
 def extreme_prune(candidates):
