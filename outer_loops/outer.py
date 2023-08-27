@@ -44,6 +44,7 @@ class OuterLoop:
         self.discarded_hv = 0
         self.coverage = 0
         self.error = np.inf
+        self.replay_triggered = 0
 
         self.track = track
         self.run_id = None
@@ -52,6 +53,22 @@ class OuterLoop:
         self.wandb_entity = wandb_entity
 
         self.seed = seed
+
+    def reset(self):
+        self.bounding_box = None
+        self.ideal = None
+        self.nadir = None
+        self.pf = np.empty((0, self.dim))
+        self.robust_points = np.empty((0, self.dim))
+        self.completed = np.empty((0, self.dim))
+
+        self.hv = 0
+        self.total_hv = 0
+        self.dominated_hv = 0
+        self.discarded_hv = 0
+        self.coverage = 0
+        self.error = np.inf
+        self.replay_triggered = 0
 
     def config(self):
         """Get the config of the algorithm."""
@@ -100,6 +117,7 @@ class OuterLoop:
         """Close wandb."""
         if self.track:
             wandb.run.summary['PF_size'] = len(self.pf)
+            wandb.run.summary['replay_triggered'] = self.replay_triggered
             wandb.finish()
 
     def log_iteration(self, iteration):

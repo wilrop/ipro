@@ -3,10 +3,10 @@ import time
 import numpy as np
 
 from sortedcontainers import SortedKeyList
-
+from copy import deepcopy
 from outer_loops.outer import OuterLoop
 from outer_loops.box import Box
-from utils.pareto import extreme_prune, strict_pareto_dominates
+from utils.pareto import extreme_prune, strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
 
 
 class Priol2D(OuterLoop):
@@ -44,6 +44,11 @@ class Priol2D(OuterLoop):
 
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
 
+    def reset(self):
+        """Reset the algorithm."""
+        self.box_queue = SortedKeyList([], key=lambda x: x.volume)
+        super().reset()
+
     def estimate_error(self):
         """Estimate the error of the algorithm."""
         if len(self.box_queue) == 0:
@@ -71,7 +76,7 @@ class Priol2D(OuterLoop):
 
         self.dominated_hv += Box(box.nadir, point).volume
         self.discarded_hv += Box(point, box.ideal).volume
-        return new_box1, new_box2
+        return [new_box1, new_box2]
 
     def update_box_queue(self, box, point):
         """Update the algorithm with a new point.
@@ -80,13 +85,9 @@ class Priol2D(OuterLoop):
             box (Box): The box that was searched.
             point (np.array): The new point.
         """
-        new_box1, new_box2 = self.split_box(box, point)
-
-        if new_box1.volume > self.tolerance:
-            self.box_queue.add(new_box1)
-
-        if new_box2.volume > self.tolerance:
-            self.box_queue.add(new_box2)
+        for box in self.split_box(box, point):
+            if box.volume > self.tolerance and pareto_dominates(box.ideal, box.nadir):
+                self.box_queue.add(box)
 
     def get_outer_points(self):
         """Get the outer points of the problem.
@@ -125,6 +126,57 @@ class Priol2D(OuterLoop):
         """Check if the algorithm is done."""
         return not self.box_queue or 1 - self.coverage <= self.tolerance or step > self.max_steps
 
+    def replay(self, vec, box_point_pairs):
+        replay_triggered = self.replay_triggered
+        self.reset()
+        self.replay_triggered = replay_triggered + 1
+        self.init_phase()
+        idx = 0
+        new_box_point_pairs = []
+
+        for box, point in box_point_pairs:  # Replay the points that were added correctly
+            self.box_queue.pop(-1)  # Remove the box.
+            idx += 1
+            if strict_pareto_dominates(vec, point):
+                self.update_found(box, vec)
+                new_box_point_pairs.append((box, vec))
+                break
+            elif strict_pareto_dominates(point, box.nadir):
+                self.update_found(box, point)
+            else:
+                self.update_not_found(box, point)
+            new_box_point_pairs.append((box, point))
+
+        for box, point in box_point_pairs[idx:]:  # Process the remaining points to see if we can still add them.
+            box_queue = deepcopy(self.box_queue)  # Avoid messing with the box_queue during processing.
+            if strict_pareto_dominates(point, box.nadir):
+                for box_id, open_box in reversed(list(enumerate(box_queue))):
+                    if strict_pareto_dominates(point, open_box.nadir):
+                        self.box_queue.pop(box_id)  # This is okay because we are working backwards.
+                        self.update_found(open_box, point)
+                        new_box_point_pairs.append((open_box, point))
+                        break
+            else:
+                for box_id, open_box in reversed(list(enumerate(box_queue))):
+                    if pareto_dominates(open_box.nadir, box.nadir):
+                        self.box_queue.pop(box_id)
+                        self.update_not_found(open_box, point)
+                        new_box_point_pairs.append((open_box, point))
+
+        return new_box_point_pairs
+
+    def update_found(self, box, vec):
+        """The update to perform when the Pareto oracle found a new Pareto dominant vector."""
+        self.update_box_queue(box, vec)
+        self.pf = np.vstack((self.pf, vec))
+
+    def update_not_found(self, box, vec):
+        """The update to perform when the Pareto oracle did not find a new Pareto dominant vector."""
+        self.discarded_hv += box.volume
+        self.completed = np.vstack((self.completed, np.copy(box.nadir)))
+        if strict_pareto_dominates(vec, self.nadir):
+            self.robust_points = np.vstack((self.robust_points, vec))
+
     def solve(self, callback=None):
         """Solve the problem.
 
@@ -136,6 +188,7 @@ class Priol2D(OuterLoop):
         self.init_phase()
         iteration = 0
         self.log_iteration(iteration)
+        box_point_pairs = []
 
         while not self.is_done(iteration):
             begin_loop = time.time()
@@ -147,13 +200,14 @@ class Priol2D(OuterLoop):
             vec = self.oracle.solve(referent, ideal, warm_start=self.warm_start)
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
-                self.update_box_queue(box, vec)
-                self.pf = np.vstack((self.pf, vec))
+                if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
+                    box_point_pairs = self.replay(vec, box_point_pairs)
+                else:
+                    self.update_found(box, vec)
+                    box_point_pairs.append((box, vec))
             else:
-                self.discarded_hv += box.volume
-                self.completed = np.vstack((self.completed, referent))
-                if strict_pareto_dominates(vec, self.nadir):
-                    self.robust_points = np.vstack((self.robust_points, vec))
+                self.update_not_found(box, vec)
+                box_point_pairs.append((box, vec))
 
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
