@@ -6,7 +6,7 @@ outer_loop: PRIOL
 tolerance: 0.0001
 oracle: MO-A2C
 gamma: 0.99
-study_name: a2c_minecart
+study_name: a2c_reacher
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null

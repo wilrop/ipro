@@ -6,7 +6,7 @@ outer_loop: PRIOL
 tolerance: 0.0001
 oracle: MO-PPO
 gamma: 0.99
-study_name: ppo_minecart
+study_name: ppo_reacher
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null

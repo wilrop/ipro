@@ -6,7 +6,7 @@ outer_loop: PRIOL
 tolerance: 0.0001
 oracle: MO-DQN
 gamma: 0.99
-study_name: dqn_minecart
+study_name: dqn_reacher
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null
