@@ -181,6 +181,7 @@ def search(
                              num_objectives,
                              oracle,
                              linear_solver,
+                             ref_point=parameters.get('ref_point'),
                              track=parameters['track'],
                              exp_name=run_name,
                              wandb_project_name=parameters['wandb_project_name'],
