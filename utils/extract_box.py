@@ -4,25 +4,23 @@ import numpy as np
 
 def extract_box_from_df(df):
     corner_idcs = df.idxmax()
-
-    for idx in corner_idcs:
-        print(f'Pareto point: {df.iloc[idx].to_numpy()}')
-
-    print(f'Nadir: {df.min().to_numpy()}')
+    corner_vecs = df.iloc[corner_idcs].to_numpy()
+    nadir = df.min().to_numpy()
+    ideal = df.max().to_numpy()
+    return nadir, corner_vecs, ideal
 
 
 def extract_box_from_array(arr):
     corner_idcs = np.argmax(arr, axis=0)
-
-    for idx in corner_idcs:
-        print(f'Pareto point: {arr[idx]}')
-
-    print(f'Nadir: {arr.min(axis=0)}')
+    corner_vecs = arr[corner_idcs]
+    nadir = arr.min(axis=0)
+    ideal = arr.max(axis=0)
+    return nadir, corner_vecs, ideal
 
 
 if __name__ == '__main__':
-    # df = pd.read_csv('udrl.csv')
-    # extract_box_from_df(df)
+    df = pd.read_csv('udrl.csv')
+    extract_box_from_df(df)
     arr = np.array([np.array([0.55612687, 0.11092755, -0.65061296]), np.array([0.85192097, 0.16992796, -0.81650404]),
                     np.array([0.60293373, 0.12026385, -0.77743027]), np.array([0.92362357, 0.18423008, -0.94917702]),
                     np.array([0.40115733, 0.27441997, -0.67291286]), np.array([0.58274497, 0.39863875, -0.83521908]),
