@@ -1,6 +1,8 @@
 import json
 import numpy as np
 import pygmo as pg
+import pandas as pd
+from extract_box import extract_box_from_array
 
 
 def extract_front_from_json(file_name):
@@ -21,6 +23,39 @@ def extract_front_from_json(file_name):
             iter_point = int(key.split('_')[-1])
             front[iter_point] = value
     return front
+
+
+def extract_front_from_csv(file_name):
+    """Extract the Pareto front from a file name.
+
+    Args:
+        file_name (str): The file to load the results from.
+
+    Returns:
+        Dict: A dictionary with the point found for each iteration.
+    """
+    df = pd.read_csv(file_name)
+    df = df.to_dict(orient="index")
+    df = {int(key): np.array(list(value.values())) for key, value in df.items()}
+    return df
+
+
+def reacher_fronts():
+    """Compute the Pareto front for mo-reacher."""
+    front = extract_front_from_csv("gdpi_reacher.csv")
+    front_vecs = np.array(list(front.values()))
+    nadir, corner_vecs, ideal = extract_box_from_array(front_vecs)
+    box_corners = np.array([[40, -50, -50, -50],
+                            [-50, 40, -50, -50],
+                            [-50, -50, 40, -50],
+                            [-50, -50, -50, 40]])
+    ref_point = np.array([-50, -50, -50, -50])  # Used by morl-baselines.
+
+    hv_true = pg.hypervolume(-front_vecs).compute(-ref_point)
+
+    print("Reacher")
+    print(f"True HV: {hv_true}")
+    print("----------")
 
 
 def minecart_fronts():
@@ -67,3 +102,4 @@ def dst_fronts():
 if __name__ == '__main__':
     minecart_fronts()
     dst_fronts()
+    reacher_fronts()
