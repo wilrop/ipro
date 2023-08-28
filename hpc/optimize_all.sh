@@ -20,7 +20,7 @@ module load tensorboard/2.10.0-foss-2022a
 module load wandb/0.13.4-GCCcore-11.3.0
 
 pip install --user gymnasium
-pip install --user mo-gymnasium
+pip install --user "mo-gymnasium[mujoco]"
 pip install --user highway-env
 
 export OMP_NUM_THREADS=1
