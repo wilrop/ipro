@@ -80,7 +80,7 @@ class Priol(OuterLoop):
         ideal = ideal + self.offset
         self.nadir = np.copy(nadir)
         self.ideal = np.copy(ideal)
-        self.ref_point = np.copy(nadir) if self.ref_point is None else self.ref_point
+        self.ref_point = np.copy(nadir) if self.ref_point is None else np.array(self.ref_point)
         self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
         if len(self.pf) == 1:  # If the Pareto front is the ideal.

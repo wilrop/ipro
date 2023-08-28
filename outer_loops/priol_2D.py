@@ -107,7 +107,7 @@ class Priol2D(OuterLoop):
         outer_points = self.get_outer_points()
         self.nadir = np.min(outer_points, axis=0) - self.offset
         self.ideal = np.max(outer_points, axis=0) + self.offset
-        self.ref_point = np.copy(self.nadir) if self.ref_point is None else self.ref_point
+        self.ref_point = np.copy(self.nadir) if self.ref_point is None else np.array(self.ref_point)
         self.bounding_box = Box(self.nadir, self.ideal)
         self.pf = np.vstack((self.pf, outer_points))
         self.box_queue.add(self.bounding_box)
