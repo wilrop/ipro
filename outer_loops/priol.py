@@ -214,12 +214,13 @@ class Priol(OuterLoop):
 
         for ref, point in ref_point_pairs:  # Replay the points that were added correctly
             idx += 1
-            if strict_pareto_dominates(vec, point):
-                self.update_found(vec)
-                new_ref_point_pairs.append((ref, vec))
-                break
-            elif strict_pareto_dominates(point, ref):
-                self.update_found(point)
+            if strict_pareto_dominates(point, ref):
+                if strict_pareto_dominates(vec, point):
+                    self.update_found(vec)
+                    new_ref_point_pairs.append((ref, vec))
+                    break
+                else:
+                    self.update_found(point)
             else:
                 self.update_not_found(ref, point)
             new_ref_point_pairs.append((ref, point))
