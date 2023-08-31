@@ -308,12 +308,5 @@ class Priol(OuterLoop):
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
-        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
-        self.log_iteration(iteration + 1)
-
-        print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
-
-        self.close_wandb()
+        self.finish(start, iteration)
         return self.pf

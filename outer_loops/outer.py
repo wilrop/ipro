@@ -1,6 +1,8 @@
+import time
 import wandb
 import numpy as np
 import pygmo as pg
+from utils.pareto import extreme_prune
 
 
 class OuterLoop:
@@ -69,6 +71,17 @@ class OuterLoop:
         self.coverage = 0
         self.error = np.inf
         self.replay_triggered = 0
+
+    def finish(self, start_time, iteration):
+        """Finish the algorithm."""
+        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
+        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.log_iteration(iteration + 1)
+
+        print(f'Algorithm finished in {time.time() - start_time:.2f} seconds.')
+
+        self.close_wandb()
 
     def config(self):
         """Get the config of the algorithm."""

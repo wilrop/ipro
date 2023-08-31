@@ -6,7 +6,7 @@ from sortedcontainers import SortedKeyList
 from copy import deepcopy
 from outer_loops.outer import OuterLoop
 from outer_loops.box import Box
-from utils.pareto import extreme_prune, strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
+from utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
 
 
 class Priol2D(OuterLoop):
@@ -221,12 +221,5 @@ class Priol2D(OuterLoop):
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
             print('---------------------')
 
-        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
-        self.log_iteration(iteration + 1)
-
-        print(f'Algorithm finished in {time.time() - start:.2f} seconds.')
-
-        self.close_wandb()
+        self.finish(start, iteration)
         return self.pf
