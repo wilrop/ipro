@@ -137,15 +137,22 @@ class Priol2D(OuterLoop):
         for box, point in box_point_pairs:  # Replay the points that were added correctly
             self.box_queue.pop(-1)  # Remove the box.
             idx += 1
-            if strict_pareto_dominates(vec, box.nadir) and strict_pareto_dominates(vec, point):
-                self.update_found(box, vec)
-                new_box_point_pairs.append((box, vec))
-                break
-            elif strict_pareto_dominates(point, box.nadir):
-                self.update_found(box, point)
+            if strict_pareto_dominates(point, box.nadir):
+                if strict_pareto_dominates(vec, point):
+                    self.update_found(box, vec)
+                    new_box_point_pairs.append((box, vec))
+                    break
+                else:
+                    self.update_found(box, point)
+                    new_box_point_pairs.append((box, point))
             else:
-                self.update_not_found(box, point)
-            new_box_point_pairs.append((box, point))
+                if strict_pareto_dominates(vec, box.nadir):
+                    self.update_found(box, vec)
+                    new_box_point_pairs.append((box, vec))
+                    break
+                else:
+                    self.update_not_found(box, point)
+                    new_box_point_pairs.append((box, point))
 
         for box, point in box_point_pairs[idx:]:  # Process the remaining points to see if we can still add them.
             box_queue = deepcopy(self.box_queue)  # Avoid messing with the box_queue during processing.

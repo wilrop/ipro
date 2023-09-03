@@ -214,15 +214,22 @@ class Priol(OuterLoop):
 
         for ref, point in ref_point_pairs:  # Replay the points that were added correctly
             idx += 1
-            if strict_pareto_dominates(vec, ref) and strict_pareto_dominates(vec, point):
-                self.update_found(vec)
-                new_ref_point_pairs.append((ref, vec))
-                break
-            elif strict_pareto_dominates(point, ref):
-                self.update_found(point)
+            if strict_pareto_dominates(point, ref):
+                if strict_pareto_dominates(vec, point):
+                    self.update_found(vec)
+                    new_ref_point_pairs.append((ref, vec))
+                    break
+                else:
+                    self.update_found(point)
+                    new_ref_point_pairs.append((ref, point))
             else:
-                self.update_not_found(ref, point)
-            new_ref_point_pairs.append((ref, point))
+                if strict_pareto_dominates(vec, ref):
+                    self.update_found(vec)
+                    new_ref_point_pairs.append((ref, vec))
+                    break
+                else:
+                    self.update_not_found(ref, point)
+                    new_ref_point_pairs.append((ref, point))
 
         for ref, point in ref_point_pairs[idx:]:  # Process the remaining points to see if we can still add them.
             lower_points = np.copy(self.lower_points)  # Avoids messing with lower points while iterating over them.
