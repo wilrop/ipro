@@ -8,7 +8,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/output-%A.out
 #SBATCH --error=logs/err-%A.err
-#SBATCH --array=1-100
+#SBATCH --array=1-200
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
