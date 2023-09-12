@@ -57,22 +57,5 @@ hyperparameters:
     type: categorical
     choices: [ 32, 64 ]
   per:
-    type: categorical
-    choices: [ True, False ]
-  conditionals:
-    - vars: [ per ]
-      cond: per
-      if_cond:
-        alpha_per:
-          type: categorical
-          choices: [ 0.6, 0.8, 1. ]
-        min_priority:
-          type: constant
-          value: 0.001
-      else:
-        alpha_per:
-          type: constant
-          value: 0.6
-        min_priority:
-          type: constant
-          value: 0.001
+    type: constant
+    value: False
