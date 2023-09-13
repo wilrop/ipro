@@ -43,7 +43,6 @@ class DRLOracle:
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
         self.iteration = 0
-        self.expected_returns = {}
 
         self.window_size = window_size
         self.episodic_returns = deque(maxlen=window_size)
@@ -76,7 +75,6 @@ class DRLOracle:
 
     def reset_stats(self):
         """Reset the agent's statistics."""
-        self.expected_returns = {}
         self.episodic_returns.clear()
         self.episodic_lengths.clear()
 
@@ -195,56 +193,62 @@ class DRLOracle:
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
-    def log_episode_stats(self, episodic_return, episodic_length, global_step):
-        self.episodic_returns.append(episodic_return)
-        self.episodic_lengths.append(episodic_length)
-
+    def get_episode_stats(self, global_step):
+        """Get the episode statistics."""
         curr_exp_ret = np.mean(self.episodic_returns, axis=0)
-        self.expected_returns[global_step] = curr_exp_ret
         with torch.no_grad():
             utility = self.u_func(torch.tensor(curr_exp_ret, dtype=torch.float))
         episodic_length = np.mean(self.episodic_lengths)
+        return {
+            f'charts/utility_{self.iteration}': utility,
+            f'charts/episodic_length_{self.iteration}': episodic_length,
+            f'global_step_{self.iteration}': global_step,
+        }
 
-        if self.track:
-            log_dict = {
-                f'charts/utility_{self.iteration}': utility,
-                f'charts/episodic_length_{self.iteration}': episodic_length,
-                f'global_step_{self.iteration}': global_step,
-            }
-            try:
-                wandb.log(log_dict)
-            except Exception as e:
-                print(e)
-                print(log_dict)
+    def save_episode_stats(self, episodic_return, episodic_length):
+        """Save the episodic statistics for a single environment."""
+        self.episodic_returns.append(episodic_return)
+        self.episodic_lengths.append(episodic_length)
 
-        return np.std(self.episodic_returns, axis=0)
-
-    def log_vectorized_episodic_stats(self, info, dones, global_step):
+    def save_vectorized_episodic_stats(self, info, dones):
+        """Save the episodic statistics for vectorized environments."""
         for k, v in info.items():
             if k == "episode":
                 episodic_returns = v["r"]
                 episodic_lengths = v["l"]
                 for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
                     if done:
-                        self.log_episode_stats(episodic_return, episodic_length, global_step)
+                        self.save_episode_stats(episodic_return, episodic_length)
 
-    def log_pg_stats(self, global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm):
-        """Log the policy gradient loss, value loss, entropy loss, and gradient norms."""
+    def log_pg(self, global_step, loss, pg_l, v_l, e_l):
+        """Log the loss and episode statistics for PPO and A2C."""""
+        log_dict = {
+            f'losses/loss_{self.iteration}': loss,
+            f'losses/policy_gradient_loss_{self.iteration}': pg_l,
+            f'losses/value_loss_{self.iteration}': v_l,
+            f'losses/entropy_loss_{self.iteration}': e_l,
+            **self.get_episode_stats(global_step),
+        }
+        self.log_wandb(log_dict)
+
+    def log_dqn(self, global_step, loss):
+        """Log the loss and episode statistics for DQN."""
+        log_dict = {
+            f'losses/loss_{self.iteration}': loss,
+            **self.get_episode_stats(global_step),
+        }
+        self.log_wandb(log_dict)
+
+    def log_wandb(self, log_dict):
+        """Log a dictionary to wandb."""
         if self.track:
-            log_dict = {
-                    f'losses/loss_{self.iteration}': loss,
-                    f'losses/policy_gradient_loss_{self.iteration}': pg_l,
-                    f'losses/value_loss_{self.iteration}': v_l,
-                    f'losses/entropy_loss_{self.iteration}': e_l,
-                    f'losses/actor_grad_norm_{self.iteration}': a_gnorm,
-                    f'losses/critic_grad_norm_{self.iteration}': c_gnorm,
-                    f'global_step_{self.iteration}': global_step,
-                }
             try:
                 wandb.log(log_dict)
             except Exception as e:
                 print(e)
                 print(log_dict)
+        else:
+            print(log_dict)
 
     def get_closest_referent(self, referent):
         """Get the processed referent closest to the given referent.

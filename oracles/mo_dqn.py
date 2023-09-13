@@ -318,7 +318,7 @@ class MODQN(DRLOracle):
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                self.log_episode_stats(accrued_reward, timestep, global_step)
+                self.save_episode_stats(accrued_reward, timestep)
                 raw_obs, _ = self.env.reset()
                 accrued_reward = np.zeros(self.num_objectives)
                 obs = self.format_obs(raw_obs)
@@ -328,16 +328,8 @@ class MODQN(DRLOracle):
             if global_step > self.learning_start:
                 if global_step % self.train_freq == 0:
                     loss = self.train_network()
-                if self.track and global_step % self.log_freq == 0:
-                    log_dict = {
-                        f'losses/loss_{self.iteration}': loss,
-                        f'global_step_{self.iteration}': global_step,
-                    }
-                    try:
-                        wandb.log(log_dict)
-                    except Exception as e:
-                        print(e)
-                        print(log_dict)
+                if global_step % self.log_freq == 0:
+                    self.log_dqn(global_step, loss)
                 if global_step % self.target_update_freq == 0:
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)

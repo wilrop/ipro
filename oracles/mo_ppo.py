@@ -265,8 +265,6 @@ class MOPPO(DRLOracle):
                 self.actor_optimizer.zero_grad()
                 self.critic_optimizer.zero_grad()
                 loss.backward()
-                a_gnorm = self._compute_grad_norm(self.actor)
-                c_gnorm = self._compute_grad_norm(self.critic)
                 nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.actor_optimizer.step()
@@ -278,7 +276,7 @@ class MOPPO(DRLOracle):
                 if approx_kl > self.target_kl:
                     break
 
-        return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
+        return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item()
 
     def select_action(self, aug_obs, acs):
         """Select an action from the policy.
@@ -320,12 +318,6 @@ class MOPPO(DRLOracle):
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
         timesteps = torch.zeros((self.num_envs, 1))
-        loss = 0
-        pg_l = 0
-        v_l = 0
-        e_l = 0
-        a_gnorm = 0
-        c_gnorm = 0
         steps_since_log = 0
 
         for update in range(self.num_updates):
@@ -353,14 +345,14 @@ class MOPPO(DRLOracle):
                 aug_obs = aug_next_obs
                 timesteps = (timesteps + 1) * (1 - dones)
 
-                self.log_vectorized_episodic_stats(info, dones, global_step)
+                self.save_vectorized_episodic_stats(info, dones)
 
                 global_step += self.num_envs  # The global step is 1 * the number of environments.
                 steps_since_log += self.num_envs
 
-            loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
+            loss, pg_l, v_l, e_l = self.update_policy()
             if steps_since_log - self.log_freq >= 0:
-                self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
+                self.log_pg(global_step, loss, pg_l, v_l, e_l)
                 steps_since_log = 0
             self.rollout_buffer.reset()
 

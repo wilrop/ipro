@@ -192,14 +192,12 @@ class MOA2C(DRLOracle):
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
         loss.backward()
-        a_gnorm = self._compute_grad_norm(self.actor)
-        c_gnorm = self._compute_grad_norm(self.critic)
         nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
         nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
         self.critic_optimizer.step()
         self.actor_optimizer.step()
 
-        return loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item(), a_gnorm, c_gnorm
+        return loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item()
 
     def reset_env(self):
         """Reset the environment.
@@ -250,8 +248,6 @@ class MOA2C(DRLOracle):
         pg_l = 0
         v_l = 0
         e_l = 0
-        a_gnorm = 0
-        c_gnorm = 0
 
         for global_step in range(self.global_steps):
             if global_step % self.log_freq == 0:
@@ -267,17 +263,17 @@ class MOA2C(DRLOracle):
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
 
             if (global_step + 1) % self.n_steps == 0:
-                loss, pg_l, v_l, e_l, a_gnorm, c_gnorm = self.update_policy()
+                loss, pg_l, v_l, e_l = self.update_policy()
                 self.rollout_buffer.reset()
 
             if (global_step + 1) % self.log_freq == 0:
-                self.log_pg_stats(global_step, loss, pg_l, v_l, e_l, a_gnorm, c_gnorm)
+                self.log_pg(global_step, loss, pg_l, v_l, e_l)
 
             aug_obs = aug_next_obs
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                self.log_episode_stats(accrued_reward, timestep, global_step)
+                self.save_episode_stats(accrued_reward, timestep)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
     def load_model(self, referent, load_actor=False, load_critic=True):
