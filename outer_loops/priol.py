@@ -44,7 +44,6 @@ class Priol(OuterLoop):
         self.upper_points = []
 
         self.rng = rng if rng is not None else np.random.default_rng(seed)
-        self.tolerance = 0.001
 
     def reset(self):
         """Reset the algorithm."""
