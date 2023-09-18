@@ -222,10 +222,14 @@ if __name__ == '__main__':
     parser.add_argument('--report_intermediate', default=False, action='store_true')
     parser.add_argument('--log_dir', type=str, default='./')
     parser.add_argument('--delete_local', default=False, action='store_true')
+    parser.add_argument('--overwrite_seed', type=int, default=None, help='overwrite the seed in the yaml file')
     args = parser.parse_args()
 
     with open(args.params, 'r') as file:
         parameters = yaml.safe_load(file)
+
+    if args.overwrite_seed is not None:
+        parameters['seed'] = args.overwrite_seed
 
     search(parameters,
            study_name=parameters.get('study_name', 'IPRO_study'),
