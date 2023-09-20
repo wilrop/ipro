@@ -294,7 +294,7 @@ class MODQN(DRLOracle):
     def train(self):
         """Train MODQN on the given environment."""
         raw_obs, _ = self.env.reset()
-        obs = self.format_obs(raw_obs)
+        obs = self.format_obs(np.nan_to_num(raw_obs))
         timestep = 0
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = np.hstack((obs, accrued_reward))
@@ -309,7 +309,7 @@ class MODQN(DRLOracle):
                 action = self.select_action(torch.tensor(aug_obs, dtype=torch.float), accrued_reward, epsilon=epsilon)
 
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_obs = self.format_obs(next_raw_obs)
+            next_obs = self.format_obs(np.nan_to_num(next_raw_obs))
             next_accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
             aug_next_obs = np.hstack((next_obs, next_accrued_reward))
             self.add_to_buffer(aug_obs, accrued_reward, action, reward, aug_next_obs, terminated, timestep)
@@ -321,7 +321,7 @@ class MODQN(DRLOracle):
                 self.save_episode_stats(accrued_reward, timestep)
                 raw_obs, _ = self.env.reset()
                 accrued_reward = np.zeros(self.num_objectives)
-                obs = self.format_obs(raw_obs)
+                obs = self.format_obs(np.nan_to_num(raw_obs))
                 aug_obs = np.hstack((obs, accrued_reward))
                 timestep = 0
 
