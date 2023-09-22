@@ -38,4 +38,5 @@ sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
 python3 ${EXPERIMENT_DIR}/run_experiments.py \
-  --exp_id ${SLURM_ARRAY_TASK_ID}
+  --exp_id ${SLURM_ARRAY_TASK_ID} \
+  --exp_dir ${EXPERIMENT_DIR}

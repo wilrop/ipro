@@ -35,8 +35,8 @@ def get_env_info(env_id):
     return outer, nadirs, ideals, ref_point, max_episode_steps, tolerance
 
 
-def load_parameters(params_file):
-    with open(f'hyperparams/{params_file}', "r") as f:
+def load_parameters(exp_dir, params_file):
+    with open(f'{exp_dir}/hyperparams/{params_file}', "r") as f:
         parameters = json.load(f)
     for key, value in parameters.items():
         parameters[key] = value['value']
@@ -53,8 +53,8 @@ def load_parameters(params_file):
     return parameters
 
 
-def run_experiment(exp_id):
-    params_file, seed = json.load(open('hyperparams/experiments.json', 'r'))[str(exp_id)]
+def run_experiment(exp_id, exp_dir):
+    params_file, seed = json.load(open(f'{exp_dir}/hyperparams/experiments.json', 'r'))[str(exp_id)]
 
     splitted_params_file = params_file.split('.')[0].split('_')
     exp_name = '_'.join(splitted_params_file[:2])
@@ -65,7 +65,7 @@ def run_experiment(exp_id):
     else:
         oracle_name = 'MO-DQN'
     arg_idx = splitted_params_file[2]
-    parameters = load_parameters(params_file)
+    parameters = load_parameters(exp_dir, params_file)
     torch.manual_seed(seed)
 
     env_id = parameters.pop('env_id')
@@ -106,6 +106,7 @@ def run_experiment(exp_id):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run experiments from JSON files.')
     parser.add_argument('--exp_id', type=str, default=1)
+    parser.add_argument('--exp_dir', type=str)
     args = parser.parse_args()
 
-    run_experiment(args.exp_id)
+    run_experiment(args.exp_id, args.exp_dir)
