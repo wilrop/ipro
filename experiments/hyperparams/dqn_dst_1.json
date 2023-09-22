@@ -1,0 +1,1159 @@
+ {
+    "lr": {
+        "desc": null,
+        "value": 0.0003
+    },
+    "aug": {
+        "desc": null,
+        "value": 0
+    },
+    "per": {
+        "desc": null,
+        "value": false
+    },
+    "tau": {
+        "desc": null,
+        "value": 0.1
+    },
+    "seed": {
+        "desc": null,
+        "value": 1
+    },
+    "gamma": {
+        "desc": null,
+        "value": 1
+    },
+    "scale": {
+        "desc": null,
+        "value": 10
+    },
+    "track": {
+        "desc": null,
+        "value": true
+    },
+    "_wandb": {
+        "desc": null,
+        "value": {
+            "m": [
+                {
+                    "1": "iteration",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "outer/hypervolume",
+                    "5": 1,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "outer/dominated_hv",
+                    "5": 1,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "outer/discarded_hv",
+                    "5": 1,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "outer/coverage",
+                    "5": 1,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "outer/error",
+                    "5": 1,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_0",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_0",
+                    "5": 7,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_0",
+                    "5": 7,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_0",
+                    "5": 7,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_0",
+                    "5": 7,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_1",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_1",
+                    "5": 12,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_1",
+                    "5": 12,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_1",
+                    "5": 12,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_1",
+                    "5": 12,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_2",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_2",
+                    "5": 17,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_2",
+                    "5": 17,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_2",
+                    "5": 17,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_2",
+                    "5": 17,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_3",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_3",
+                    "5": 22,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_3",
+                    "5": 22,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_3",
+                    "5": 22,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_3",
+                    "5": 22,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_4",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_4",
+                    "5": 27,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_4",
+                    "5": 27,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_4",
+                    "5": 27,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_4",
+                    "5": 27,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_5",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_5",
+                    "5": 32,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_5",
+                    "5": 32,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_5",
+                    "5": 32,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_5",
+                    "5": 32,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_6",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_6",
+                    "5": 37,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_6",
+                    "5": 37,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_6",
+                    "5": 37,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_6",
+                    "5": 37,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_7",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_7",
+                    "5": 42,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_7",
+                    "5": 42,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_7",
+                    "5": 42,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_7",
+                    "5": 42,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_8",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_8",
+                    "5": 47,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_8",
+                    "5": 47,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_8",
+                    "5": 47,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_8",
+                    "5": 47,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_9",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_9",
+                    "5": 52,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_9",
+                    "5": 52,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_9",
+                    "5": 52,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_9",
+                    "5": 52,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_10",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_10",
+                    "5": 57,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_10",
+                    "5": 57,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_10",
+                    "5": 57,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_10",
+                    "5": 57,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_11",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_11",
+                    "5": 62,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_11",
+                    "5": 62,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_11",
+                    "5": 62,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_11",
+                    "5": 62,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_12",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_12",
+                    "5": 67,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_12",
+                    "5": 67,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_12",
+                    "5": 67,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_12",
+                    "5": 67,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_13",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_13",
+                    "5": 72,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_13",
+                    "5": 72,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_13",
+                    "5": 72,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_13",
+                    "5": 72,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_14",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_14",
+                    "5": 77,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_14",
+                    "5": 77,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_14",
+                    "5": 77,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_14",
+                    "5": 77,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_15",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_15",
+                    "5": 82,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_15",
+                    "5": 82,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_15",
+                    "5": 82,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_15",
+                    "5": 82,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_16",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_16",
+                    "5": 87,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_16",
+                    "5": 87,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_16",
+                    "5": 87,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_16",
+                    "5": 87,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_17",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_17",
+                    "5": 92,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_17",
+                    "5": 92,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_17",
+                    "5": 92,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_17",
+                    "5": 92,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_18",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_18",
+                    "5": 97,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_18",
+                    "5": 97,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_18",
+                    "5": 97,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_18",
+                    "5": 97,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_19",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_19",
+                    "5": 102,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_19",
+                    "5": 102,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_19",
+                    "5": 102,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_19",
+                    "5": 102,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_20",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_20",
+                    "5": 107,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_20",
+                    "5": 107,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_20",
+                    "5": 107,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_20",
+                    "5": 107,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_21",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_21",
+                    "5": 112,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_21",
+                    "5": 112,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_21",
+                    "5": 112,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_21",
+                    "5": 112,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_22",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_22",
+                    "5": 117,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_22",
+                    "5": 117,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_22",
+                    "5": 117,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_22",
+                    "5": 117,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_23",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_23",
+                    "5": 122,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_23",
+                    "5": 122,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_23",
+                    "5": 122,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_23",
+                    "5": 122,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "global_step_24",
+                    "6": [
+                        3
+                    ]
+                },
+                {
+                    "1": "losses/loss_24",
+                    "5": 127,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/utility_24",
+                    "5": 127,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/episodic_length_24",
+                    "5": 127,
+                    "6": [
+                        1,
+                        3
+                    ]
+                },
+                {
+                    "1": "charts/distance_24",
+                    "5": 127,
+                    "6": [
+                        1,
+                        3
+                    ]
+                }
+            ],
+            "t": {
+                "1": [
+                    1,
+                    35,
+                    55
+                ],
+                "2": [
+                    1,
+                    35,
+                    55
+                ],
+                "3": [
+                    2,
+                    4,
+                    7,
+                    13,
+                    16,
+                    23
+                ],
+                "4": "3.10.4",
+                "5": "0.13.4",
+                "8": [
+                    5
+                ]
+            },
+            "framework": "torch",
+            "start_time": 1695149242.788609,
+            "cli_version": "0.13.4",
+            "is_jupyter_run": false,
+            "python_version": "3.10.4",
+            "is_kaggle_kernel": false
+        }
+    },
+    "env_id": {
+        "desc": null,
+        "value": "deep-sea-treasure-concave-v0"
+    },
+    "method": {
+        "desc": null,
+        "value": "priol_2D"
+    },
+    "one_hot": {
+        "desc": null,
+        "value": true
+    },
+    "log_freq": {
+        "desc": null,
+        "value": 500
+    },
+    "alpha_per": {
+        "desc": null,
+        "value": 0.6
+    },
+    "max_steps": {
+        "desc": null,
+        "value": null
+    },
+    "tolerance": {
+        "desc": null,
+        "value": 0
+    },
+    "batch_size": {
+        "desc": null,
+        "value": 32
+    },
+    "dimensions": {
+        "desc": null,
+        "value": 2
+    },
+    "train_freq": {
+        "desc": null,
+        "value": 1
+    },
+    "warm_start": {
+        "desc": null,
+        "value": false
+    },
+    "buffer_size": {
+        "desc": null,
+        "value": 50000
+    },
+    "epsilon_end": {
+        "desc": null,
+        "value": 0.05
+    },
+    "global_steps": {
+        "desc": null,
+        "value": 70000
+    },
+    "min_priority": {
+        "desc": null,
+        "value": 0.001
+    },
+    "epsilon_start": {
+        "desc": null,
+        "value": 1
+    },
+    "eval_episodes": {
+        "desc": null,
+        "value": 1
+    },
+    "hidden_layers": {
+        "desc": null,
+        "value": [
+            64,
+            64
+        ]
+    },
+    "gradient_steps": {
+        "desc": null,
+        "value": 1
+    },
+    "learning_start": {
+        "desc": null,
+        "value": 5000
+    },
+    "exploration_frac": {
+        "desc": null,
+        "value": 0.3
+    },
+    "target_update_freq": {
+        "desc": null,
+        "value": 1
+    }
+}
