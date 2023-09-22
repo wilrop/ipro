@@ -164,5 +164,5 @@ wandb/
 opt/
 studies/
 
-*.json
+utils/*.json
 *.csv
