@@ -206,7 +206,7 @@ class MOA2C(DRLOracle):
             Tuple: The initial observation, accrued reward, augmented observation and timestep.
         """
         raw_obs, _ = self.env.reset()
-        obs = self.format_obs(np.nan_to_num(raw_obs))
+        obs = self.format_obs(np.nan_to_num(raw_obs, posinf=0))
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)  # Create the augmented state.
         timestep = 0
@@ -257,7 +257,7 @@ class MOA2C(DRLOracle):
                 action = self.select_action(aug_obs, accrued_reward)
 
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_obs = self.format_obs(np.nan_to_num(next_raw_obs))
+            next_obs = self.format_obs(np.nan_to_num(next_raw_obs, posinf=0))
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
