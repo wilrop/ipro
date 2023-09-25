@@ -24,8 +24,8 @@ def get_env_info(env_id):
         max_episode_steps = 50
         outer = "PRIOL"
     elif env_id == 'minecart-v0':
-        nadirs = np.array([[0., 0., -3.1199985], [0., 0., -3.1199985], [0., 0., -3.1199985]])
-        ideals = np.array([[1.5, 0., -0.95999986], [0., 1.5, -0.95999986], [0., 0., -0.24923698]])
+        nadirs = np.array([[-1, -1, -200], [-1, -1, -200], [-1, -1, -200]])
+        ideals = np.array([[1.5, -1, -200], [-1, 1.5, -200], [-1, -1, 0]])
         ref_point = np.array([-1, -1, -200])
         max_episode_steps = 1000
         outer = "PRIOL"
