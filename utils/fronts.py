@@ -40,6 +40,11 @@ def extract_front_from_csv(file_name):
     return df
 
 
+def extract_front_from_wandb_csv(file_name):
+    df = pd.read_csv(file_name)
+    return df
+
+
 def reacher_fronts():
     """Compute the Pareto front for mo-reacher."""
     front = extract_front_from_csv("gdpi_reacher.csv")
@@ -60,7 +65,7 @@ def reacher_fronts():
 
 def minecart_fronts():
     """Compute the Pareto fronts for minecart."""
-    ideals = np.array([[1.5, 0., -0.95999986], [0., 1.5, -0.95999986], [0., 0., -0.24923698]])
+    ideals = np.array([[1.5, -1, -200], [-1, 1.5, -200], [-1, -1, 0]])
     correct_vecs = np.array(
         [np.array([0.55612687, 0.11092755, -0.65061296]), np.array([0.85192097, 0.16992796, -0.81650404]),
          np.array([0.60293373, 0.12026385, -0.77743027]), np.array([0.92362357, 0.18423008, -0.94917702]),
@@ -73,18 +78,32 @@ def minecart_fronts():
          np.array([0.16992796, 0.85192097, -0.81650404]), np.array([0.12026385, 0.60293373, -0.77743027]),
          np.array([0.18423008, 0.92362357, -0.94917702]), np.array([0., 0., -0.24923698])])
 
-    nadir = np.array([0., 0., -3.1199985]) - 1
-    computed_front = extract_front_from_json("minecart.json")
-    computed_vecs = np.array(list(computed_front.values()))
-    correct_vecs = np.vstack((correct_vecs, ideals))
-    computed_vecs = np.vstack((computed_vecs, ideals))
-
-    hv_true = pg.hypervolume(-correct_vecs).compute(-nadir)
-    hv_computed = pg.hypervolume(-computed_vecs).compute(-nadir)
+    ref_point = np.array([-1, -1, -200])
+    pf = np.vstack((correct_vecs, ideals))
+    hv_true = pg.hypervolume(-pf).compute(-ref_point)
 
     print("Minecart")
     print(f"True HV: {hv_true}")
-    print(f"Computed HV: {hv_computed}")
+    print("----------")
+
+
+def minecart_fronts_baseline(alg):
+    """Compute the Pareto front in minecart for a baseline algorithm."""
+    ref_point = np.array([-1, -1, -200])
+    ideals = np.array([[1.5, 0., -0.95999986], [0., 1.5, -0.95999986], [0., 0., -0.24923698]])
+
+    hypervolumes = []
+    for i in range(5):
+        correct_vecs = extract_front_from_wandb_csv(f"{alg}/minecart{i + 1}.csv")
+        pf = np.vstack((correct_vecs, ideals))
+        hv = pg.hypervolume(-pf).compute(-ref_point)
+        hypervolumes.append(hv)
+    hv_mean = np.mean(hypervolumes)
+    print(hypervolumes)
+    hv_std = np.std(hypervolumes)
+
+    print("Minecart")
+    print(f"{alg} HV: {hv_mean} +/- {hv_std}")
     print("----------")
 
 
@@ -100,6 +119,5 @@ def dst_fronts():
 
 
 if __name__ == '__main__':
+    # minecart_fronts_baseline('pcn')
     minecart_fronts()
-    dst_fronts()
-    reacher_fronts()
