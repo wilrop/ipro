@@ -1,4 +1,5 @@
 import logging
+import random
 import os
 import shutil
 import sys
@@ -6,6 +7,7 @@ import yaml
 import time
 import argparse
 import optuna
+import torch
 import numpy as np
 
 from optuna._callbacks import RetryFailedTrialCallback
@@ -167,6 +169,11 @@ def search(
                                                    max_episode_steps=max_episode_steps)
         else:
             env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
+
+        # Seeding
+        torch.manual_seed(args.seed)
+        np.random.seed(args.seed)
+        random.seed(args.seed)
 
         linear_solver = init_linear_solver('known_box', nadirs=nadirs, ideals=ideals)
         oracle = init_oracle(oracle_name,
