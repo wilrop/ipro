@@ -176,6 +176,7 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
                              linear_solver,
                              ref_point=parameters.get('ref_point'),
                              track=parameters['track_outer'],
+                             max_iterations=parameters['max_iterations'],
                              exp_name=run_name,
                              wandb_project_name=parameters['wandb_project_name'],
                              wandb_entity=parameters['wandb_entity'],

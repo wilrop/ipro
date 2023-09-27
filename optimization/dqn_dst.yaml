@@ -11,6 +11,7 @@ wandb_project_name: IPRO
 wandb_entity: null
 track_outer: True
 track_oracle: False
+max_iterations: null
 warm_start: False
 n_trials: 100
 max_episode_steps: 50

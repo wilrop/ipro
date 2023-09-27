@@ -15,7 +15,7 @@ class OuterLoop:
                  ref_point=None,
                  offset=1,
                  tolerance=1e-1,
-                 max_steps=None,
+                 max_iterations=None,
                  warm_start=False,
                  track=False,
                  exp_name=None,
@@ -30,7 +30,7 @@ class OuterLoop:
         self.ref_point = ref_point
         self.offset = offset
         self.tolerance = tolerance
-        self.max_steps = max_steps if max_steps is not None else np.inf
+        self.max_iterations = max_iterations if max_iterations is not None else np.inf
         self.warm_start = warm_start
 
         self.bounding_box = None
@@ -91,7 +91,7 @@ class OuterLoop:
             "dimensions": self.dim,
             "warm_start": self.warm_start,
             "tolerance": self.tolerance,
-            "max_steps": self.max_steps,
+            "max_iterations": self.max_iterations,
             "seed": self.seed,
         }
 

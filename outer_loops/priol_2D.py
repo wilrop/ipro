@@ -19,7 +19,7 @@ class Priol2D(OuterLoop):
                  ref_point=None,
                  offset=1,
                  tolerance=1e-6,
-                 max_steps=None,
+                 max_iterations=None,
                  warm_start=False,
                  track=False,
                  exp_name=None,
@@ -34,7 +34,7 @@ class Priol2D(OuterLoop):
                          ref_point=ref_point,
                          offset=offset,
                          tolerance=tolerance,
-                         max_steps=max_steps,
+                         max_iterations=max_iterations,
                          warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
@@ -124,7 +124,7 @@ class Priol2D(OuterLoop):
 
     def is_done(self, step):
         """Check if the algorithm is done."""
-        return not self.box_queue or 1 - self.coverage <= self.tolerance or step > self.max_steps
+        return not self.box_queue or 1 - self.coverage <= self.tolerance or step >= self.max_iterations
 
     def replay(self, vec, box_point_pairs):
         replay_triggered = self.replay_triggered

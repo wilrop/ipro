@@ -16,7 +16,7 @@ class Priol(OuterLoop):
                  ref_point=None,
                  offset=1,
                  tolerance=1e-1,
-                 max_steps=None,
+                 max_iterations=None,
                  warm_start=False,
                  track=False,
                  exp_name=None,
@@ -33,7 +33,7 @@ class Priol(OuterLoop):
                          ref_point=ref_point,
                          offset=offset,
                          tolerance=tolerance,
-                         max_steps=max_steps,
+                         max_iterations=max_iterations,
                          warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
@@ -188,7 +188,7 @@ class Priol(OuterLoop):
 
     def is_done(self, step):
         """Check if the algorithm is done."""
-        return 1 - self.coverage <= self.tolerance or step > self.max_steps
+        return 1 - self.coverage <= self.tolerance or step >= self.max_iterations
 
     def replay(self, vec, ref_point_pairs):
         """Replay the algorithm while accounting for the non-optimal Pareto oracle.
