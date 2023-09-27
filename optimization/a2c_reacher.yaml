@@ -10,7 +10,8 @@ study_name: a2c_reacher
 seed: 1
 wandb_project_name: IPRO
 wandb_entity: null
-track: True
+track_outer: True
+track_oracle: False
 warm_start: False
 n_trials: 100
 max_episode_steps: 50

@@ -1,13 +1,13 @@
 import logging
 import random
 import os
-import shutil
 import sys
 import yaml
 import time
 import argparse
 import optuna
 import torch
+
 import numpy as np
 
 from optuna._callbacks import RetryFailedTrialCallback
@@ -117,23 +117,9 @@ def suggest_hyperparameters(trial, parameters):
     return hyperparams
 
 
-def del_run_dir(run_id, log_dir):
-    wandb_path = os.path.join(log_dir, 'wandb')
-    dirs = os.listdir(wandb_path)
-    for run_dir in dirs:
-        if run_dir.endswith(run_id):
-            shutil.rmtree(os.path.join(wandb_path, run_dir))
-            break
+def search(parameters, study_name='study', n_trials=100, report_intermediate=True, log_dir='.', delete_local=False):
+    """Search for hyperparameters for the given configuration."""
 
-
-def search(
-        parameters,
-        study_name='study',
-        n_trials=100,
-        report_intermediate=True,
-        log_dir='.',
-        delete_local=False
-):
     def optimize_trial(trial):
         env_id = parameters['env_id']
         seed = parameters['seed']
@@ -179,7 +165,7 @@ def search(
         oracle = init_oracle(oracle_name,
                              env,
                              parameters['gamma'],
-                             track=parameters['track'],
+                             track=parameters['track_oracle'],
                              log_freq=parameters['log_freq'],
                              seed=seed,
                              **hyperparameters)
@@ -189,7 +175,7 @@ def search(
                              oracle,
                              linear_solver,
                              ref_point=parameters.get('ref_point'),
-                             track=parameters['track'],
+                             track=parameters['track_outer'],
                              exp_name=run_name,
                              wandb_project_name=parameters['wandb_project_name'],
                              wandb_entity=parameters['wandb_entity'],
@@ -206,11 +192,6 @@ def search(
         ol.solve(callback=callback)
 
         time.sleep(10)  # Sleep to allow wandb to sync.
-
-        if delete_local:
-            run_id = ol.run_id
-            del_run_dir(run_id, log_dir)
-
         return ol.dominated_hv
 
     if type(parameters['env_id']) == str:
