@@ -1,6 +1,4 @@
 env_id: deep-sea-treasure-concave-v0
-nadirs: [ [ 0 , 0 ], [ 124, -19 ] ]
-ideals: [ [ 124, -19 ], [ 0 , 0 ] ]
 outer_loop: 2D
 tolerance: 0.0
 oracle: MO-PPO
@@ -13,7 +11,7 @@ track_outer: True
 track_oracle: False
 max_iterations: null
 warm_start: False
-n_trials: 100
+n_trials: 10
 max_episode_steps: 50
 log_freq: 2000
 

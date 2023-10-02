@@ -63,6 +63,7 @@ class MODQN(DRLOracle):
                  min_priority=1e-3,
                  batch_size=32,
                  global_steps=100000,
+                 warm_start=False,
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
@@ -72,6 +73,7 @@ class MODQN(DRLOracle):
                          scale=scale,
                          gamma=gamma,
                          one_hot=one_hot,
+                         warm_start=warm_start,
                          eval_episodes=eval_episodes)
 
         self.dqn_lr = lr
@@ -122,6 +124,8 @@ class MODQN(DRLOracle):
 
         self.batch_size = batch_size
 
+        self.warm_start = warm_start
+
     def config(self):
         return {
             "gamma": self.gamma,
@@ -157,8 +161,7 @@ class MODQN(DRLOracle):
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)
-        if self.per:
-            self.replay_buffer.reset_priorities()
+        self.replay_buffer.reset()
         self.u_func = None
 
     def select_greedy_action(self, aug_obs, accrued_reward):
@@ -294,7 +297,8 @@ class MODQN(DRLOracle):
     def train(self):
         """Train MODQN on the given environment."""
         raw_obs, _ = self.env.reset()
-        obs = self.format_obs(np.nan_to_num(raw_obs, posinf=0))
+        raw_obs = np.nan_to_num(raw_obs, posinf=0)
+        obs = self.format_obs(raw_obs)
         timestep = 0
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = np.hstack((obs, accrued_reward))
@@ -309,7 +313,9 @@ class MODQN(DRLOracle):
                 action = self.select_action(torch.tensor(aug_obs, dtype=torch.float), accrued_reward, epsilon=epsilon)
 
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_obs = self.format_obs(np.nan_to_num(next_raw_obs, posinf=0))
+            next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+            reward = np.nan_to_num(reward, posinf=0)
+            next_obs = self.format_obs(next_raw_obs)
             next_accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
             aug_next_obs = np.hstack((next_obs, next_accrued_reward))
             self.add_to_buffer(aug_obs, accrued_reward, action, reward, aug_next_obs, terminated, timestep)
@@ -320,8 +326,9 @@ class MODQN(DRLOracle):
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
                 self.save_episode_stats(accrued_reward, timestep)
                 raw_obs, _ = self.env.reset()
+                raw_obs = np.nan_to_num(raw_obs, posinf=0)
                 accrued_reward = np.zeros(self.num_objectives)
-                obs = self.format_obs(np.nan_to_num(raw_obs, posinf=0))
+                obs = self.format_obs(raw_obs)
                 aug_obs = np.hstack((obs, accrued_reward))
                 timestep = 0
 
@@ -334,32 +341,23 @@ class MODQN(DRLOracle):
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
 
-    def load_model(self, referent):
-        """Load the model that is closest to the given referent.
-
-        Args:
-            referent (ndarray): The referent to load the model for.
-        """
-        closest_referent = self.get_closest_referent(referent)
-        if closest_referent:
-            self.target_network.load_state_dict(self.trained_models[tuple(closest_referent)])
-            self.q_network.load_state_dict(self.trained_models[tuple(closest_referent)])
-
-    def solve(self, referent, ideal, warm_start=True):
+    def solve(self, referent, ideal):
         """Solve for problem for the given referent and ideal.
 
         Args:
             referent (list): The referent to solve for.
             ideal (list): The ideal to solve for.
-            warm_start (bool, optional): Whether to warm start the solver. Defaults to False.
 
         Returns:
             list: The solution to the problem.
         """
         self.reset()
         self.setup_dqn_metrics()
-        if warm_start:
-            self.load_model(referent)
+        if self.warm_start:
+            _, critic_net = self.load_model(referent)
+            if critic_net is not None:
+                self.target_network.load_state_dict(critic_net)
+                self.q_network.load_state_dict(critic_net)
         pareto_point = super().solve(referent, ideal)
-        self.trained_models[tuple(referent)] = self.q_network.state_dict()
+        self.save_models(referent, critic=self.q_network)
         return pareto_point

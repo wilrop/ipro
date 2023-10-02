@@ -8,6 +8,7 @@ import numpy as np
 
 from utils.helpers import strtobool
 from environments import setup_env
+from environments.bounding_boxes import get_bounding_box
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
@@ -28,7 +29,7 @@ def parse_args():
                         help="if toggled, cuda will be enabled by default")
     parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="if toggled, this experiment will be tracked with Weights and Biases")
-    parser.add_argument("--wandb-project-name", type=str, default="PRIOL", help="the wandb's project name")
+    parser.add_argument("--wandb-project-name", type=str, default="IPRO_local", help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None, help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                         help="whether to capture videos of the agent performances (check out `videos` folder)")
@@ -36,7 +37,7 @@ def parse_args():
 
     # General arguments.
     parser.add_argument("--env_id", type=str, default="deep-sea-treasure-concave-v0", help="The game to use.")
-    parser.add_argument('--outer_loop', type=str, default='2D', help='The outer loop to use.')
+    parser.add_argument('--outer_loop', type=str, default='IPRO-2D', help='The outer loop to use.')
     parser.add_argument("--oracle", type=str, default="MO-DQN", help="The algorithm to use.")
     parser.add_argument("--aug", type=float, default=0.005, help="The augmentation term in the utility function.")
     parser.add_argument("--scale", type=float, default=1000, help="The scale of the utility function.")
@@ -91,9 +92,10 @@ if __name__ == '__main__':
     random.seed(args.seed)
 
     env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
+    minimals, maximals, ref_point = get_bounding_box(args.env_id)
     linear_solver = init_linear_solver('known_box',
-                                       nadirs=[np.array([0., 0.]), np.array([124.0, -19.])],
-                                       ideals=[np.array([124.0, -19.]), np.array([0., 0.])])
+                                       minimals,
+                                       maximals)
     oracle = init_oracle(args.oracle,
                          env,
                          args.gamma,
@@ -117,6 +119,7 @@ if __name__ == '__main__':
                          min_priority=args.min_priority,
                          batch_size=args.batch_size,
                          global_steps=args.global_steps,
+                         warm_start=args.warm_start,
                          eval_episodes=args.eval_episodes,
                          log_freq=args.log_freq,
                          seed=args.seed,
@@ -126,11 +129,12 @@ if __name__ == '__main__':
                          num_objectives,
                          oracle,
                          linear_solver,
+                         ref_point=ref_point,
+                         tolerance=args.tolerance,
                          track=args.track,
                          exp_name=run_name,
                          wandb_project_name=args.wandb_project_name,
                          wandb_entity=args.wandb_entity,
-                         warm_start=args.warm_start,
                          seed=args.seed)
     pf = ol.solve()
 

@@ -60,8 +60,8 @@ class MOA2C(DRLOracle):
                  n_steps=10,
                  gae_lambda=0.5,
                  global_steps=100000,
+                 warm_start=False,
                  eval_episodes=100,
-                 window_size=500,
                  log_freq=1000,
                  seed=0):
         super().__init__(env,
@@ -70,8 +70,8 @@ class MOA2C(DRLOracle):
                          scale=scale,
                          gamma=gamma,
                          one_hot=one_hot,
-                         eval_episodes=eval_episodes,
-                         window_size=window_size)
+                         warm_start=warm_start,
+                         eval_episodes=eval_episodes)
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.e_coef = e_coef
@@ -109,6 +109,7 @@ class MOA2C(DRLOracle):
                                             max_size=self.n_steps,
                                             action_dtype=int,
                                             aug_obs=True)
+        self.warm_start = warm_start
 
     def config(self):
         return {
@@ -206,7 +207,8 @@ class MOA2C(DRLOracle):
             Tuple: The initial observation, accrued reward, augmented observation and timestep.
         """
         raw_obs, _ = self.env.reset()
-        obs = self.format_obs(np.nan_to_num(raw_obs, posinf=0))
+        obs = self.format_obs(raw_obs)
+        obs = np.nan_to_num(obs, posinf=0)
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)  # Create the augmented state.
         timestep = 0
@@ -257,7 +259,9 @@ class MOA2C(DRLOracle):
                 action = self.select_action(aug_obs, accrued_reward)
 
             next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_obs = self.format_obs(np.nan_to_num(next_raw_obs, posinf=0))
+            next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+            reward = np.nan_to_num(reward, posinf=0)
+            next_obs = self.format_obs(next_raw_obs)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
@@ -276,30 +280,16 @@ class MOA2C(DRLOracle):
                 self.save_episode_stats(accrued_reward, timestep)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
-    def load_model(self, referent, load_actor=False, load_critic=True):
-        """Load the model that is closest to the given referent.
-
-        Args:
-            referent (ndarray): The referent to load the model for.
-            load_actor (bool, optional): Whether to load the actor. The rationale to not loading the actor is that the
-                policy might already be very close to deterministic making it very hard to escape. Defaults to False.
-            load_critic (bool, optional): Whether to load the critic. The rationale to loading the critic is that the
-                value function estimates may help the policy navigate to better states faster. Defaults to True.
-        """
-        closest_referent = self.get_closest_referent(referent)
-        if closest_referent:
-            actor_net, critic_net = self.trained_models[tuple(closest_referent)]
-            if load_actor:
-                self.actor.load_state_dict(actor_net)
-            if load_critic:
-                self.critic.load_state_dict(critic_net)
-
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
         if warm_start:
-            self.load_model(referent)
+            actor_net, critic_net = self.load_model(referent)
+            if actor_net is not None:
+                self.actor.load_state_dict(actor_net)
+            if critic_net is not None:
+                self.critic.load_state_dict(critic_net)
         pareto_point = super().solve(referent, ideal)
-        self.trained_models[tuple(referent)] = (self.actor.state_dict(), self.critic.state_dict())
+        self.save_models(referent, actor=self.actor, critic=self.critic)
         return pareto_point

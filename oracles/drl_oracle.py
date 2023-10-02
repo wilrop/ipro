@@ -16,6 +16,7 @@ class DRLOracle:
                  scale=100,
                  gamma=0.99,
                  one_hot=False,
+                 warm_start=False,
                  eval_episodes=100,
                  window_size=100,
                  track=False):
@@ -43,6 +44,8 @@ class DRLOracle:
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
         self.iteration = 0
+
+        self.warm_start = warm_start
 
         self.window_size = window_size
         self.episodic_returns = deque(maxlen=window_size)
@@ -264,6 +267,32 @@ class DRLOracle:
             return False
         distances = np.array([np.linalg.norm(np.array(referent) - np.array(r)) for r in referents])
         return referents[np.argmin(distances)]
+
+    def load_model(self, referent):
+        """Load the model that is closest to the given referent.
+
+        Args:
+            referent (ndarray): The referent to load the model for.
+        """
+        closest_referent = self.get_closest_referent(referent)
+        if closest_referent:
+            return self.trained_models[tuple(closest_referent)]
+        else:
+            return None, None
+
+    def save_models(self, referent, actor=None, critic=None):
+        """Save the models for the given referent.
+
+        Args:
+            referent (ndarray): The referent to save the models for.
+            actor (nn.Module, optional): The actor network to save. Defaults to None.
+            critic (nn.Module, optional): The critic network to save. Defaults to None.
+        """
+        if actor is not None:
+            actor = actor.state_dict()
+        if critic is not None:
+            critic = critic.state_dict()
+        self.trained_models[tuple(referent)] = (actor, critic)
 
     def log_points(self, referent, ideal, pareto_point):
         """Log the referent, ideal, and pareto point.

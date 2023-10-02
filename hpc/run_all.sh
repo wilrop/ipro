@@ -6,7 +6,7 @@
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-45
+#SBATCH --array=1-135
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -25,10 +25,10 @@ pip install --user highway-env
 export OMP_NUM_THREADS=1
 
 # Define variables.
-EXPERIMENT_DIR="${VSC_HOME}/geohunt/experiments"
+EXPERIMENT_DIR="${VSC_HOME}/ipro/experiments"
 
 # Set pythonpath
-export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/geohunt"
+export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
 
 # Set wandb directory.
 export WANDB_DIR=$VSC_SCRATCH

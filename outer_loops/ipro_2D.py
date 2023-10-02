@@ -9,8 +9,8 @@ from outer_loops.box import Box
 from utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
 
 
-class Priol2D(OuterLoop):
-    """An inner-outer loop method for solving 2D multi-objective problems."""
+class IPRO2D(OuterLoop):
+    """IPRO algorithm for solving bi-objective multi-objective problems."""
 
     def __init__(self,
                  problem,
@@ -20,7 +20,6 @@ class Priol2D(OuterLoop):
                  offset=1,
                  tolerance=1e-6,
                  max_iterations=None,
-                 warm_start=False,
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -35,7 +34,6 @@ class Priol2D(OuterLoop):
                          offset=offset,
                          tolerance=tolerance,
                          max_iterations=max_iterations,
-                         warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
@@ -204,7 +202,7 @@ class Priol2D(OuterLoop):
             box = self.get_next_box()
             ideal = np.copy(box.ideal)
             referent = np.copy(box.nadir)
-            vec = self.oracle.solve(referent, ideal, warm_start=self.warm_start)
+            vec = self.oracle.solve(referent, ideal)
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
@@ -229,4 +227,4 @@ class Priol2D(OuterLoop):
             print('---------------------')
 
         self.finish(start, iteration)
-        return self.pf
+        return self.pf.copy()

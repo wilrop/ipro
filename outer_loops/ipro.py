@@ -5,8 +5,8 @@ from outer_loops.box import Box
 from utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, extreme_prune, pareto_dominates
 
 
-class Priol(OuterLoop):
-    """An inner-outer loop method for solving multi-objective problems."""
+class IPRO(OuterLoop):
+    """IPRO algorithm for solving multi-objective problems."""
 
     def __init__(self,
                  problem,
@@ -17,7 +17,6 @@ class Priol(OuterLoop):
                  offset=1,
                  tolerance=1e-1,
                  max_iterations=None,
-                 warm_start=False,
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -34,7 +33,6 @@ class Priol(OuterLoop):
                          offset=offset,
                          tolerance=tolerance,
                          max_iterations=max_iterations,
-                         warm_start=warm_start,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
@@ -286,7 +284,7 @@ class Priol(OuterLoop):
             print(f'Iter {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             referent = self.select_referent(method='first')
-            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal), warm_start=self.warm_start)
+            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal))
 
             if strict_pareto_dominates(vec, referent):
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
@@ -315,4 +313,4 @@ class Priol(OuterLoop):
             print('---------------------')
 
         self.finish(start, iteration)
-        return self.pf
+        return self.pf.copy()

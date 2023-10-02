@@ -4,7 +4,7 @@ import numpy as np
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
-from utils.pareto import verify_pcs
+from utils.pareto import extreme_prune
 
 
 def parse_args():
@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--low', type=int, default=0, help='The lower bound for the random integers.')
     parser.add_argument('--high', type=int, default=10, help='The upper bound for the random integers.')
     parser.add_argument('--aug', type=float, default=0.01, help='The augmentation parameter.')
-    parser.add_argument('--outer_loop', type=str, default='PRIOL', help='The outer loop to use.')
+    parser.add_argument('--outer_loop', type=str, default='IPRO', help='The outer loop to use.')
     parser.add_argument('--seed', type=int, default=1, help='The seed for the random number generator.')
     return parser.parse_args()
 
@@ -52,18 +52,10 @@ if __name__ == '__main__':
                                      linear_solver=linear_solver, seed=args.seed)
 
         pf = outer_loop.solve()
-        correct_set, is_correct = verify_pcs(problem, pf)
-        missing_set = correct_set - pf
-
-        if not is_correct:
+        correct_set = extreme_prune(pf)
+        if len(correct_set) != len(pf):
             print(f'Problem: {problem}')
-            print(f'Is correct: {is_correct}')
             print(f'Correct set: {correct_set}')
             print(f'Obtained set: {pf}')
-            print(f'Number of missing elements: {len(missing_set)} - Difference : {missing_set}')
             print(f'Bounding box: {outer_loop.bounding_box}')
             print(f'Lower set: {outer_loop.lower_points}')
-
-            for point in missing_set:
-                strict_ok = np.any(np.all(np.array(point) > outer_loop.lower_points, axis=1))
-                print(f'Point {point} strictly dominates some lower point: {strict_ok}')

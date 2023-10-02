@@ -1,9 +1,6 @@
 env_id: mo-reacher-v4
-nadirs: [ [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ] ]
-ideals: [ [ 40, -50, -50, -50 ], [ -50, 40, -50, -50 ], [ -50, -50, 40, -50 ], [ -50, -50, -50, 40 ] ]
-ref_point: [ -50, -50, -50, -50 ]
 outer_loop: PRIOL
-tolerance: 0.0
+tolerance: 1.e-5
 oracle: MO-DQN
 gamma: 0.99
 study_name: dqn_reacher

@@ -1,10 +1,8 @@
-env_id: minecart-v0
-nadirs: [ [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ], [ 0., 0., -3.1199985 ] ]
-ideals: [ [ 1.5, 0., -0.95999986 ], [ 0., 1.5, -0.95999986 ], [ 0., 0., -0.31999996 ] ]
+env_id: deep-sea-treasure-concave-v0
 outer_loop: PRIOL
-tolerance: 0.1
+tolerance: 0.0
 oracle: MO-A2C
-gamma: 0.98
+gamma: 1.0
 study_name: a2c_minecart
 seed: 1
 wandb_project_name: IPRO_test
@@ -12,8 +10,8 @@ wandb_entity: null
 track_outer: False
 track_oracle: False
 warm_start: False
-n_trials: 100
-max_episode_steps: 1000
+n_trials: 2
+max_episode_steps: 50
 log_freq: 1000
 
 hyperparameters:

@@ -3,17 +3,18 @@ import json
 
 
 def link_experiments():
-    all_files = os.listdir('../experiments/hyperparams')
+    """Creates a json file that links an experiment id to a hyperparameter file and seed"""
+    all_files = os.listdir('hyperparams')
     experiments = {}
     idx = 1
 
     for file in all_files:
-        if 'minecart' in file:
+        if file[:3] in ['dqn', 'a2c', 'ppo']:
             for seed in range(5):
                 experiments[idx] = (file, seed)
                 idx += 1
 
-    json.dump(experiments, open('experiments.json', 'w'))
+    json.dump(experiments, open('hyperparams/experiments.json', 'w'))
 
 
 if __name__ == '__main__':

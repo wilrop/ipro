@@ -68,9 +68,9 @@ class MOPPO(DRLOracle):
                  gae_lambda=0.95,
                  n_steps=128,
                  global_steps=500000,
+                 warm_start=False,
                  eval_episodes=100,
                  log_freq=1000,
-                 window_size=100,
                  seed=0):
         super().__init__(envs.envs[0],
                          track=track,
@@ -78,8 +78,8 @@ class MOPPO(DRLOracle):
                          scale=scale,
                          gamma=gamma,
                          one_hot=one_hot,
-                         eval_episodes=eval_episodes,
-                         window_size=window_size, )
+                         warm_start=warm_start,
+                         eval_episodes=eval_episodes)
         self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
@@ -102,6 +102,7 @@ class MOPPO(DRLOracle):
         self.n_steps = n_steps
         self.global_steps = int(global_steps)
         self.eval_episodes = eval_episodes
+        self.log_freq = log_freq
 
         self.batch_size = int(self.num_envs * self.n_steps)
         self.minibatch_size = int(self.batch_size // self.num_minibatches)
@@ -135,7 +136,7 @@ class MOPPO(DRLOracle):
                                             action_dtype=int,
                                             aug_obs=True)
 
-        self.log_freq = log_freq
+        self.warm_start = warm_start
 
     def config(self):
         return {
@@ -313,7 +314,8 @@ class MOPPO(DRLOracle):
         """Train the agent."""
         global_step = 0
         raw_obs, _ = self.envs.reset()
-        obs = torch.tensor(self.format_obs(np.nan_to_num(raw_obs, posinf=0), vectorized=True), dtype=torch.float)
+        raw_obs = np.nan_to_num(raw_obs, posinf=0)
+        obs = torch.tensor(self.format_obs(raw_obs, vectorized=True), dtype=torch.float)
         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
@@ -336,7 +338,9 @@ class MOPPO(DRLOracle):
 
                 next_raw_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)
-                next_obs = self.format_obs(np.nan_to_num(next_raw_obs, posinf=0), vectorized=True)
+                next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+                rewards = np.nan_to_num(rewards, posinf=0)
+                next_obs = self.format_obs(next_raw_obs, vectorized=True)
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
                 aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
 
@@ -356,30 +360,16 @@ class MOPPO(DRLOracle):
                 steps_since_log = 0
             self.rollout_buffer.reset()
 
-    def load_model(self, referent, load_actor=False, load_critic=True):
-        """Load the model that is closest to the given referent.
-
-        Args:
-            referent (ndarray): The referent to load the model for.
-            load_actor (bool, optional): Whether to load the actor. The rationale to not loading the actor is that the
-                policy might already be very close to deterministic making it very hard to escape. Defaults to False.
-            load_critic (bool, optional): Whether to load the critic. The rationale to loading the critic is that the
-                value function estimates may help the policy navigate to better states faster. Defaults to True.
-        """
-        closest_referent = self.get_closest_referent(referent)
-        if closest_referent:
-            actor_net, critic_net = self.trained_models[tuple(closest_referent)]
-            if load_actor:
-                self.actor.load_state_dict(actor_net)
-            if load_critic:
-                self.critic.load_state_dict(critic_net)
-
     def solve(self, referent, ideal, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
         if warm_start:
-            self.load_model(referent)
+            actor_net, critic_net = self.load_model(referent)
+            if actor_net is not None:
+                self.actor.load_state_dict(actor_net)
+            if critic_net is not None:
+                self.critic.load_state_dict(critic_net)
         pareto_point = super().solve(referent, ideal)
-        self.trained_models[tuple(referent)] = (self.actor.state_dict(), self.critic.state_dict())
+        self.save_models(referent, actor=self.actor, critic=self.critic)
         return pareto_point

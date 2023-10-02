@@ -163,7 +163,7 @@ runs/
 wandb/
 opt/
 studies/
-experiments/results
+utils/results
 
 utils/*.json
 *.csv

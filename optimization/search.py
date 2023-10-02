@@ -13,6 +13,7 @@ import numpy as np
 from optuna._callbacks import RetryFailedTrialCallback
 
 from environments import setup_env, setup_vector_env
+from environments.bounding_boxes import get_bounding_box
 from linear_solvers import init_linear_solver
 from oracles import init_oracle
 from outer_loops import init_outer_loop
@@ -128,8 +129,7 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
         max_episode_steps = parameters['max_episode_steps']
         run_name = f"{study_name}__{seed}__{int(time.time())}"
 
-        nadirs = np.array(parameters['nadirs'])
-        ideals = np.array(parameters['ideals'])
+        minimals, maximals, ref_point = get_bounding_box(env_id)
         hyperparameters = suggest_hyperparameters(trial, parameters)
         if 'hidden_size' in hyperparameters:
             hl_actor = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
@@ -161,11 +161,12 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
         np.random.seed(args.seed)
         random.seed(args.seed)
 
-        linear_solver = init_linear_solver('known_box', nadirs=nadirs, ideals=ideals)
+        linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
         oracle = init_oracle(oracle_name,
                              env,
                              parameters['gamma'],
                              track=parameters['track_oracle'],
+                             warm_start=parameters['warm_start'],
                              log_freq=parameters['log_freq'],
                              seed=seed,
                              **hyperparameters)
@@ -174,14 +175,13 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
                              num_objectives,
                              oracle,
                              linear_solver,
-                             ref_point=parameters.get('ref_point'),
-                             track=parameters['track_outer'],
+                             ref_point=ref_point,
+                             tolerance=parameters['tolerance'],
                              max_iterations=parameters['max_iterations'],
+                             track=parameters['track_outer'],
                              exp_name=run_name,
                              wandb_project_name=parameters['wandb_project_name'],
                              wandb_entity=parameters['wandb_entity'],
-                             warm_start=parameters['warm_start'],
-                             tolerance=parameters['tolerance'],
                              seed=seed)
         if report_intermediate:
             def callback(step, hypervolume, dominated_hv, discarded_hv, coverage, error):
