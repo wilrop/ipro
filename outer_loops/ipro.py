@@ -306,7 +306,7 @@ class IPRO(OuterLoop):
             self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
-            self.log_iteration(iteration, referent=referent, ideal=self.ideal, vec=vec)
+            self.log_iteration(iteration, referent=referent, ideal=self.ideal, pareto_point=vec)
             if callback is not None:
                 callback(iteration, self.hv, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
             print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
