@@ -4,6 +4,43 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import os
+import imageio.v3 as iio
+
+
+def plot_patches(patches, pf, points, log_dir, name):
+    pf = sorted(pf, key=lambda x: x[0])
+    fig, ax = plt.subplots()
+    ax.set_facecolor((154 / 256, 142 / 256, 148 / 256, 0.8))
+    ax.scatter(points[:, 0], points[:, 1], c='b', s=15)
+
+    rectangles = [(tuple(patch.bot_left), patch.width, patch.height) for patch in patches]
+
+    for rect in rectangles:
+        ax.add_patch(Rectangle(rect[0], rect[1], rect[2], linewidth=1, edgecolor='r', facecolor='white'))
+
+    for point1, point2 in zip(pf, pf[1:]):
+        ax.plot([point1[0], point2[0]], [point1[1], point2[1]], c='black', linewidth=1)
+
+    os.makedirs(log_dir, exist_ok=True)
+    file_path = os.path.join(log_dir, f"{name}.png")
+    plt.savefig(file_path)
+
+
+def create_gif(log_dir, name):
+    """Create a gif from standalone images."""
+    image_iter = []
+    for file_name in sorted(os.listdir(log_dir)):
+        if file_name.startswith('iter'):
+            iteration = int(file_name.split('_')[1].split('.')[0])
+            file_path = os.path.join(log_dir, file_name)
+            image_iter.append((iteration, iio.imread(file_path)))
+    sorted_images = sorted(image_iter, key=lambda x: x[0])
+    iio.imwrite(os.path.join(log_dir, f"{name}.gif"), images, format='GIF', duration=1000)
+
+
 def plot_lineplot(env_id, metric, y_label):
     # Read the data for each individual algorithm.
     ppo_data = pd.read_csv(f'results/ppo_{env_id}_{metric}.csv')
