@@ -11,7 +11,7 @@ class OuterLoop:
                  dimensions,
                  oracle,
                  linear_solver,
-                 method="priol",
+                 method="IPRO",
                  ref_point=None,
                  offset=1,
                  tolerance=1e-1,
@@ -133,7 +133,7 @@ class OuterLoop:
             wandb.run.summary['replay_triggered'] = self.replay_triggered
             wandb.finish()
 
-    def log_iteration(self, iteration):
+    def log_iteration(self, iteration, referent=None, ideal=None, pareto_point=None):
         """Log the iteration."""
         if self.track:
             wandb.log({
@@ -144,6 +144,11 @@ class OuterLoop:
                 'outer/error': self.error,
                 'iteration': iteration
             })
+
+            if referent is not None:
+                wandb.run.summary[f"referent_{iteration}"] = referent
+                wandb.run.summary[f"ideal_{iteration}"] = ideal
+                wandb.run.summary[f"pareto_point_{iteration}"] = pareto_point
 
     def compute_hypervolume(self, points, ref):
         """Compute the hypervolume of a set of points.

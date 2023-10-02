@@ -294,19 +294,6 @@ class DRLOracle:
             critic = critic.state_dict()
         self.trained_models[tuple(referent)] = (actor, critic)
 
-    def log_points(self, referent, ideal, pareto_point):
-        """Log the referent, ideal, and pareto point.
-
-        Args:
-            referent (ndarray): The referent.
-            ideal (ndarray): The ideal.
-            pareto_point (ndarray): The pareto point.
-        """
-        if self.track:
-            wandb.run.summary[f"referent_{self.iteration}"] = referent
-            wandb.run.summary[f"ideal_{self.iteration}"] = ideal
-            wandb.run.summary[f"pareto_point_{self.iteration}"] = pareto_point
-
     def solve(self, referent, ideal):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
@@ -315,6 +302,5 @@ class DRLOracle:
         self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
-        self.log_points(referent, ideal, pareto_point)
         self.iteration += 1
         return pareto_point
