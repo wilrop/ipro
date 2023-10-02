@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=optimize
+#SBATCH --job-name=optimise
 #SBATCH --time=48:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
@@ -23,7 +23,7 @@ export OMP_NUM_THREADS=1
 NUM_LINES=$(wc -l <${VSC_HOME}/ipro/hpc/yaml_files.txt)
 LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
 YAML_FILE=$(head -${LINE} ${VSC_HOME}/ipro/hpc/yaml_files.txt | tail -1)
-OPTIMIZATION_DIR="${VSC_HOME}/ipro/optimization"
+OPTIMISATION_DIR="${VSC_HOME}/ipro/optimisation"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
@@ -35,6 +35,6 @@ export WANDB_DIR=$VSC_SCRATCH
 sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
-python3 ${OPTIMIZATION_DIR}/search.py \
-  --params ${OPTIMIZATION_DIR}/${YAML_FILE} \
+python3 ${OPTIMISATION_DIR}/search.py \
+  --params ${OPTIMISATION_DIR}/${YAML_FILE} \
   --log_dir ${VSC_SCRATCH}
