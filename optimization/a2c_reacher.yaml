@@ -1,5 +1,5 @@
 env_id: mo-reacher-v4
-outer_loop: PRIOL
+outer_loop: IPRO
 tolerance: 1.e-5
 oracle: MO-A2C
 gamma: 0.99

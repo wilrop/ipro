@@ -1,5 +1,5 @@
 env_id: deep-sea-treasure-concave-v0
-outer_loop: 2D
+outer_loop: IPRO-2D
 tolerance: 0.0
 oracle: MO-PPO
 gamma: 1.0

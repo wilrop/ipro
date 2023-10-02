@@ -1,5 +1,5 @@
 env_id: deep-sea-treasure-concave-v0
-outer_loop: PRIOL
+outer_loop: IPRO
 tolerance: 0.0
 oracle: MO-A2C
 gamma: 1.0
@@ -9,6 +9,7 @@ wandb_project_name: IPRO_test
 wandb_entity: null
 track_outer: False
 track_oracle: False
+max_iterations: 2
 warm_start: False
 n_trials: 2
 max_episode_steps: 50

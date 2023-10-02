@@ -157,9 +157,9 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
             env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
 
         # Seeding
-        torch.manual_seed(args.seed)
-        np.random.seed(args.seed)
-        random.seed(args.seed)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        random.seed(seed)
 
         linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
         oracle = init_oracle(oracle_name,

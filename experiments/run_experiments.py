@@ -61,9 +61,9 @@ def run_experiment(exp_id, exp_dir):
     parameters = load_parameters(exp_dir, params_file)
 
     # Seeding
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
     env_id = parameters.pop('env_id')
     run_name = f"{exp_name}__{seed}__arg{arg_idx}"
