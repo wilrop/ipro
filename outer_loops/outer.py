@@ -163,7 +163,7 @@ class OuterLoop:
         Returns:
             float: The computed hypervolume.
         """
-        points = points[batched_pareto_dominates(points, ref)]
+        points = points[batched_pareto_dominates(ref, points)]
         if points.size == 0:
             return 0
         return pg.hypervolume(points).compute(ref)
