@@ -2,7 +2,7 @@ import time
 import wandb
 import numpy as np
 import pygmo as pg
-from utils.pareto import extreme_prune
+from utils.pareto import extreme_prune, batched_pareto_dominates
 
 
 class OuterLoop:
@@ -163,4 +163,7 @@ class OuterLoop:
         Returns:
             float: The computed hypervolume.
         """
+        points = points[batched_pareto_dominates(points, ref)]
+        if points.size == 0:
+            return 0
         return pg.hypervolume(points).compute(ref)
