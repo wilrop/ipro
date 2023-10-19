@@ -2,6 +2,7 @@ import json
 import torch
 import random
 import argparse
+import wandb
 
 import numpy as np
 
@@ -15,50 +16,47 @@ from outer_loops import init_outer_loop
 def get_env_info(env_id):
     if env_id == 'deep-sea-treasure-concave-v0':
         max_episode_steps = 50
-        outer = "2D"
+        outer = "IPRO-2D"
     elif env_id == 'mo-reacher-v4':
         max_episode_steps = 50
-        outer = "PRIOL"
+        outer = "IPRO"
     elif env_id == 'minecart-v0':
         max_episode_steps = 1000
-        outer = "PRIOL"
+        outer = "IPRO"
     else:
         raise NotImplementedError
     tolerance = 0.00001
     return outer, max_episode_steps, tolerance
 
 
-def load_parameters(exp_dir, params_file):
-    with open(f'{exp_dir}/hyperparams/{params_file}', "r") as f:
-        parameters = json.load(f)
-    for key, value in parameters.items():
-        parameters[key] = value['value']
+def load_parameters(run_id):
+    api = wandb.Api(timeout=120)
+    run = api.run(f'{run_id}')
+    parameters = run.config
 
     # Remove unused parameters.
-    parameters.pop('_wandb')
-    parameters.pop('seed')
-    parameters.pop('track')
-    parameters.pop('method')
-    parameters.pop('max_steps')
-    parameters.pop('warm_start')
-    parameters.pop('tolerance')
-    parameters.pop('dimensions')
+    parameters.pop('seed', None)
+    parameters.pop('track', None)
+    parameters.pop('method', None)
+    parameters.pop('max_steps', None)
+    parameters.pop('warm_start', None)
+    parameters.pop('tolerance', None)
+    parameters.pop('dimensions', None)
     return parameters
 
 
 def run_experiment(exp_id, exp_dir):
-    params_file, seed = json.load(open(f'{exp_dir}/hyperparams/experiments.json', 'r'))[str(exp_id)]
+    id_exp_dict = json.load(open(f'{exp_dir}/evaluation/experiments.json', 'r'))
+    alg, env_id, seed, run_id = id_exp_dict[str(exp_id)]
 
-    splitted_params_file = params_file.split('.')[0].split('_')
-    exp_name = '_'.join(splitted_params_file[:2])
-    if splitted_params_file[0] == 'a2c':
+    if alg == 'a2c':
         oracle_name = 'MO-A2C'
-    elif splitted_params_file[0] == 'ppo':
+    elif alg == 'ppo':
         oracle_name = 'MO-PPO'
     else:
         oracle_name = 'MO-DQN'
-    arg_idx = splitted_params_file[2]
-    parameters = load_parameters(exp_dir, params_file)
+
+    parameters = load_parameters(run_id)
 
     # Seeding
     torch.manual_seed(seed)
@@ -66,10 +64,11 @@ def run_experiment(exp_id, exp_dir):
     random.seed(seed)
 
     env_id = parameters.pop('env_id')
-    run_name = f"{exp_name}__{seed}__arg{arg_idx}"
+    run_name = f"{env_id}__{run_id}__{seed}"
 
     minimals, maximals, ref_point = get_bounding_box(env_id)
     outer_loop_name, max_episode_steps, tolerance = get_env_info(env_id)
+    max_iterations = parameters.pop('max_iterations')
 
     if oracle_name == 'MO-PPO':
         env, num_objectives = setup_vector_env(env_id, parameters['num_envs'], seed, run_name, False,
@@ -81,7 +80,7 @@ def run_experiment(exp_id, exp_dir):
     oracle = init_oracle(oracle_name,
                          env,
                          parameters.pop('gamma'),
-                         track=True,
+                         track=False,
                          warm_start=False,
                          log_freq=parameters.pop('log_freq'),
                          seed=seed,
@@ -93,6 +92,7 @@ def run_experiment(exp_id, exp_dir):
                          linear_solver,
                          ref_point=ref_point,
                          tolerance=tolerance,
+                         max_iterations=max_iterations,
                          track=True,
                          exp_name=run_name,
                          wandb_project_name='IPRO_experiments',
@@ -104,7 +104,7 @@ def run_experiment(exp_id, exp_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run experiments from JSON files.')
     parser.add_argument('--exp_id', type=str, default=1)
-    parser.add_argument('--exp_dir', type=str)
+    parser.add_argument('--exp_dir', type=str, default='.')
     args = parser.parse_args()
 
     run_experiment(args.exp_id, args.exp_dir)
