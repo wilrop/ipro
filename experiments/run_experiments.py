@@ -39,6 +39,7 @@ def load_parameters(run_id):
     parameters.pop('track', None)
     parameters.pop('method', None)
     parameters.pop('max_steps', None)
+    parameters.pop('max_iterations')
     parameters.pop('warm_start', None)
     parameters.pop('tolerance', None)
     parameters.pop('dimensions', None)
@@ -68,7 +69,6 @@ def run_experiment(exp_id, exp_dir):
 
     minimals, maximals, ref_point = get_bounding_box(env_id)
     outer_loop_name, max_episode_steps, tolerance = get_env_info(env_id)
-    max_iterations = parameters.pop('max_iterations')
 
     if oracle_name == 'MO-PPO':
         env, num_objectives = setup_vector_env(env_id, parameters['num_envs'], seed, run_name, False,
@@ -92,7 +92,6 @@ def run_experiment(exp_id, exp_dir):
                          linear_solver,
                          ref_point=ref_point,
                          tolerance=tolerance,
-                         max_iterations=max_iterations,
                          track=True,
                          exp_name=run_name,
                          wandb_project_name='IPRO_experiments',
