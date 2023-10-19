@@ -166,7 +166,6 @@ class MOPPO(DRLOracle):
             "global_steps": self.global_steps,
             "eval_episodes": self.eval_episodes,
             "log_freq": self.log_freq,
-            "window_size": self.window_size,
             "seed": self.seed
         }
 

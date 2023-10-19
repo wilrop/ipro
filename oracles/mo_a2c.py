@@ -130,7 +130,6 @@ class MOA2C(DRLOracle):
             "gae_lambda": self.gae_lambda,
             "global_steps": self.global_steps,
             "eval_episodes": self.eval_episodes,
-            "window_size": self.window_size,
             "log_freq": self.log_freq,
             "seed": self.seed
         }
