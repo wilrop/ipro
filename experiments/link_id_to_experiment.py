@@ -6,25 +6,10 @@ def link_experiments(num_seeds=5):
     """Creates a json file that links an experiment id to a hyperparameter file and seed"""
     checked = {
         'dqn': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/x9xfnbv8', 'wilrop/IPRO/ttzb2vs0', 'wilrop/IPRO/ix8r4fsh'],
-            'minecart-v0': ['wilrop/IPRO/x2pv2xwv', 'wilrop/IPRO/fpoxkpym', 'wilrop/IPRO/bpb21s4t'],
-            'mo-reacher-v4': ['wilrop/IPRO/1e0xr6jn', 'wilrop/IPRO/307g4ksp', 'wilrop/IPRO/12zmmwr8']
-        },
-        'a2c': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/nxiv5fqn', 'wilrop/IPRO/32eh8222', 'wilrop/IPRO/2pc0xpyf'],
-            'minecart-v0': ['wilrop/IPRO/84vg9vtt', 'wilrop/IPRO/1boe8jil', 'wilrop/IPRO/g96509f9'],
-            'mo-reacher-v4': ['wilrop/IPRO/1vfi17wo', 'wilrop/IPRO/2xqvo1cc', 'wilrop/IPRO/3sroox9j']
-        },
-        'ppo': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/2o7zx3ic', 'wilrop/IPRO/1y9o463h', 'wilrop/IPRO/1fz5i5sy'],
-            'minecart-v0': ['wilrop/IPRO/3re02q13', 'wilrop/IPRO/2lo9cwwv', 'wilrop/IPRO/y4lbmsh8'],
-            'mo-reacher-v4': ['wilrop/IPRO/1to7naft', 'wilrop/IPRO/27vlgn7k', 'wilrop/IPRO/3706ujn8']
-        }
-    }
-
-    to_evaluate = {
-        'dqn': {
             'deep-sea-treasure-concave-v0': ['wilrop/IPRO/x9xfnbv8',
+                                             'wilrop/IPRO/ttzb2vs0',
+                                             'wilrop/IPRO/ix8r4fsh',
+                                             'wilrop/IPRO/x9xfnbv8',
                                              'wilrop/IPRO/ttzb2vs0',
                                              'wilrop/IPRO/ix8r4fsh',
                                              'wilrop/IPRO/f581k7r3',
@@ -43,7 +28,45 @@ def link_experiments(num_seeds=5):
                                              'wilrop/IPRO/1caf8qmt',
                                              'wilrop/IPRO/vhctag70',
                                              'wilrop/IPRO/nkfq8tgc',
-                                             'wilrop/IPRO/m8f1ib2h'],
+                                             'wilrop/IPRO/m8f1ib2h'
+                                             ],
+            'minecart-v0': ['wilrop/IPRO/x2pv2xwv', 'wilrop/IPRO/fpoxkpym', 'wilrop/IPRO/bpb21s4t'],
+            'mo-reacher-v4': ['wilrop/IPRO/1e0xr6jn', 'wilrop/IPRO/307g4ksp', 'wilrop/IPRO/12zmmwr8']
+        },
+        'a2c': {
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/nxiv5fqn', 'wilrop/IPRO/32eh8222', 'wilrop/IPRO/2pc0xpyf'],
+            'minecart-v0': ['wilrop/IPRO/84vg9vtt', 'wilrop/IPRO/1boe8jil', 'wilrop/IPRO/g96509f9'],
+            'mo-reacher-v4': ['wilrop/IPRO/1vfi17wo', 'wilrop/IPRO/2xqvo1cc', 'wilrop/IPRO/3sroox9j']
+        },
+        'ppo': {
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/2o7zx3ic', 'wilrop/IPRO/1y9o463h', 'wilrop/IPRO/1fz5i5sy'],
+            'minecart-v0': ['wilrop/IPRO/3re02q13', 'wilrop/IPRO/2lo9cwwv', 'wilrop/IPRO/y4lbmsh8'],
+            'mo-reacher-v4': ['wilrop/IPRO/1to7naft', 'wilrop/IPRO/27vlgn7k', 'wilrop/IPRO/3706ujn8']
+        }
+    }
+
+    to_evaluate = {
+        'dqn': {
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/8l7hf6gd',
+                                             'wilrop/IPRO/3vh5e87c',
+                                             'wilrop/IPRO/3sqwmyow',
+                                             'wilrop/IPRO/3p3u7gln',
+                                             'wilrop/IPRO/3nf9ebo6',
+                                             'wilrop/IPRO/3lugayto',
+                                             'wilrop/IPRO/3iaoq66k',
+                                             'wilrop/IPRO/3i7w0kfb',
+                                             'wilrop/IPRO/3f963c97',
+                                             'wilrop/IPRO/3dejfk3b',
+                                             'wilrop/IPRO/35kx3zix',
+                                             'wilrop/IPRO/2wrelpkv',
+                                             'wilrop/IPRO/2wmmzkkl',
+                                             'wilrop/IPRO/2vimvoar',
+                                             'wilrop/IPRO/2v2akoo8',
+                                             'wilrop/IPRO/2n8ek51m',
+                                             'wilrop/IPRO/2i2wryg6',
+                                             'wilrop/IPRO/2i0a1d5z',
+                                             'wilrop/IPRO/2cjrfzw3',
+                                             'wilrop/IPRO/2bbqo7x8'],
             'minecart-v0': [],
             'mo-reacher-v4': []
         },
