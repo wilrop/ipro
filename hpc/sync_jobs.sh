@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
 #SBATCH --job-name=wandbsync
-#SBATCH --time=4:00:00
-#SBATCH --cpus-per-task=10
+#SBATCH --time=8:00:00
+#SBATCH --cpus-per-task=5
 #SBATCH --mem-per-cpu=1G
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
@@ -20,20 +20,10 @@ while read -r l1; do
   read -r l3
   read -r l4
   read -r l5
-  read -r l6
-  read -r l7
-  read -r l8
-  read -r l9
-  read -r l10
   wandb sync $l1 &
   wandb sync $l2 &
   wandb sync $l3 &
   wandb sync $l4 &
-  wandb sync $l5 &
-  wandb sync $l6 &
-  wandb sync $l7 &
-  wandb sync $l8 &
-  wandb sync $l9 &
-  wandb sync $l10
+  wandb sync $l5
   wait
 done <${FILE_LIST}
