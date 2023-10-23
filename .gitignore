@@ -164,6 +164,7 @@ wandb/
 opt/
 studies/
 utils/results
+utils/results_old
 
 utils/*.json
 *.csv
