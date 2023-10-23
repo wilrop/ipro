@@ -6,23 +6,6 @@ def link_experiments(num_seeds=5):
     """Creates a json file that links an experiment id to a hyperparameter file and seed"""
     checked = {
         'dqn': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': []
-        },
-        'a2c': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': []
-        },
-        'ppo': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': []
-        }
-    }
-    to_evaluate = {
-        'dqn': {
             'deep-sea-treasure-concave-v0': ['wilrop/IPRO/x9xfnbv8', 'wilrop/IPRO/ttzb2vs0', 'wilrop/IPRO/ix8r4fsh'],
             'minecart-v0': ['wilrop/IPRO/x2pv2xwv', 'wilrop/IPRO/fpoxkpym', 'wilrop/IPRO/bpb21s4t'],
             'mo-reacher-v4': ['wilrop/IPRO/1e0xr6jn', 'wilrop/IPRO/307g4ksp', 'wilrop/IPRO/12zmmwr8']
@@ -36,6 +19,43 @@ def link_experiments(num_seeds=5):
             'deep-sea-treasure-concave-v0': ['wilrop/IPRO/2o7zx3ic', 'wilrop/IPRO/1y9o463h', 'wilrop/IPRO/1fz5i5sy'],
             'minecart-v0': ['wilrop/IPRO/3re02q13', 'wilrop/IPRO/2lo9cwwv', 'wilrop/IPRO/y4lbmsh8'],
             'mo-reacher-v4': ['wilrop/IPRO/1to7naft', 'wilrop/IPRO/27vlgn7k', 'wilrop/IPRO/3706ujn8']
+        }
+    }
+
+    to_evaluate = {
+        'dqn': {
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO/x9xfnbv8',
+                                             'wilrop/IPRO/ttzb2vs0',
+                                             'wilrop/IPRO/ix8r4fsh',
+                                             'wilrop/IPRO/f581k7r3',
+                                             'wilrop/IPRO/b8kd5c59',
+                                             'wilrop/IPRO/3ba9x1uo',
+                                             'wilrop/IPRO/306dyvmk',
+                                             'wilrop/IPRO/2vuh88h6',
+                                             'wilrop/IPRO/2vn1iqdl',
+                                             'wilrop/IPRO/2ts0ezja',
+                                             'wilrop/IPRO/289gpteh',
+                                             'wilrop/IPRO/286x9a6t',
+                                             'wilrop/IPRO/2055czjj',
+                                             'wilrop/IPRO/1w0m1y6i',
+                                             'wilrop/IPRO/1odcxii3',
+                                             'wilrop/IPRO/1m9l90u5',
+                                             'wilrop/IPRO/1caf8qmt',
+                                             'wilrop/IPRO/vhctag70',
+                                             'wilrop/IPRO/nkfq8tgc',
+                                             'wilrop/IPRO/m8f1ib2h'],
+            'minecart-v0': [],
+            'mo-reacher-v4': []
+        },
+        'a2c': {
+            'deep-sea-treasure-concave-v0': [],
+            'minecart-v0': [],
+            'mo-reacher-v4': []
+        },
+        'ppo': {
+            'deep-sea-treasure-concave-v0': [],
+            'minecart-v0': [],
+            'mo-reacher-v4': []
         }
     }
 
