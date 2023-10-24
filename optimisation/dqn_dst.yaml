@@ -4,8 +4,8 @@ tolerance: 0.0
 oracle: MO-DQN
 gamma: 1.0
 study_name: dqn_dst
-seed: 1
-wandb_project_name: IPRO
+seed: [0, 1, 2, 3, 4]
+wandb_project_name: IPRO_dqn_dst
 wandb_entity: null
 track_outer: True
 track_oracle: False

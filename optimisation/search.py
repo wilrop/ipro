@@ -124,10 +124,10 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
     def optimize_trial(trial):
         env_id = parameters['env_id']
         seed = parameters['seed']
+        seeds = [seed] if isinstance(seed, int) else seed
         oracle_name = parameters['oracle']
         outer_loop_name = parameters['outer_loop']
         max_episode_steps = parameters['max_episode_steps']
-        run_name = f"{study_name}__{seed}__{int(time.time())}"
 
         minimals, maximals, ref_point = get_bounding_box(env_id)
         hyperparameters = suggest_hyperparameters(trial, parameters)
@@ -150,50 +150,54 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
             hyperparameters['actor_hidden'] = hl_actor
             hyperparameters['critic_hidden'] = hl_critic
 
-        if oracle_name == 'MO-PPO':
-            env, num_objectives = setup_vector_env(env_id, hyperparameters['num_envs'], seed, run_name, False,
-                                                   max_episode_steps=max_episode_steps)
-        else:
-            env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
+        hypervolumes = []
 
-        # Seeding
-        torch.manual_seed(seed)
-        np.random.seed(seed)
-        random.seed(seed)
+        for seed in seeds:
+            # Seeding
+            torch.manual_seed(seed)
+            np.random.seed(seed)
+            random.seed(seed)
 
-        linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
-        oracle = init_oracle(oracle_name,
-                             env,
-                             parameters['gamma'],
-                             track=parameters['track_oracle'],
-                             warm_start=parameters['warm_start'],
-                             log_freq=parameters['log_freq'],
-                             seed=seed,
-                             **hyperparameters)
-        ol = init_outer_loop(outer_loop_name,
-                             env,
-                             num_objectives,
-                             oracle,
-                             linear_solver,
-                             ref_point=ref_point,
-                             tolerance=parameters['tolerance'],
-                             max_iterations=parameters['max_iterations'],
-                             track=parameters['track_outer'],
-                             exp_name=run_name,
-                             wandb_project_name=parameters['wandb_project_name'],
-                             wandb_entity=parameters['wandb_entity'],
-                             seed=seed)
-        if report_intermediate:
-            def callback(step, hypervolume, dominated_hv, discarded_hv, coverage, error):
-                trial.report(hypervolume, step)
-                if trial.should_prune():
-                    raise optuna.TrialPruned()
-        else:
-            callback = None
-        ol.solve(callback=callback)
+            run_name = f"{study_name}__{seed}__{int(time.time())}"
 
-        time.sleep(10)  # Sleep to allow wandb to sync.
-        return ol.dominated_hv
+            if oracle_name == 'MO-PPO':
+                env, num_objectives = setup_vector_env(env_id, hyperparameters['num_envs'], seed, run_name, False,
+                                                       max_episode_steps=max_episode_steps)
+            else:
+                env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
+
+            linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
+            oracle = init_oracle(oracle_name,
+                                 env,
+                                 parameters['gamma'],
+                                 track=parameters['track_oracle'],
+                                 warm_start=parameters['warm_start'],
+                                 log_freq=parameters['log_freq'],
+                                 seed=seed,
+                                 **hyperparameters)
+            ol = init_outer_loop(outer_loop_name,
+                                 env,
+                                 num_objectives,
+                                 oracle,
+                                 linear_solver,
+                                 ref_point=ref_point,
+                                 tolerance=parameters['tolerance'],
+                                 max_iterations=parameters['max_iterations'],
+                                 track=parameters['track_outer'],
+                                 exp_name=run_name,
+                                 wandb_project_name=parameters['wandb_project_name'],
+                                 wandb_entity=parameters['wandb_entity'],
+                                 seed=seed)
+            if report_intermediate:
+                def callback(step, hypervolume, dominated_hv, discarded_hv, coverage, error):
+                    trial.report(hypervolume, step)
+                    if trial.should_prune():
+                        raise optuna.TrialPruned()
+            else:
+                callback = None
+            ol.solve(callback=callback)
+            hypervolumes.append(ol.hv)
+        return np.mean(hypervolumes)
 
     if type(parameters['env_id']) == str:
         env_name = parameters['env_id']
