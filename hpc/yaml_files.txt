@@ -1,9 +1,1 @@
 dqn_dst.yaml
-dqn_minecart.yaml
-dqn_reacher.yaml
-a2c_dst.yaml
-a2c_minecart.yaml
-a2c_reacher.yaml
-ppo_dst.yaml
-ppo_minecart.yaml
-ppo_reacher.yaml
