@@ -28,7 +28,7 @@ class IPRO(OuterLoop):
                          dimensions,
                          oracle,
                          linear_solver,
-                         method="priol",
+                         method="IPRO",
                          ref_point=ref_point,
                          offset=offset,
                          tolerance=tolerance,

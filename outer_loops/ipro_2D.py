@@ -29,7 +29,7 @@ class IPRO2D(OuterLoop):
                          2,
                          oracle,
                          linear_solver,
-                         method="priol_2D",
+                         method="IPRO-2D",
                          ref_point=ref_point,
                          offset=offset,
                          tolerance=tolerance,
