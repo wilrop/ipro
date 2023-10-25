@@ -11,7 +11,7 @@ track_outer: True
 track_oracle: False
 max_iterations: null
 warm_start: False
-n_trials: 10
+n_trials: 1
 max_episode_steps: 50
 log_freq: 500
 
