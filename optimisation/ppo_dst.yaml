@@ -1,20 +1,33 @@
+# Experiment params
 env_id: deep-sea-treasure-concave-v0
-outer_loop: IPRO-2D
-tolerance: 0.0
-oracle: MO-PPO
+max_episode_steps: 50
+one_hot_wrapper: True
 gamma: 1.0
 study_name: ppo_dst
-seed: 1
-wandb_project_name: IPRO
+seed: [ 0, 1, 2, 3, 4 ]
+wandb_project_name: IPRO_opt
 wandb_entity: null
-track_outer: True
-track_oracle: False
-max_iterations: null
-warm_start: False
 n_trials: 10
-max_episode_steps: 50
-log_freq: 2000
 
+
+# Outer loop params
+outer_loop:
+  method: IPRO-2D
+  tolerance: 0.0
+  max_iterations: null
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: MO-PPO
+  warm_start: False
+  eval_episodes: 1
+  log_freq: 2000
+  track: False
+
+
+# Hyperparameter options to be selected during the optimisation
 hyperparameters:
   aug:
     type: categorical
@@ -25,24 +38,11 @@ hyperparameters:
   global_steps:
     type: categorical
     choices: [ 3.e+5, 4.e+5, 5.e+5 ]
-  eval_episodes:
-    type: constant
-    value: 1
-  one_hot:
-    type: constant
-    value: True
-  num_hidden_layers_actor:
+  num_hidden_layers:
     type: int
     min: 1
     max: 3
-  hidden_size_actor:
-    type: categorical
-    choices: [ 32, 64, 128, 256 ]
-  num_hidden_layers_critic:
-    type: int
-    min: 1
-    max: 3
-  hidden_size_critic:
+  hidden_size:
     type: categorical
     choices: [ 32, 64, 128, 256 ]
   lr_actor:
@@ -61,9 +61,6 @@ hyperparameters:
     type: categorical
     choices: [ 0.5, 1.0, 5.0, 10.0, 50.0 ]
   normalize_advantage:
-    type: categorical
-    choices: [ True, False ]
-  anneal_lr:
     type: categorical
     choices: [ True, False ]
   n_steps:
@@ -87,3 +84,6 @@ hyperparameters:
   clip_range_vf:
     type: categorical
     choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
+  anneal_lr:
+    type: categorical
+    choices: [ True, False ]

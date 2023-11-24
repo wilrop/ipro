@@ -1,20 +1,33 @@
+# Experiment params
 env_id: minecart-v0
-outer_loop: IPRO
-tolerance: 1.e-5
-oracle: MO-A2C
+max_episode_steps: 1000
+one_hot_wrapper: False
 gamma: 0.98
 study_name: a2c_minecart
 seed: 1
-wandb_project_name: IPRO
+wandb_project_name: IPRO_opt
 wandb_entity: null
-track_outer: True
-track_oracle: False
-max_iterations: 50
-warm_start: False
 n_trials: 1
-max_episode_steps: 1000
-log_freq: 10000
 
+
+# Outer loop params
+outer_loop:
+  method: IPRO
+  tolerance: 1.e-5
+  max_iterations: 50
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: MO-A2C
+  warm_start: False
+  eval_episodes: 100
+  log_freq: 10000
+  track: False
+
+
+# Hyperparameter options to be selected during the optimisation
 hyperparameters:
   aug:
     type: categorical
@@ -25,9 +38,6 @@ hyperparameters:
   global_steps:
     type: categorical
     choices: [ 1.e+6, 1.5e+6, 2.e+6 ]
-  eval_episodes:
-    type: constant
-    value: 100
   num_hidden_layers:
     type: int
     min: 1

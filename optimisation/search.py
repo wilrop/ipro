@@ -49,7 +49,7 @@ def optimize_hyperparameters(study_name, env_name, optimize_trial, storage=None,
     return study.optimize(optimize_trial, n_trials=n_trials)
 
 
-def suggest_hyperparameters(trial, parameters):
+def suggest_hyperparameters(trial, hyperparams_options):
     hyperparams = dict()
 
     def _suggest(_param, _config, _suggestion_type):
@@ -67,19 +67,19 @@ def suggest_hyperparameters(trial, parameters):
             'constant': lambda: _config['value']
         }[_suggestion_type]()
 
-    for param, config in parameters['hyperparameters'].items():
-        if param != 'conditionals':
-            assert 'type' in config, f'Please provide a suggestion type for parameter {param}'
-            suggestion_type = config['type']
-            _suggest(param, config, suggestion_type)
-
     def _str_replace(str_, dict_):
         for word, replacement in dict_.items():
             str_ = str_.replace(word, str(replacement))
         return str_
 
+    for param, config in hyperparams_options.items():
+        if param != 'conditionals':
+            assert 'type' in config, f'Please provide a suggestion type for parameter {param}'
+            suggestion_type = config['type']
+            _suggest(param, config, suggestion_type)
+
     conditionals = []
-    conditional_params = parameters['hyperparameters'].get('conditionals', [])
+    conditional_params = hyperparams_options.get('conditionals', [])
     for conditional in conditional_params:
         class ConditionalStatement:
             _conditional_parameters = conditional['vars']
@@ -118,37 +118,42 @@ def suggest_hyperparameters(trial, parameters):
     return hyperparams
 
 
-def search(parameters, study_name='study', n_trials=100, report_intermediate=True, log_dir='.', delete_local=False):
+def search(parameters, study_name='study', n_trials=100, report_intermediate=True, log_dir='.'):
     """Search for hyperparameters for the given configuration."""
 
     def optimize_trial(trial):
         env_id = parameters['env_id']
+        max_episode_steps = parameters['max_episode_steps']
+        one_hot = parameters['one_hot_wrapper']
+        gamma = parameters['gamma']
+        study_name = parameters['study_name']
         seed = parameters['seed']
         seeds = [seed] if isinstance(seed, int) else seed
-        oracle_name = parameters['oracle']
-        outer_loop_name = parameters['outer_loop']
-        max_episode_steps = parameters['max_episode_steps']
-
+        wandb_project_name = parameters['wandb_project_name']
+        wandb_entity = parameters['wandb_entity']
         minimals, maximals, ref_point = get_bounding_box(env_id)
-        hyperparameters = suggest_hyperparameters(trial, parameters)
-        if 'hidden_size' in hyperparameters:
-            hl_actor = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
-            hl_critic = (hyperparameters['hidden_size'],) * hyperparameters['num_hidden_layers']
-            hyperparameters.pop('hidden_size')
-            hyperparameters.pop('num_hidden_layers')
-        else:
-            hl_actor = (hyperparameters['hidden_size_actor'],) * hyperparameters['num_hidden_layers_actor']
-            hl_critic = (hyperparameters['hidden_size_critic'],) * hyperparameters['num_hidden_layers_critic']
-            hyperparameters.pop('hidden_size_actor')
-            hyperparameters.pop('hidden_size_critic')
-            hyperparameters.pop('num_hidden_layers_actor')
-            hyperparameters.pop('num_hidden_layers_critic')
+        method = parameters['outer_loop'].pop('method')
+        algorithm = parameters['oracle'].pop('algorithm')
+        oracle_hyperparams = suggest_hyperparameters(trial, parameters.pop('hyperparameters'))
 
-        if oracle_name == 'MO-DQN':
-            hyperparameters['hidden_layers'] = hl_critic
+        if 'hidden_size' in oracle_hyperparams:
+            hl_actor = (oracle_hyperparams['hidden_size'],) * oracle_hyperparams['num_hidden_layers']
+            hl_critic = (oracle_hyperparams['hidden_size'],) * oracle_hyperparams['num_hidden_layers']
+            oracle_hyperparams.pop('hidden_size')
+            oracle_hyperparams.pop('num_hidden_layers')
         else:
-            hyperparameters['actor_hidden'] = hl_actor
-            hyperparameters['critic_hidden'] = hl_critic
+            hl_actor = (oracle_hyperparams['hidden_size_actor'],) * oracle_hyperparams['num_hidden_layers_actor']
+            hl_critic = (oracle_hyperparams['hidden_size_critic'],) * oracle_hyperparams['num_hidden_layers_critic']
+            oracle_hyperparams.pop('hidden_size_actor')
+            oracle_hyperparams.pop('hidden_size_critic')
+            oracle_hyperparams.pop('num_hidden_layers_actor')
+            oracle_hyperparams.pop('num_hidden_layers_critic')
+
+        if algorithm in ['MO-DQN', 'SN-MO-DQN']:
+            oracle_hyperparams['hidden_layers'] = hl_critic
+        else:
+            oracle_hyperparams['actor_hidden'] = hl_actor
+            oracle_hyperparams['critic_hidden'] = hl_critic
 
         hypervolumes = []
 
@@ -160,34 +165,39 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
 
             run_name = f"{study_name}__{seed}__{int(time.time())}"
 
-            if oracle_name == 'MO-PPO':
-                env, num_objectives = setup_vector_env(env_id, hyperparameters['num_envs'], seed, run_name, False,
-                                                       max_episode_steps=max_episode_steps)
+            if algorithm in ['MO-PPO', 'SN-MO-PPO']:
+                env, num_objectives = setup_vector_env(env_id,
+                                                       oracle_hyperparams['num_envs'],
+                                                       seed,
+                                                       run_name,
+                                                       max_episode_steps=max_episode_steps,
+                                                       one_hot=one_hot,
+                                                       capture_video=False)
             else:
-                env, num_objectives = setup_env(env_id, max_episode_steps, capture_video=False, run_name=run_name)
+                env, num_objectives = setup_env(env_id,
+                                                max_episode_steps=max_episode_steps,
+                                                one_hot=one_hot,
+                                                capture_video=False,
+                                                run_name=run_name)
 
             linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
-            oracle = init_oracle(oracle_name,
+            oracle = init_oracle(algorithm,
                                  env,
-                                 parameters['gamma'],
-                                 track=parameters['track_oracle'],
-                                 warm_start=parameters['warm_start'],
-                                 log_freq=parameters['log_freq'],
+                                 gamma,
                                  seed=seed,
-                                 **hyperparameters)
-            ol = init_outer_loop(outer_loop_name,
+                                 **parameters['oracle'],
+                                 **oracle_hyperparams)
+            ol = init_outer_loop(method,
                                  env,
                                  num_objectives,
                                  oracle,
                                  linear_solver,
                                  ref_point=ref_point,
-                                 tolerance=parameters['tolerance'],
-                                 max_iterations=parameters['max_iterations'],
-                                 track=parameters['track_outer'],
                                  exp_name=run_name,
-                                 wandb_project_name=parameters['wandb_project_name'],
-                                 wandb_entity=parameters['wandb_entity'],
-                                 seed=seed)
+                                 wandb_project_name=wandb_project_name,
+                                 wandb_entity=wandb_entity,
+                                 seed=seed,
+                                 **parameters['outer_loop'])
             if report_intermediate:
                 def callback(step, hypervolume, dominated_hv, discarded_hv, coverage, error):
                     trial.report(hypervolume, step)
@@ -199,7 +209,7 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
             hypervolumes.append(ol.hv)
         return np.mean(hypervolumes)
 
-    if type(parameters['env_id']) == str:
+    if isinstance(parameters['env_id'], str):
         env_name = parameters['env_id']
     else:
         parameters['env_name'] = np.random.choice(parameters['env_id'])
@@ -210,11 +220,10 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--params', type=str, default='test.yaml',
+    parser.add_argument('--params', type=str, default='sn_dqn_dst.yaml',
                         help='path of a yaml file containing the parameters of this study')
     parser.add_argument('--report_intermediate', default=False, action='store_true')
     parser.add_argument('--log_dir', type=str, default='./')
-    parser.add_argument('--delete_local', default=False, action='store_true')
     parser.add_argument('--overwrite_seed', type=int, default=None, help='overwrite the seed in the yaml file')
     args = parser.parse_args()
 
@@ -229,5 +238,4 @@ if __name__ == '__main__':
            n_trials=parameters['n_trials'],
            report_intermediate=args.report_intermediate,
            log_dir=args.log_dir,
-           delete_local=args.delete_local
            )
