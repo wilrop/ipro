@@ -77,7 +77,7 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
+    env, num_objectives = setup_env(args.env_id, max_episode_steps=args.max_episode_steps, one_hot=args.one_hot)
     minimals, maximals, ref_point = get_bounding_box(args.env_id)
     linear_solver = init_linear_solver('known_box',
                                        minimals,
@@ -92,7 +92,6 @@ if __name__ == '__main__':
                          lr_critic=args.lr_critic,
                          actor_hidden=args.actor_hidden,
                          critic_hidden=args.critic_hidden,
-                         one_hot=args.one_hot,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
                          max_grad_norm=args.max_grad_norm,

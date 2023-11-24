@@ -66,7 +66,7 @@ def parse_args():
                         help="The number of gradient steps to take for each DQN training step.")
     parser.add_argument("--batch_size", type=int, default=32, help="The batch size for the DQN training.")
     parser.add_argument("--buffer_size", type=int, default=10000, help="The size of the replay buffer.")
-    parser.add_argument("--per", type=bool, default=True, help="Whether to use prioritized experience replay.")
+    parser.add_argument("--per", type=bool, default=False, help="Whether to use prioritized experience replay.")
     parser.add_argument("--alpha_per", type=float, default=0.6,
                         help="The alpha parameter for prioritized experience replay.")
     parser.add_argument("--min_priority", type=float, default=1e-3,
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    env, num_objectives = setup_env(args.env_id, args.max_episode_steps)
+    env, num_objectives = setup_env(args.env_id, max_episode_steps=args.max_episode_steps, one_hot=args.one_hot)
     minimals, maximals, ref_point = get_bounding_box(args.env_id)
     linear_solver = init_linear_solver('known_box',
                                        minimals,
@@ -104,7 +104,6 @@ if __name__ == '__main__':
                          scale=args.scale,
                          lr=args.lr,
                          hidden_layers=args.hidden_layers,
-                         one_hot=args.one_hot,
                          learning_start=args.learning_start,
                          train_freq=args.train_freq,
                          target_update_freq=args.target_update_freq,

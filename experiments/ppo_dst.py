@@ -89,8 +89,9 @@ if __name__ == '__main__':
                                             args.num_envs,
                                             args.seed,
                                             run_name,
-                                            args.capture_video,
-                                            max_episode_steps=args.max_episode_steps)
+                                            max_episode_steps=args.max_episode_steps,
+                                            one_hot=args.one_hot,
+                                            capture_video=args.capture_video)
     minimals, maximals, ref_point = get_bounding_box(args.env_id)
     linear_solver = init_linear_solver('known_box',
                                        minimals=minimals,
@@ -106,7 +107,6 @@ if __name__ == '__main__':
                          eps=args.eps,
                          actor_hidden=args.actor_hidden,
                          critic_hidden=args.critic_hidden,
-                         one_hot=args.one_hot,
                          anneal_lr=args.anneal_lr,
                          e_coef=args.e_coef,
                          v_coef=args.v_coef,
