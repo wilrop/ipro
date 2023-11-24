@@ -2,7 +2,7 @@ import torch
 import wandb
 import numpy as np
 
-from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete
 from collections import deque
 import torch.nn as nn
 
@@ -10,38 +10,45 @@ from oracles.vector_u import create_batched_aasf
 
 
 class DRLOracle:
+    """The base class for deep reinforcement learning oracles that execute independent learning."""
+
     def __init__(self,
                  env,
                  aug=0.2,
                  scale=100,
                  gamma=0.99,
-                 one_hot=False,
                  warm_start=False,
+                 vary_nadir=False,
+                 vary_ideal=False,
                  eval_episodes=100,
+                 deterministic_eval=True,
                  window_size=100,
-                 track=False):
+                 track=False,
+                 seed=0):
+        self.seed = seed
+        self.np_rng = np.random.default_rng(seed=seed)
+        self.torch_rng = torch.Generator()
+        self.torch_rng.manual_seed(seed)
+
         self.env = env
         self.aug = aug
         self.scale = scale
 
         self.num_actions = env.action_space.n
         self.num_objectives = env.reward_space.shape[0]
-
-        if isinstance(self.env.observation_space, Box):
-            low_bound = self.env.observation_space.low
-            high_bound = self.env.observation_space.high
-            self.obs_shape = self.env.observation_space.shape
-            if one_hot:
-                self.box_shape = (high_bound[0] - low_bound[0] + 1, high_bound[1] - low_bound[1] + 1)
-                self.obs_dim = np.prod(self.box_shape)
-            else:
-                self.obs_dim = np.prod(self.obs_shape)
+        self.flat_obs_dim = np.prod(self.env.observation_space.shape)
+        self.aug_obs_dim = self.flat_obs_dim + self.num_objectives
 
         self.gamma = gamma
-        self.one_hot = one_hot
         self.eval_episodes = eval_episodes
+        self.deterministic_eval = deterministic_eval
         self.u_func = None
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
+
+        self.nadir = None
+        self.ideal = None
+        self.vary_nadir = vary_nadir
+        self.vary_ideal = vary_ideal
 
         self.iteration = 0
 
@@ -68,6 +75,11 @@ class DRLOracle:
             torch.nn.init.xavier_uniform_(m.weight, gain=std)
             torch.nn.init.constant_(m.bias, bias_const)
 
+    def init_oracle(self, nadir=None, ideal=None):
+        """Initialise the oracle."""
+        self.nadir = nadir
+        self.ideal = ideal
+
     def config(self):
         """Return the configuration of the algorithm."""
         raise NotImplementedError
@@ -81,11 +93,11 @@ class DRLOracle:
         self.episodic_returns.clear()
         self.episodic_lengths.clear()
 
-    def select_greedy_action(self, aug_obs, accrued_reward):
+    def select_greedy_action(self, aug_obs, accrued_reward, *args, **kwargs):
         """Select the greedy action for the given observation."""
         raise NotImplementedError
 
-    def select_action(self, aug_obs, accrued_reward):
+    def select_action(self, aug_obs, accrued_reward, *args, **kwargs):
         """Select an action for the given observation."""
         raise NotImplementedError
 
@@ -94,7 +106,6 @@ class DRLOracle:
         if self.track:
             wandb.define_metric(f'charts/utility_{self.iteration}', step_metric=f'global_step_{self.iteration}')
             wandb.define_metric(f'charts/episodic_length_{self.iteration}', step_metric=f'global_step_{self.iteration}')
-            wandb.define_metric(f'charts/distance_{self.iteration}', step_metric=f'global_step_{self.iteration}')
 
     def setup_dqn_metrics(self):
         """Set up the metrics for logging."""
@@ -116,49 +127,12 @@ class DRLOracle:
                                 step_metric=f'global_step_{self.iteration}')
             self.setup_chart_metrics()
 
-    def one_hot_encode(self, obs):
-        """One-hot encode the given observation.
-
-        Args:
-            obs (ndarray): The observation to one-hot encode.
-
-        Returns:
-            ndarray: The one-hot encoded observation.
-        """
-        dims = obs.ndim
-        if dims == 1:
-            obs = np.expand_dims(obs, axis=0)
-        num_obs = len(obs)
-        obs = np.swapaxes(obs, 0, 1)
-        flat_obs = np.ravel_multi_index(obs, self.box_shape)
-        one_hot_obs = np.zeros((num_obs, self.obs_dim))
-        one_hot_obs[np.arange(num_obs), flat_obs] = 1
-        if dims == 1:
-            one_hot_obs = np.squeeze(one_hot_obs, axis=0)
-        return one_hot_obs
-
-    def format_obs(self, obs, vectorized=False):
-        """Format the given observation.
-
-        Args:
-            obs (ndarray): The observation to format.
-            vectorized (bool): Whether the observation is vectorized or not. Defaults to False.
-
-        Returns:
-            ndarray: The formatted observation.
-        """
-        if self.one_hot:
-            return self.one_hot_encode(obs)
-        elif vectorized:
-            return obs.reshape((obs.shape[0], -1))
-        else:
-            return obs.flatten()
-
     def evaluate(self, eval_episodes=100, deterministic=True):
         """Evaluate the agent on the environment.
 
         Args:
-            deterministic (bool): Whether to use a deterministic policy or not.
+            eval_episodes (int, optional): The number of episodes to evaluate the agent for. Defaults to 100.
+            deterministic (bool, optional): Whether to use a deterministic policy or not. Defaults to True.
 
         Returns:
             ndarray: The average reward over the evaluation episodes.
@@ -171,8 +145,7 @@ class DRLOracle:
         pareto_point = np.zeros(self.num_objectives)
 
         for episode in range(eval_episodes):
-            raw_obs, _ = self.env.reset()
-            obs = self.format_obs(raw_obs)
+            obs, _ = self.env.reset()
             terminated = False
             truncated = False
             accrued_reward = np.zeros(self.num_objectives)
@@ -182,8 +155,7 @@ class DRLOracle:
                 aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
                 with torch.no_grad():
                     action = policy(aug_obs, accrued_reward)
-                next_raw_obs, reward, terminated, truncated, _ = self.env.step(action)
-                next_obs = self.format_obs(next_raw_obs)
+                next_obs, reward, terminated, truncated, _ = self.env.step(action)
                 accrued_reward += (self.gamma ** timestep) * reward
                 obs = next_obs
                 timestep += 1
@@ -192,7 +164,7 @@ class DRLOracle:
 
         return pareto_point / eval_episodes
 
-    def train(self):
+    def train(self, *args, **kwargs):
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
@@ -208,12 +180,12 @@ class DRLOracle:
             f'global_step_{self.iteration}': global_step,
         }
 
-    def save_episode_stats(self, episodic_return, episodic_length):
+    def save_episode_stats(self, episodic_return, episodic_length, *args, **kwargs):
         """Save the episodic statistics for a single environment."""
         self.episodic_returns.append(episodic_return)
         self.episodic_lengths.append(episodic_length)
 
-    def save_vectorized_episodic_stats(self, info, dones):
+    def save_vectorized_episodic_stats(self, info, dones, *args, **kwargs):
         """Save the episodic statistics for vectorized environments."""
         for k, v in info.items():
             if k == "episode":
@@ -221,7 +193,7 @@ class DRLOracle:
                 episodic_lengths = v["l"]
                 for episodic_return, episodic_length, done in zip(episodic_returns, episodic_lengths, dones):
                     if done:
-                        self.save_episode_stats(episodic_return, episodic_length)
+                        self.save_episode_stats(episodic_return, episodic_length, *args, **kwargs)
 
     def log_pg(self, global_step, loss, pg_l, v_l, e_l):
         """Log the loss and episode statistics for PPO and A2C."""""
@@ -294,13 +266,21 @@ class DRLOracle:
             critic = critic.state_dict()
         self.trained_models[tuple(referent)] = (actor, critic)
 
-    def solve(self, referent, ideal):
+    def solve(self, referent, nadir=None, ideal=None):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
-        referent = torch.tensor(referent)
-        ideal = torch.tensor(ideal)
-        self.u_func = create_batched_aasf(referent, referent, ideal, aug=self.aug, scale=self.scale, backend='torch')
+
+        # Determine boundaries of the utility function.
+        nadir = nadir if nadir is not None and self.vary_nadir else self.nadir
+        ideal = ideal if ideal is not None and self.vary_ideal else self.ideal
+
+        # Make vectors tensors.
+        referent = torch.tensor(referent, dtype=torch.float32)
+        nadir = torch.tensor(nadir, dtype=torch.float32)
+        ideal = torch.tensor(ideal, dtype=torch.float32)
+
+        self.u_func = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
-        pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=True)
+        pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=self.deterministic_eval)
         self.iteration += 1
         return pareto_point

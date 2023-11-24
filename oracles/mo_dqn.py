@@ -48,7 +48,6 @@ class MODQN(DRLOracle):
                  scale=1000,
                  lr=0.001,
                  hidden_layers=(64, 64),
-                 one_hot=False,
                  learning_start=1000,
                  train_freq=1,
                  target_update_freq=1,
@@ -68,14 +67,13 @@ class MODQN(DRLOracle):
                  log_freq=1000,
                  seed=0):
         super().__init__(env,
-                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
-                         one_hot=one_hot,
                          warm_start=warm_start,
-                         eval_episodes=eval_episodes)
-
+                         eval_episodes=eval_episodes,
+                         track=track,
+                         seed=seed)
         self.dqn_lr = lr
         self.learning_start = learning_start
         self.train_freq = train_freq
@@ -92,12 +90,6 @@ class MODQN(DRLOracle):
         self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
-        self.seed = seed
-        self.rng = np.random.default_rng(seed=seed)
-
-        self.one_hot = one_hot
-
-        self.input_dim = self.obs_dim + self.num_objectives
         self.output_dim = int(self.num_actions * self.num_objectives)
         self.dqn_hidden_layers = hidden_layers
 
@@ -110,17 +102,19 @@ class MODQN(DRLOracle):
         self.alpha_per = alpha_per
         self.min_priority = min_priority
         if self.per:
-            self.replay_buffer = PrioritizedAccruedRewardReplayBuffer((self.input_dim,),
-                                                                      env.action_space.shape,
+            self.replay_buffer = PrioritizedAccruedRewardReplayBuffer((self.aug_obs_dim,),
+                                                                      self.env.action_space.shape,
                                                                       rew_dim=self.num_objectives,
                                                                       max_size=self.buffer_size,
-                                                                      action_dtype=np.uint8)
+                                                                      action_dtype=np.uint8,
+                                                                      rng=self.np_rng)
         else:
-            self.replay_buffer = AccruedRewardReplayBuffer((self.input_dim,),
-                                                           env.action_space.shape,
+            self.replay_buffer = AccruedRewardReplayBuffer((self.aug_obs_dim,),
+                                                           self.env.action_space.shape,
                                                            rew_dim=self.num_objectives,
                                                            max_size=self.buffer_size,
-                                                           action_dtype=np.uint8)
+                                                           action_dtype=np.uint8,
+                                                           rng=self.np_rng)
 
         self.batch_size = batch_size
 
@@ -134,7 +128,6 @@ class MODQN(DRLOracle):
             "scale": self.scale,
             "lr": self.dqn_lr,
             "hidden_layers": self.dqn_hidden_layers,
-            "one_hot": self.one_hot,
             "learning_start": self.learning_start,
             "train_freq": self.train_freq,
             "target_update_freq": self.target_update_freq,
@@ -156,15 +149,15 @@ class MODQN(DRLOracle):
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
-        self.q_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim)
-        self.target_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim)
+        self.q_network = QNetwork(self.aug_obs_dim, self.dqn_hidden_layers, self.output_dim)
+        self.target_network = QNetwork(self.aug_obs_dim, self.dqn_hidden_layers, self.output_dim)
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)
         self.replay_buffer.reset()
         self.u_func = None
 
-    def select_greedy_action(self, aug_obs, accrued_reward):
+    def select_greedy_action(self, aug_obs, accrued_reward, *args, **kwargs):
         """Select the greedy action.
 
         Args:
@@ -179,7 +172,7 @@ class MODQN(DRLOracle):
         utilities = self.u_func(expected_returns)
         return torch.argmax(utilities).item()
 
-    def select_action(self, aug_obs, accrued_reward, epsilon=0.1):
+    def select_action(self, aug_obs, accrued_reward, epsilon=0.1, *args, **kwargs):
         """Select an action using epsilon-greedy exploration.
 
         Args:
@@ -190,8 +183,8 @@ class MODQN(DRLOracle):
         Returns:
             action (int): The action to take.
         """
-        if self.rng.uniform() < epsilon:
-            return self.rng.integers(self.num_actions)
+        if self.np_rng.uniform() < epsilon:
+            return self.np_rng.integers(self.num_actions)
         else:
             return self.select_greedy_action(aug_obs, accrued_reward)
 
@@ -296,9 +289,8 @@ class MODQN(DRLOracle):
 
     def train(self):
         """Train MODQN on the given environment."""
-        raw_obs, _ = self.env.reset()
-        raw_obs = np.nan_to_num(raw_obs, posinf=0)
-        obs = self.format_obs(raw_obs)
+        obs, _ = self.env.reset()
+        obs = np.nan_to_num(obs, posinf=0)
         timestep = 0
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = np.hstack((obs, accrued_reward))
@@ -312,10 +304,9 @@ class MODQN(DRLOracle):
             with torch.no_grad():
                 action = self.select_action(torch.tensor(aug_obs, dtype=torch.float), accrued_reward, epsilon=epsilon)
 
-            next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+            next_obs, reward, terminated, truncated, info = self.env.step(action)
+            next_obs = np.nan_to_num(next_obs, posinf=0)
             reward = np.nan_to_num(reward, posinf=0)
-            next_obs = self.format_obs(next_raw_obs)
             next_accrued_reward = accrued_reward + (self.gamma ** timestep) * reward
             aug_next_obs = np.hstack((next_obs, next_accrued_reward))
             self.add_to_buffer(aug_obs, accrued_reward, action, reward, aug_next_obs, terminated, timestep)
@@ -325,10 +316,9 @@ class MODQN(DRLOracle):
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
                 self.save_episode_stats(accrued_reward, timestep)
-                raw_obs, _ = self.env.reset()
-                raw_obs = np.nan_to_num(raw_obs, posinf=0)
+                obs, _ = self.env.reset()
+                obs = np.nan_to_num(obs, posinf=0)
                 accrued_reward = np.zeros(self.num_objectives)
-                obs = self.format_obs(raw_obs)
                 aug_obs = np.hstack((obs, accrued_reward))
                 timestep = 0
 
@@ -341,7 +331,7 @@ class MODQN(DRLOracle):
                     for t_params, q_params in zip(self.target_network.parameters(), self.q_network.parameters()):
                         t_params.data.copy_(self.tau * q_params.data + (1.0 - self.tau) * t_params.data)
 
-    def solve(self, referent, ideal):
+    def solve(self, referent, nadir=None, ideal=None, warm_start=True):
         """Solve for problem for the given referent and ideal.
 
         Args:
@@ -358,6 +348,6 @@ class MODQN(DRLOracle):
             if critic_net is not None:
                 self.target_network.load_state_dict(critic_net)
                 self.q_network.load_state_dict(critic_net)
-        pareto_point = super().solve(referent, ideal)
+        pareto_point = super().solve(referent, nadir=nadir, ideal=ideal)
         self.save_models(referent, critic=self.q_network)
         return pareto_point

@@ -53,7 +53,6 @@ class MOPPO(DRLOracle):
                  eps=1e-8,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
-                 one_hot=False,
                  anneal_lr=False,
                  e_coef=0.01,
                  v_coef=0.5,
@@ -73,13 +72,13 @@ class MOPPO(DRLOracle):
                  log_freq=1000,
                  seed=0):
         super().__init__(envs.envs[0],
-                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
-                         one_hot=one_hot,
-                         warm_start=warm_start,
-                         eval_episodes=eval_episodes)
+                         warm_start=False,
+                         eval_episodes=eval_episodes,
+                         track=track,
+                         seed=seed)
         self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
@@ -108,13 +107,6 @@ class MOPPO(DRLOracle):
         self.minibatch_size = int(self.batch_size // self.num_minibatches)
         self.num_updates = int(self.global_steps // self.batch_size)
 
-        self.seed = seed
-        self.np_rng = np.random.default_rng(seed=seed)
-        self.torch_rng = torch.Generator()
-        self.torch_rng.manual_seed(seed)
-
-        self.one_hot = one_hot
-        self.input_dim = self.obs_dim + self.num_objectives
         self.actor_output_dim = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
         self.actor_hidden = actor_hidden
@@ -127,14 +119,13 @@ class MOPPO(DRLOracle):
         self.critic_optimizer = None
         self.actor_scheduler = None
         self.critic_scheduler = None
-
-        self.rollout_buffer = RolloutBuffer((self.num_envs, self.obs_dim),
-                                            (self.num_envs,) + envs.single_action_space.shape,
+        self.rollout_buffer = RolloutBuffer((self.num_envs, self.aug_obs_dim),
+                                            (self.num_envs,) + self.envs.single_action_space.shape,
                                             rew_dim=(self.num_envs, self.num_objectives),
                                             dones_dim=(self.num_envs, 1),
                                             max_size=self.batch_size,
                                             action_dtype=int,
-                                            aug_obs=True)
+                                            rng=self.np_rng)
 
         self.warm_start = warm_start
 
@@ -149,7 +140,6 @@ class MOPPO(DRLOracle):
             "eps": self.eps,
             "actor_hidden": self.actor_hidden,
             "critic_hidden": self.critic_hidden,
-            "one_hot": self.one_hot,
             "anneal_lr": self.anneal_lr,
             "e_coef": self.e_coef,
             "v_coef": self.v_coef,
@@ -171,9 +161,9 @@ class MOPPO(DRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_hidden, self.actor_output_dim)
+        self.actor = Actor(self.aug_obs_dim, self.actor_hidden, self.actor_output_dim)
         self.actor.apply(self.init_weights)
-        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
+        self.critic = Critic(self.aug_obs_dim, self.critic_hidden, self.output_dim_critic)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)
@@ -202,7 +192,7 @@ class MOPPO(DRLOracle):
     def update_policy(self):
         """Update the policy using the rollout buffer."""
         with torch.no_grad():
-            aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
+            aug_obs, actions, rewards, aug_next_obs, dones, _ = self.rollout_buffer.get_all_data(to_tensor=True)
             values = self.critic(torch.cat((aug_obs, aug_next_obs[-1:]), dim=0))  # Predict values of observations.
             advantages = self.calc_generalised_advantages(rewards, dones, values)  # Calculate the advantages.
             returns = advantages + values[:-1]  # Calculate the returns.
@@ -210,7 +200,7 @@ class MOPPO(DRLOracle):
             log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
 
             # Flatten the data.
-            aug_obs = aug_obs.view(-1, self.input_dim)
+            aug_obs = aug_obs.view(-1, self.aug_obs_dim)
             actions = actions.view(-1)
             log_prob = log_prob.view(-1, 1)
             values = values.view(-1, self.num_objectives)
@@ -312,9 +302,8 @@ class MOPPO(DRLOracle):
     def train(self):
         """Train the agent."""
         global_step = 0
-        raw_obs, _ = self.envs.reset()
-        raw_obs = np.nan_to_num(raw_obs, posinf=0)
-        obs = torch.tensor(self.format_obs(raw_obs, vectorized=True), dtype=torch.float)
+        obs, _ = self.envs.reset()
+        obs = torch.tensor(np.nan_to_num(obs, posinf=0))
         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
@@ -335,14 +324,12 @@ class MOPPO(DRLOracle):
                 with torch.no_grad():
                     actions = self.select_action(aug_obs, acs)
 
-                next_raw_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
+                next_obs, rewards, terminateds, truncateds, info = self.envs.step(actions)
                 dones = np.expand_dims(terminateds | truncateds, axis=1)
-                next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+                next_obs = np.nan_to_num(next_obs, posinf=0)
                 rewards = np.nan_to_num(rewards, posinf=0)
-                next_obs = self.format_obs(next_raw_obs, vectorized=True)
                 acs = (acs + (self.gamma ** timesteps) * rewards) * (1 - dones)  # Update the accrued reward.
                 aug_next_obs = torch.tensor(np.hstack((next_obs, acs)), dtype=torch.float)
-
                 self.rollout_buffer.add(aug_obs, actions, rewards, aug_next_obs, np.expand_dims(terminateds, axis=-1))
 
                 aug_obs = aug_next_obs
@@ -359,7 +346,7 @@ class MOPPO(DRLOracle):
                 steps_since_log = 0
             self.rollout_buffer.reset()
 
-    def solve(self, referent, ideal, warm_start=True):
+    def solve(self, referent, nadir=None, ideal=None, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
@@ -369,6 +356,6 @@ class MOPPO(DRLOracle):
                 self.actor.load_state_dict(actor_net)
             if critic_net is not None:
                 self.critic.load_state_dict(critic_net)
-        pareto_point = super().solve(referent, ideal)
+        pareto_point = super().solve(referent, nadir=nadir, ideal=ideal)
         self.save_models(referent, actor=self.actor, critic=self.critic)
         return pareto_point

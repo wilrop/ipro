@@ -52,7 +52,6 @@ class MOA2C(DRLOracle):
                  lr_critic=0.001,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
-                 one_hot=False,
                  e_coef=0.01,
                  v_coef=0.5,
                  max_grad_norm=0.5,
@@ -65,13 +64,13 @@ class MOA2C(DRLOracle):
                  log_freq=1000,
                  seed=0):
         super().__init__(env,
-                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
-                         one_hot=one_hot,
-                         warm_start=warm_start,
-                         eval_episodes=eval_episodes)
+                         warm_start=False,
+                         eval_episodes=eval_episodes,
+                         track=track,
+                         seed=seed)
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.e_coef = e_coef
@@ -83,11 +82,6 @@ class MOA2C(DRLOracle):
         self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
-        self.seed = seed
-        self.rng = np.random.default_rng(seed=seed)
-
-        self.one_hot = one_hot
-        self.input_dim = self.obs_dim + self.num_objectives
         self.actor_output_dim = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
         self.actor_hidden = actor_hidden
@@ -103,12 +97,12 @@ class MOA2C(DRLOracle):
         self.gae_lambda = gae_lambda
 
         self.n_steps = n_steps
-        self.rollout_buffer = RolloutBuffer((self.obs_dim,),
-                                            env.action_space.shape,
+        self.rollout_buffer = RolloutBuffer((self.aug_obs_dim,),
+                                            self.env.action_space.shape,
                                             rew_dim=(self.num_objectives,),
                                             max_size=self.n_steps,
                                             action_dtype=int,
-                                            aug_obs=True)
+                                            rng=self.np_rng)
         self.warm_start = warm_start
 
     def config(self):
@@ -121,7 +115,6 @@ class MOA2C(DRLOracle):
             "lr_critic": self.lr_critic,
             "actor_hidden": self.actor_hidden,
             "critic_hidden": self.critic_hidden,
-            "one_hot": self.one_hot,
             "e_coef": self.e_coef,
             "v_coef": self.v_coef,
             "max_grad_norm": self.max_grad_norm,
@@ -136,8 +129,8 @@ class MOA2C(DRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_hidden, self.actor_output_dim)
-        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
+        self.actor = Actor(self.aug_obs_dim, self.actor_hidden, self.actor_output_dim)
+        self.critic = Critic(self.aug_obs_dim, self.critic_hidden, self.output_dim_critic)
         self.actor.apply(self.init_weights)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
@@ -166,7 +159,7 @@ class MOA2C(DRLOracle):
 
     def update_policy(self):
         """Update the policy using the rollout buffer."""
-        aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
+        aug_obs, actions, rewards, aug_next_obs, dones, _ = self.rollout_buffer.get_all_data(to_tensor=True)
         with torch.no_grad():
             v_s0 = self.critic(self.s0)  # Value of s0.
         v_s0.requires_grad = True
@@ -205,8 +198,7 @@ class MOA2C(DRLOracle):
         Returns:
             Tuple: The initial observation, accrued reward, augmented observation and timestep.
         """
-        raw_obs, _ = self.env.reset()
-        obs = self.format_obs(raw_obs)
+        obs, _ = self.env.reset()
         obs = np.nan_to_num(obs, posinf=0)
         accrued_reward = np.zeros(self.num_objectives)
         aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)  # Create the augmented state.
@@ -257,10 +249,9 @@ class MOA2C(DRLOracle):
             with torch.no_grad():
                 action = self.select_action(aug_obs, accrued_reward)
 
-            next_raw_obs, reward, terminated, truncated, info = self.env.step(action)
-            next_raw_obs = np.nan_to_num(next_raw_obs, posinf=0)
+            next_obs, reward, terminated, truncated, info = self.env.step(action)
+            next_obs = np.nan_to_num(next_obs, posinf=0)
             reward = np.nan_to_num(reward, posinf=0)
-            next_obs = self.format_obs(next_raw_obs)
             accrued_reward += (self.gamma ** timestep) * reward  # Update the accrued reward.
             aug_next_obs = torch.tensor(np.concatenate((next_obs, accrued_reward)), dtype=torch.float)
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
@@ -279,7 +270,7 @@ class MOA2C(DRLOracle):
                 self.save_episode_stats(accrued_reward, timestep)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
-    def solve(self, referent, ideal, warm_start=True):
+    def solve(self, referent, nadir=None, ideal=None, warm_start=True):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
@@ -289,6 +280,6 @@ class MOA2C(DRLOracle):
                 self.actor.load_state_dict(actor_net)
             if critic_net is not None:
                 self.critic.load_state_dict(critic_net)
-        pareto_point = super().solve(referent, ideal)
+        pareto_point = super().solve(referent, nadir=nadir, ideal=ideal)
         self.save_models(referent, actor=self.actor, critic=self.critic)
         return pareto_point

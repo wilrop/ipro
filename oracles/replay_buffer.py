@@ -5,11 +5,12 @@ import torch as th
 class SumTree:
     """SumTree with fixed size."""
 
-    def __init__(self, max_size):
+    def __init__(self, max_size, seed=None, rng=None):
         """Initialize the SumTree.
         Args:
             max_size: Maximum size of the SumTree
         """
+        self.rng = rng if rng is not None else np.random.default_rng(seed)
         self.nodes = []
         # Tree construction
         # Double the number of nodes at each level
@@ -26,7 +27,7 @@ class SumTree:
         Returns:
             indices: Indices of the sampled nodes
         """
-        query_value = np.random.uniform(0, self.nodes[0][0], size=batch_size)
+        query_value = self.rng.uniform(0, self.nodes[0][0], size=batch_size)
         node_index = np.zeros(batch_size, dtype=int)
 
         for nodes in self.nodes[1:]:
@@ -81,6 +82,8 @@ class PrioritizedAccruedRewardReplayBuffer:
             obs_dtype=np.float32,
             action_dtype=np.float32,
             max_priority=1e-5,
+            seed=None,
+            rng=None
     ):
         """Initialize the Replay Buffer.
 
@@ -92,7 +95,10 @@ class PrioritizedAccruedRewardReplayBuffer:
             obs_dtype: Data type of the observations
             action_dtype: Data type of the actions
             max_priority: Minimum priority of the buffer
+            seed: Seed for the random number generator
+            rng: Random number generator
         """
+        self.rng = rng if rng is not None else np.random.default_rng(seed)
         self.max_size = max_size
         self.ptr, self.size = 0, 0
         self.obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
@@ -211,7 +217,7 @@ class PrioritizedAccruedRewardReplayBuffer:
             Tuple of (obs, accrued_rewards, actions, rewards, next_obs, dones)
         """
         if max_samples is not None:
-            inds = np.random.choice(self.size, min(max_samples, self.size), replace=False)
+            inds = self.rng.choice(self.size, min(max_samples, self.size), replace=False)
         else:
             inds = np.arange(self.size)
         experience_tuples = (
@@ -244,6 +250,8 @@ class AccruedRewardReplayBuffer:
             max_size=100000,
             obs_dtype=np.float32,
             action_dtype=np.float32,
+            seed=None,
+            rng=None
     ):
         """Initialize the Replay Buffer.
 
@@ -254,7 +262,10 @@ class AccruedRewardReplayBuffer:
             max_size: Maximum size of the buffer
             obs_dtype: Data type of the observations
             action_dtype: Data type of the actions
+            seed: Seed for the random number generator
+            rng: Random number generator
         """
+        self.rng = rng if rng is not None else np.random.default_rng(seed)
         self.max_size = max_size
         self.ptr, self.size = 0, 0
         self.obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
@@ -300,7 +311,7 @@ class AccruedRewardReplayBuffer:
         Returns:
             Tuple of (obs, accrued_rewards, actions, rewards, next_obs, dones)
         """
-        inds = np.random.choice(self.size, batch_size, replace=replace)
+        inds = self.rng.choice(self.size, batch_size, replace=replace)
         if use_cer:
             inds[0] = self.ptr - 1  # always use last experience
         experience_tuples = (
@@ -339,7 +350,7 @@ class AccruedRewardReplayBuffer:
             Tuple of (obs, accrued_rewards, actions, rewards, next_obs, dones)
         """
         if max_samples is not None:
-            inds = np.random.choice(self.size, min(max_samples, self.size), replace=False)
+            inds = self.rng.choice(self.size, min(max_samples, self.size), replace=False)
         else:
             inds = np.arange(self.size)
         experience_tuples = (
@@ -373,7 +384,8 @@ class RolloutBuffer:
             max_size=100,
             obs_dtype=np.float32,
             action_dtype=np.float32,
-            aug_obs=False,
+            seed=None,
+            rng=None
     ):
         """Initialize the Rollout Buffer.
 
@@ -381,22 +393,24 @@ class RolloutBuffer:
             obs_shape: Shape of the observations
             action_shape:  Shape of the actions
             rew_dim: Dimension of the rewards
+            dones_dim: Dimension of the dones
             max_size: Maximum size of the buffer
             obs_dtype: Data type of the observations
             action_dtype: Data type of the actions
+            seed: Seed for the random number generator
+            rng: Random number generator
         """
-        if aug_obs:
-            obs_shape = obs_shape[:-1] + (obs_shape[-1] + rew_dim[-1],)
-
+        self.rng = rng if rng is not None else np.random.default_rng(seed)
         self.max_size = max_size
         self.ptr, self.size = 0, 0
         self.obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.next_obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.actions = np.zeros((max_size,) + action_shape, dtype=action_dtype)
+        self.probs = np.zeros((max_size, 1), dtype=np.float32)  # Necessary for importance sampling.
         self.rewards = np.zeros((max_size,) + rew_dim, dtype=np.float32)
         self.dones = np.zeros((max_size,) + dones_dim, dtype=np.float32)
 
-    def add(self, obs, action, reward, next_obs, done):
+    def add(self, obs, action, reward, next_obs, done, prob=1.):
         """Add a new experience to memory.
 
         Args:
@@ -405,12 +419,14 @@ class RolloutBuffer:
             reward: Reward
             next_obs: Next observation
             done: Done
+            prob (float, optional): The probability of the action.
         """
         self.obs[self.ptr] = np.array(obs).copy()
         self.next_obs[self.ptr] = np.array(next_obs).copy()
         self.actions[self.ptr] = np.array(action).copy()
         self.rewards[self.ptr] = np.array(reward).copy()
         self.dones[self.ptr] = np.array(done).copy()
+        self.probs[self.ptr] = np.array(prob).copy()
 
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
@@ -428,7 +444,7 @@ class RolloutBuffer:
         Returns:
             Tuple of (obs, accrued_rewards, actions, rewards, next_obs, dones)
         """
-        inds = np.random.choice(self.size, batch_size, replace=replace)
+        inds = self.rng.choice(self.size, batch_size, replace=replace)
         if use_cer:
             inds[0] = self.ptr - 1  # always use last experience
         experience_tuples = (
@@ -437,6 +453,7 @@ class RolloutBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
+            self.probs[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
@@ -465,7 +482,7 @@ class RolloutBuffer:
             Tuple of (obs, accrued_rewards, actions, rewards, next_obs, dones)
         """
         if max_samples is not None:
-            inds = np.random.choice(self.size, min(max_samples, self.size), replace=False)
+            inds = self.rng.choice(self.size, min(max_samples, self.size), replace=False)
         else:
             inds = np.arange(self.size)
         experience_tuples = (
@@ -474,6 +491,7 @@ class RolloutBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
+            self.probs[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
