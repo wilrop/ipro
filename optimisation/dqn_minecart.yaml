@@ -4,7 +4,7 @@ max_episode_steps: 1000
 one_hot_wrapper: False
 gamma: 0.98
 study_name: dqn_minecart
-seed: [ 0, 1, 2, 3, 4 ]
+seed: 1
 wandb_project_name: IPRO_opt
 wandb_entity: null
 n_trials: 1

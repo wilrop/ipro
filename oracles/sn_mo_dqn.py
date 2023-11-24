@@ -20,7 +20,6 @@ class QNetwork(nn.Module):
         self.layers = nn.Sequential(*self.layers)
 
     def forward(self, obs, ref):
-        print(obs.shape, ref.shape)
         x = torch.cat((obs, ref), dim=-1)
         return self.layers(x)
 

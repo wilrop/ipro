@@ -35,7 +35,7 @@ def setup_env(env_id, max_episode_steps=None, one_hot=False, capture_video=False
     return env, env.reward_space.shape[0]
 
 
-def make_env(env_id, idx, seed, run_name, max_episode_steps=None, one_hot=False, capture_video=False):
+def make_env(env_id, idx, seed, max_episode_steps=None, one_hot=False, capture_video=False, run_name='run'):
     """A function used in the vectorised environment generation."""
 
     def thunk():
@@ -61,17 +61,23 @@ def make_env(env_id, idx, seed, run_name, max_episode_steps=None, one_hot=False,
     return thunk
 
 
-def setup_vector_env(env_id, num_envs, seed, run_name, max_episode_steps=None, one_hot=False, capture_video=False):
+def setup_vector_env(env_id,
+                     num_envs,
+                     seed,
+                     max_episode_steps=None,
+                     one_hot=False,
+                     capture_video=False,
+                     run_name='run'):
     """Setup a vectorised environment."""
     envs = []
     for i in range(num_envs):
         envs.append(make_env(env_id,
                              i,
                              seed + i,
-                             run_name,
                              max_episode_steps=max_episode_steps,
                              one_hot=one_hot,
-                             capture_video=capture_video))
+                             capture_video=capture_video,
+                             run_name=run_name))
     envs = mo_gym.MOSyncVectorEnv(envs)
     envs = mo_gym.MORecordEpisodeStatistics(envs)
     envs.env_id = env_id
