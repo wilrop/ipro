@@ -93,6 +93,7 @@ class IPRO(OuterLoop):
         self.upper_points = np.array([ideal])  # Initialise the upper points.
         self.error = max(ideal - nadir)
         self.compute_hvis()
+        self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
 
         return False
 
@@ -283,8 +284,8 @@ class IPRO(OuterLoop):
             begin_loop = time.time()
             print(f'Iter {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
-            referent = self.select_referent(method='first')
-            vec = self.oracle.solve(np.copy(referent), np.copy(self.ideal))
+            referent = np.copy(self.select_referent(method='first'))
+            vec = self.oracle.solve(referent, nadir=referent)
 
             if strict_pareto_dominates(vec, referent):
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):

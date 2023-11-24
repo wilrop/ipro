@@ -112,6 +112,7 @@ class IPRO2D(OuterLoop):
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
         self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
 
     def get_next_box(self):
         """Get the next box to search."""
@@ -200,9 +201,8 @@ class IPRO2D(OuterLoop):
             print(f'Step {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             box = self.get_next_box()
-            ideal = np.copy(box.ideal)
             referent = np.copy(box.nadir)
-            vec = self.oracle.solve(referent, ideal)
+            vec = self.oracle.solve(referent, nadir=np.copy(box.nadir), ideal=np.copy(box.ideal))
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
