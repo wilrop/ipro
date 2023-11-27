@@ -1,5 +1,6 @@
 import time
 import wandb
+import platform
 import numpy as np
 import pygmo as pg
 from utils.pareto import extreme_prune, batched_pareto_dominates
@@ -95,8 +96,9 @@ class OuterLoop:
             "seed": self.seed,
         }
 
-    def setup_wandb(self, mode='offline', cluster=True):
+    def setup_wandb(self, mode='offline'):
         """Setup wandb."""
+        cluster = not platform.platform().startswith('macOS')  # Hack to differentiate between my laptop and cluster.
         if self.track:
             config = self.config()
             config.update(self.oracle.config())
