@@ -1,1 +1,1 @@
-dqn_dst.yaml
+sn_dqn_dst.yaml
