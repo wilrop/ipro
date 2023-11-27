@@ -60,6 +60,21 @@ class DRLOracle:
 
         self.track = track
 
+    def config(self):
+        """Get the config of the algorithm."""
+        return {
+            "env_id": self.env.env_id,
+            "aug": self.aug,
+            "scale": self.scale,
+            "gamma": self.gamma,
+            "vary_nadir": self.vary_nadir,
+            "vary_ideal": self.vary_ideal,
+            "eval_episodes": self.eval_episodes,
+            "deterministic_eval": self.deterministic_eval,
+            "window_size": self.window_size,
+            "seed": self.seed,
+        }
+
     @staticmethod
     def _compute_grad_norm(model):
         """Compute the gradient norm of the model parameters."""

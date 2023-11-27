@@ -75,7 +75,7 @@ class MOPPO(DRLOracle):
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
-                         warm_start=False,
+                         warm_start=warm_start,
                          eval_episodes=eval_episodes,
                          track=track,
                          seed=seed)
@@ -100,7 +100,6 @@ class MOPPO(DRLOracle):
 
         self.n_steps = n_steps
         self.global_steps = int(global_steps)
-        self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
         self.batch_size = int(self.num_envs * self.n_steps)
@@ -127,37 +126,32 @@ class MOPPO(DRLOracle):
                                             action_dtype=int,
                                             rng=self.np_rng)
 
-        self.warm_start = warm_start
-
     def config(self):
-        return {
-            "gamma": self.gamma,
-            "track": self.track,
-            "aug": self.aug,
-            "scale": self.scale,
-            "lr_actor": self.lr_actor,
-            "lr_critic": self.lr_critic,
-            "eps": self.eps,
-            "actor_hidden": self.actor_hidden,
-            "critic_hidden": self.critic_hidden,
-            "anneal_lr": self.anneal_lr,
-            "e_coef": self.e_coef,
-            "v_coef": self.v_coef,
-            "num_envs": self.num_envs,
-            "num_minibatches": self.num_minibatches,
-            "update_epochs": self.update_epochs,
-            "max_grad_norm": self.max_grad_norm,
-            "target_kl": self.target_kl,
-            "normalize_advantage": self.normalize_advantage,
-            "clip_coef": self.clip_coef,
-            "clip_range_vf": self.clip_range_vf,
-            "gae_lambda": self.gae_lambda,
-            "n_steps": self.n_steps,
-            "global_steps": self.global_steps,
-            "eval_episodes": self.eval_episodes,
-            "log_freq": self.log_freq,
-            "seed": self.seed
-        }
+        """Get the config of the algorithm."""
+        config = super().config()
+        config.update({
+            'lr_actor': self.lr_actor,
+            'lr_critic': self.lr_critic,
+            'eps': self.eps,
+            'anneal_lr': self.anneal_lr,
+            'e_coef': self.e_coef,
+            'v_coef': self.v_coef,
+            'num_envs': self.num_envs,
+            'num_minibatches': self.num_minibatches,
+            'update_epochs': self.update_epochs,
+            'max_grad_norm': self.max_grad_norm,
+            'target_kl': self.target_kl,
+            'normalize_advantage': self.normalize_advantage,
+            'clip_coef': self.clip_coef,
+            'clip_range_vf': self.clip_range_vf,
+            'gae_lambda': self.gae_lambda,
+            'n_steps': self.n_steps,
+            'global_steps': self.global_steps,
+            'log_freq': self.log_freq,
+            'actor_hidden': self.actor_hidden,
+            'critic_hidden': self.critic_hidden,
+        })
+        return config
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""

@@ -83,11 +83,9 @@ class MODQN(DRLOracle):
         self.epsilon_end = epsilon_end
         self.exploration_frac = exploration_frac
         self.exploration_steps = int(exploration_frac * global_steps)
-        self.gamma = gamma
         self.tau = tau
 
         self.global_steps = int(global_steps)
-        self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
         self.output_dim = int(self.num_actions * self.num_objectives)
@@ -118,34 +116,28 @@ class MODQN(DRLOracle):
 
         self.batch_size = batch_size
 
-        self.warm_start = warm_start
-
     def config(self):
-        return {
-            "gamma": self.gamma,
-            "track": self.track,
-            "aug": self.aug,
-            "scale": self.scale,
-            "lr": self.dqn_lr,
-            "hidden_layers": self.dqn_hidden_layers,
-            "learning_start": self.learning_start,
-            "train_freq": self.train_freq,
-            "target_update_freq": self.target_update_freq,
-            "gradient_steps": self.gradient_steps,
-            "epsilon_start": self.epsilon_start,
-            "epsilon_end": self.epsilon_end,
-            "exploration_frac": self.exploration_frac,
-            "tau": self.tau,
-            "buffer_size": self.buffer_size,
-            "per": self.per,
-            "alpha_per": self.alpha_per,
-            "min_priority": self.min_priority,
-            "batch_size": self.batch_size,
-            "global_steps": self.global_steps,
-            "eval_episodes": self.eval_episodes,
-            "log_freq": self.log_freq,
-            "seed": self.seed
+        """Get the config of the algorithm."""
+        config = {
+            'dqn_lr': self.dqn_lr,
+            'learning_start': self.learning_start,
+            'train_freq': self.train_freq,
+            'target_update_freq': self.target_update_freq,
+            'gradient_steps': self.gradient_steps,
+            'epsilon_start': self.epsilon_start,
+            'epsilon_end': self.epsilon_end,
+            'exploration_frac': self.exploration_frac,
+            'tau': self.tau,
+            'buffer_size': self.buffer_size,
+            'per': self.per,
+            'alpha_per': self.alpha_per,
+            'min_priority': self.min_priority,
+            'batch_size': self.batch_size,
+            'global_steps': self.global_steps,
+            'log_freq': self.log_freq,
+            'seed': self.seed,
         }
+        return config
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
@@ -268,17 +260,13 @@ class MODQN(DRLOracle):
                 target_pred = self.target_network(aug_next_obs).view(-1, self.num_actions, self.num_objectives)
                 total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred
                 utilities = self.u_func(total_rewards)
-                print(utilities.shape)
                 best_actions = torch.argmax(utilities, dim=1)
                 target_utilities = utilities[torch.arange(self.batch_size), best_actions]
                 q_maxs = target_pred[torch.arange(self.batch_size), best_actions]
                 td_target = rewards + self.gamma * q_maxs * (1 - dones)
 
             preds = self.q_network(aug_obs).view(-1, self.num_actions, self.num_objectives)
-            print(preds.shape)
             action_preds = preds[torch.arange(self.batch_size), actions.type(torch.LongTensor)]
-            print(action_preds.shape)
-            raise
             loss = F.mse_loss(td_target, action_preds)
 
             # optimize the model

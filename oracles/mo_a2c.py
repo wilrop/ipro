@@ -67,7 +67,7 @@ class MOA2C(DRLOracle):
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
-                         warm_start=False,
+                         warm_start=warm_start,
                          eval_episodes=eval_episodes,
                          track=track,
                          seed=seed)
@@ -75,11 +75,9 @@ class MOA2C(DRLOracle):
         self.lr_critic = lr_critic
         self.e_coef = e_coef
         self.v_coef = v_coef
-        self.gamma = gamma
         self.s0 = None
 
         self.global_steps = int(global_steps)
-        self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
         self.actor_output_dim = int(self.num_actions)
@@ -103,29 +101,25 @@ class MOA2C(DRLOracle):
                                             max_size=self.n_steps,
                                             action_dtype=int,
                                             rng=self.np_rng)
-        self.warm_start = warm_start
 
     def config(self):
-        return {
-            "gamma": self.gamma,
-            "track": self.track,
-            "aug": self.aug,
-            "scale": self.scale,
-            "lr_actor": self.lr_actor,
-            "lr_critic": self.lr_critic,
-            "actor_hidden": self.actor_hidden,
-            "critic_hidden": self.critic_hidden,
-            "e_coef": self.e_coef,
-            "v_coef": self.v_coef,
-            "max_grad_norm": self.max_grad_norm,
-            "normalize_advantage": self.normalize_advantage,
-            "n_steps": self.n_steps,
-            "gae_lambda": self.gae_lambda,
-            "global_steps": self.global_steps,
-            "eval_episodes": self.eval_episodes,
-            "log_freq": self.log_freq,
-            "seed": self.seed
-        }
+        """Return the configuration of the algorithm."""
+        config = super().config()
+        config.update({
+            'lr_actor': self.lr_actor,
+            'lr_critic': self.lr_critic,
+            'e_coef': self.e_coef,
+            'v_coef': self.v_coef,
+            'global_steps': self.global_steps,
+            'log_freq': self.log_freq,
+            'actor_hidden': self.actor_hidden,
+            'critic_hidden': self.critic_hidden,
+            'max_grad_norm': self.max_grad_norm,
+            'normalize_advantage': self.normalize_advantage,
+            'n_steps': self.n_steps,
+            'gae_lambda': self.gae_lambda,
+        })
+        return config
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""

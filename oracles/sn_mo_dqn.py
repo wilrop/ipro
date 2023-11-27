@@ -67,6 +67,7 @@ class SNMODQN(SNDRLOracle):
                  tau=0.1,
                  buffer_size=100000,
                  batch_size=32,
+                 clear_buffer=False,
                  eval_episodes=100,
                  log_freq=1000,
                  seed=0):
@@ -78,13 +79,6 @@ class SNMODQN(SNDRLOracle):
                          eval_episodes=eval_episodes,
                          seed=seed)
         self.dqn_lr = lr
-        self.pretrain_iters = pretrain_iters  # The number of iterations to pretrain for.
-        self.num_referents = num_referents  # The number of referents to apply concurrently to a batch.
-        self.pre_learning_start = pre_learning_start  # The number of steps before pretraining starts.
-        self.pre_epsilon_start = pre_epsilon_start  # The starting epsilon for pretraining.
-        self.pre_epsilon_end = pre_epsilon_end  # The ending epsilon for pretraining.
-        self.pre_exploration_frac = pre_exploration_frac  # The fraction of pretraining steps to explore.
-        self.pretraining_steps = pretraining_steps  # The number of steps to pretrain for in each iteration.
         self.online_learning_start = online_learning_start  # The number of steps before learning starts online.
         self.online_epsilon_start = online_epsilon_start  # The starting epsilon for online learning.
         self.online_epsilon_end = online_epsilon_end  # The ending epsilon for online learning.
@@ -96,7 +90,6 @@ class SNMODQN(SNDRLOracle):
         self.gradient_steps = gradient_steps
         self.tau = tau
 
-        self.eval_episodes = eval_episodes
         self.log_freq = log_freq
 
         self.input_dim = self.aug_obs_dim + self.num_objectives  # Obs + accrued reward + referent.
@@ -109,6 +102,7 @@ class SNMODQN(SNDRLOracle):
 
         self.batch_size = batch_size
         self.buffer_size = buffer_size
+        self.clear_buffer = clear_buffer
         self.replay_buffer = AccruedRewardReplayBuffer(obs_shape=(self.aug_obs_dim,),
                                                        action_shape=self.env.action_space.shape,
                                                        rew_dim=self.num_objectives,
@@ -139,6 +133,7 @@ class SNMODQN(SNDRLOracle):
             'tau': self.tau,
             'buffer_size': self.buffer_size,
             'batch_size': self.batch_size,
+            'clear_buffer': self.clear_buffer,
             'eval_episodes': self.eval_episodes,
             'log_freq': self.log_freq,
             'seed': self.seed
@@ -151,8 +146,8 @@ class SNMODQN(SNDRLOracle):
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)
-        self.replay_buffer.reset()
-        self.u_func = None
+        if self.clear_buffer:
+            self.replay_buffer.reset()
 
     def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal, ):
         """Select the greedy action.
@@ -228,23 +223,6 @@ class SNMODQN(SNDRLOracle):
             loss.backward()
             self.optimizer.step()
             return loss.item()
-
-    def pretrain(self):
-        self.reset()
-        self.setup_dqn_metrics()
-        referents = torch.rand(size=(self.pretrain_iters, self.num_objectives),
-                               dtype=torch.float,
-                               generator=self.torch_rng) * (self.nadir - self.ideal) + self.ideal
-        for idx, referent in enumerate(referents):
-            self.train(referent,
-                       self.nadir,
-                       self.ideal,
-                       self.pretraining_steps,
-                       self.pre_learning_start if idx == 0 else 0,  # Only fill the buffer on the first iteration.
-                       self.pre_epsilon_start,
-                       self.pre_epsilon_end,
-                       self.pre_exploration_frac,
-                       self.num_referents)
 
     def train(self,
               referent,

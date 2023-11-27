@@ -2,7 +2,6 @@ import wandb
 import torch
 import numpy as np
 
-from gymnasium.spaces import Box
 from collections import deque
 
 from oracles.drl_oracle import DRLOracle
@@ -19,7 +18,13 @@ class SNDRLOracle(DRLOracle):
                  gamma=0.99,
                  vary_nadir=False,
                  vary_ideal=False,
-                 pretraining_steps=1000000,
+                 pretrain_iters=100,
+                 num_referents=16,
+                 pre_learning_start=1000,
+                 pre_epsilon_start=1.0,
+                 pre_epsilon_end=0.01,
+                 pre_exploration_frac=0.5,
+                 pretraining_steps=100000,
                  online_steps=10000,
                  eval_episodes=100,
                  deterministic_eval=True,
@@ -38,30 +43,33 @@ class SNDRLOracle(DRLOracle):
                          window_size=window_size,
                          track=track,
                          seed=seed)
-
-        self.env = env
-        self.aug = aug
-        self.scale = scale
-
-        self.num_actions = env.action_space.n
-        self.num_objectives = env.reward_space.shape[0]
-
-        self.gamma = gamma
-        self.eval_episodes = eval_episodes
-        self.u_func = None
         self.pretrained_model = None  # The pretrained model.
-
-        self.iteration = 0  # The iteration of the algorithm.
         self.phase = 'pretrain'  # The phase of the algorithm. Either 'pre' or 'online_{iteration}'.
 
-        self.pretraining_steps = pretraining_steps
+        self.pretrain_iters = pretrain_iters  # The number of iterations to pretrain for.
+        self.num_referents = num_referents  # The number of referents to train on.
+        self.pre_learning_start = pre_learning_start  # The number of steps to wait before training.
+        self.pre_epsilon_start = pre_epsilon_start  # The initial epsilon value.
+        self.pre_epsilon_end = pre_epsilon_end  # The final epsilon value.
+        self.pre_exploration_frac = pre_exploration_frac  # The fraction of the training steps to explore.
+        self.pretraining_steps = pretraining_steps  # The number of training steps.
         self.online_steps = online_steps
 
-        self.window_size = window_size
         self.episodic_utility = deque(maxlen=window_size)  # The episodic utility of the agent rather than the returns.
         self.episodic_lengths = deque(maxlen=window_size)
 
-        self.track = track
+    def config(self):
+        """Get the config of the algorithm."""
+        return {
+            'pretrain_iters': self.pretrain_iters,
+            'num_referents': self.num_referents,
+            'pre_learning_start': self.pre_learning_start,
+            'pre_epsilon_start': self.pre_epsilon_start,
+            'pre_epsilon_end': self.pre_epsilon_end,
+            'pre_exploration_frac': self.pre_exploration_frac,
+            'pretraining_steps': self.pretraining_steps,
+            'online_steps': self.online_steps,
+        }
 
     # noinspection PyMethodOverriding
     def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal):
@@ -79,8 +87,22 @@ class SNDRLOracle(DRLOracle):
         raise NotImplementedError
 
     def pretrain(self):
-        """Pretrain the algorithm on the given environment."""
-        raise NotImplementedError
+        """Pretrain the algorithm."""
+        self.reset()
+        self.setup_dqn_metrics()
+        referents = torch.rand(size=(self.pretrain_iters, self.num_objectives),
+                               dtype=torch.float,
+                               generator=self.torch_rng) * (self.nadir - self.ideal) + self.ideal
+        for idx, referent in enumerate(referents):
+            self.train(referent,
+                       self.nadir,
+                       self.ideal,
+                       self.pretraining_steps,
+                       self.pre_learning_start if idx == 0 else 0,  # Only fill the buffer on the first iteration.
+                       self.pre_epsilon_start,
+                       self.pre_epsilon_end,
+                       self.pre_exploration_frac,
+                       self.num_referents)
 
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""
