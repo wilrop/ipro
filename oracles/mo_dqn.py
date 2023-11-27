@@ -103,14 +103,14 @@ class MODQN(DRLOracle):
         self.min_priority = min_priority
         if self.per:
             self.replay_buffer = PrioritizedAccruedRewardReplayBuffer((self.aug_obs_dim,),
-                                                                      self.env.action_space.shape,
+                                                                      action_shape=self.env.action_space.shape,
                                                                       rew_dim=self.num_objectives,
                                                                       max_size=self.buffer_size,
                                                                       action_dtype=np.uint8,
                                                                       rng=self.np_rng)
         else:
             self.replay_buffer = AccruedRewardReplayBuffer((self.aug_obs_dim,),
-                                                           self.env.action_space.shape,
+                                                           action_shape=self.env.action_space.shape,
                                                            rew_dim=self.num_objectives,
                                                            max_size=self.buffer_size,
                                                            action_dtype=np.uint8,
@@ -268,13 +268,17 @@ class MODQN(DRLOracle):
                 target_pred = self.target_network(aug_next_obs).view(-1, self.num_actions, self.num_objectives)
                 total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred
                 utilities = self.u_func(total_rewards)
+                print(utilities.shape)
                 best_actions = torch.argmax(utilities, dim=1)
                 target_utilities = utilities[torch.arange(self.batch_size), best_actions]
                 q_maxs = target_pred[torch.arange(self.batch_size), best_actions]
                 td_target = rewards + self.gamma * q_maxs * (1 - dones)
 
             preds = self.q_network(aug_obs).view(-1, self.num_actions, self.num_objectives)
+            print(preds.shape)
             action_preds = preds[torch.arange(self.batch_size), actions.type(torch.LongTensor)]
+            print(action_preds.shape)
+            raise
             loss = F.mse_loss(td_target, action_preds)
 
             # optimize the model
