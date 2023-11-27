@@ -110,7 +110,7 @@ class SNMODQN(SNDRLOracle):
         self.batch_size = batch_size
         self.buffer_size = buffer_size
         self.replay_buffer = AccruedRewardReplayBuffer(obs_shape=(self.aug_obs_dim,),
-                                                       action_shape=(1,),
+                                                       action_shape=self.env.action_space.shape,
                                                        rew_dim=self.num_objectives,
                                                        max_size=self.buffer_size,
                                                        action_dtype=np.uint8,
