@@ -114,6 +114,8 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
     """Search for hyperparameters for the given configuration."""
     outer_params = parameters.pop('outer_loop')
     oracle_params = parameters.pop('oracle')
+    method = outer_params.pop('method')
+    algorithm = oracle_params.pop('algorithm')
     hyperparams_options = parameters.pop('hyperparameters')
 
     def optimize_trial(trial):
@@ -125,7 +127,9 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
                     raise optuna.TrialPruned()
         else:
             callback = None
-        return run_experiment(parameters, outer_params, {**oracle_params, **oracle_hyperparams}, callback=callback)
+        filled_oracle_params = {**oracle_params, **oracle_hyperparams}
+
+        return run_experiment(method, algorithm, parameters, outer_params, filled_oracle_params, callback=callback)
 
     if isinstance(parameters['env_id'], str):
         env_name = parameters['env_id']

@@ -1,11 +1,9 @@
 import torch
 import wandb
 import numpy as np
-
-from gymnasium.spaces import Discrete
-from collections import deque
 import torch.nn as nn
 
+from collections import deque
 from oracles.vector_u import create_batched_aasf
 
 
@@ -95,10 +93,6 @@ class DRLOracle:
         self.nadir = nadir
         self.ideal = ideal
 
-    def config(self):
-        """Return the configuration of the algorithm."""
-        raise NotImplementedError
-
     def reset(self):
         """Reset the environment and the agent."""
         raise NotImplementedError
@@ -142,7 +136,7 @@ class DRLOracle:
                                 step_metric=f'global_step_{self.iteration}')
             self.setup_chart_metrics()
 
-    def evaluate(self, eval_episodes=100, deterministic=True):
+    def evaluate(self, eval_episodes=100, deterministic=True, *args, **kwargs):
         """Evaluate the agent on the environment.
 
         Args:
@@ -169,7 +163,7 @@ class DRLOracle:
             while not (terminated or truncated):
                 aug_obs = torch.tensor(np.concatenate((obs, accrued_reward)), dtype=torch.float)
                 with torch.no_grad():
-                    action = policy(aug_obs, accrued_reward)
+                    action = policy(aug_obs, accrued_reward, *args, **kwargs)
                 next_obs, reward, terminated, truncated, _ = self.env.step(action)
                 accrued_reward += (self.gamma ** timestep) * reward
                 obs = next_obs

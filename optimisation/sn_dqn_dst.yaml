@@ -24,6 +24,7 @@ oracle:
   aug: 0.01
   scale: 100
   train_freq: 1
+  pretrain_freq: 8
   target_update_freq: 1
   gradient_steps: 1
   pre_learning_start: 1000
@@ -47,7 +48,7 @@ hyperparameters:
     max: 3
   hidden_size:
     type: categorical
-    choices: [ 32, 64, 128, 256 ]
+    choices: [ 64, 128, 256 ]
   pre_epsilon_start:
     type: categorical
     choices: [ 0.2, 0.5, 0.75, 1.0 ]
@@ -59,13 +60,13 @@ hyperparameters:
     choices: [ 0.25, 0.5, 0.75 ]
   pretraining_steps:
     type: categorical
-    choices: [ 1000, 5000, 10000 ]
+    choices: [ 500, 1000, 2000 ]
   pretrain_iters:
     type: categorical
-    choices: [ 50, 75, 100, ]
+    choices: [ 25, 50 ]
   num_referents:
     type: categorical
-    choices: [ 2, 4, 8, 16 ]
+    choices: [ 1, 2, 4 ]
   batch_size:
     type: categorical
     choices: [ 16, 32, 64 ]

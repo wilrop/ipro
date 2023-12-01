@@ -81,6 +81,10 @@ class SNDRLOracle(DRLOracle):
         """Select an action for the given observation."""
         raise NotImplementedError
 
+    def save_model(self):
+        """Save the models."""
+        raise NotImplementedError
+
     # noinspection PyMethodOverriding
     def train(self, referent, nadir, ideal, *args, **kwargs):
         """Train the algorithm on the given environment."""
@@ -94,6 +98,7 @@ class SNDRLOracle(DRLOracle):
                                dtype=torch.float,
                                generator=self.torch_rng) * (self.nadir - self.ideal) + self.ideal
         for idx, referent in enumerate(referents):
+            print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
             self.train(referent,
                        self.nadir,
                        self.ideal,
@@ -104,10 +109,12 @@ class SNDRLOracle(DRLOracle):
                        self.pre_exploration_frac,
                        self.num_referents)
 
+        self.save_model()
+
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""
-        self.nadir = torch.tensor(nadir, dtype=torch.float)
-        self.ideal = torch.tensor(ideal, dtype=torch.float)
+        self.nadir = torch.tensor(nadir, dtype=torch.float, requires_grad=False)
+        self.ideal = torch.tensor(ideal, dtype=torch.float, requires_grad=False)
         self.pretrain()
 
     def setup_chart_metrics(self):
@@ -137,8 +144,8 @@ class SNDRLOracle(DRLOracle):
 
     def get_episode_stats(self, step):
         """Get the episode statistics."""
-        utility = np.mean(self.episodic_utility)
-        episodic_length = np.mean(self.episodic_lengths)
+        utility = np.mean(list(self.episodic_utility))
+        episodic_length = np.mean(list(self.episodic_lengths))
         return {
             f'charts/{self.phase}_utility': utility,
             f'charts/{self.phase}_episodic_length': episodic_length,
@@ -155,7 +162,7 @@ class SNDRLOracle(DRLOracle):
                                 aug=self.aug,
                                 scale=self.scale,
                                 backend='torch')
-        self.episodic_returns.append(episodic_utility)
+        self.episodic_utility.append(episodic_utility)
         self.episodic_lengths.append(episodic_length)
 
     def log_pg(self, step, loss, pg_l, v_l, e_l):
@@ -183,20 +190,28 @@ class SNDRLOracle(DRLOracle):
         self.phase = f'online_{self.iteration}'
 
         # Determine boundaries of the utility function.
-        nadir = nadir if nadir is not None and self.vary_nadir else self.nadir
-        ideal = ideal if ideal is not None and self.vary_ideal else self.ideal
+        if nadir is None:
+            nadir = self.nadir
+        else:
+            nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
+        if ideal is None:
+            ideal = self.ideal
+        else:
+            ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
 
-        # Make vectors tensors.
-        referent = torch.tensor(referent, dtype=torch.float32)
-        nadir = torch.tensor(nadir, dtype=torch.float32)
-        ideal = torch.tensor(ideal, dtype=torch.float32)
+        referent = torch.tensor(referent, dtype=torch.float32, requires_grad=False)
 
+        self.load_model(None)  # We always load the pretrained model.
         self.train(referent,
                    nadir,
                    ideal,
                    num_referents=1,  # Only train on the given referent.
                    *args,
                    **kwargs)
-        pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=self.deterministic_eval)
+        pareto_point = self.evaluate(eval_episodes=self.eval_episodes,
+                                     deterministic=self.deterministic_eval,
+                                     referent=referent,
+                                     nadir=nadir,
+                                     ideal=ideal)
         self.iteration += 1
         return pareto_point

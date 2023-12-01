@@ -202,7 +202,8 @@ class IPRO2D(OuterLoop):
 
             box = self.get_next_box()
             referent = np.copy(box.nadir)
-            vec = self.oracle.solve(referent, nadir=np.copy(box.nadir), ideal=np.copy(box.ideal))
+            ideal = np.copy(box.ideal)
+            vec = self.oracle.solve(referent, nadir=np.copy(box.nadir), ideal=ideal)
 
             if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):

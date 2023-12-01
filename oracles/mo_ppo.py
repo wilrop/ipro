@@ -116,8 +116,6 @@ class MOPPO(DRLOracle):
         self.policy = None
         self.actor_optimizer = None
         self.critic_optimizer = None
-        self.actor_scheduler = None
-        self.critic_scheduler = None
         self.rollout_buffer = RolloutBuffer((self.num_envs, self.aug_obs_dim),
                                             (self.num_envs,) + self.envs.single_action_space.shape,
                                             rew_dim=(self.num_envs, self.num_objectives),

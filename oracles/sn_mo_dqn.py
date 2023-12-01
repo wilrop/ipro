@@ -49,6 +49,7 @@ class SNMODQN(SNDRLOracle):
                  scale=1000,
                  lr=0.001,
                  hidden_layers=(64, 64),
+                 pretrain_freq=1,
                  train_freq=1,
                  target_update_freq=1,
                  gradient_steps=1,
@@ -72,11 +73,19 @@ class SNMODQN(SNDRLOracle):
                  log_freq=1000,
                  seed=0):
         super().__init__(env,
-                         track=track,
                          aug=aug,
                          scale=scale,
                          gamma=gamma,
+                         pretrain_iters=pretrain_iters,
+                         num_referents=num_referents,
+                         pre_learning_start=pre_learning_start,
+                         pre_epsilon_start=pre_epsilon_start,
+                         pre_epsilon_end=pre_epsilon_end,
+                         pre_exploration_frac=pre_exploration_frac,
+                         pretraining_steps=pretraining_steps,
+                         online_steps=online_steps,
                          eval_episodes=eval_episodes,
+                         track=track,
                          seed=seed)
         self.dqn_lr = lr
         self.online_learning_start = online_learning_start  # The number of steps before learning starts online.
@@ -85,6 +94,7 @@ class SNMODQN(SNDRLOracle):
         self.online_exploration_frac = online_exploration_frac  # The fraction of online learning steps to explore.
         self.online_steps = online_steps  # The number of steps to learn online.
 
+        self.pretrain_freq = pretrain_freq
         self.train_freq = train_freq
         self.target_update_freq = target_update_freq
         self.gradient_steps = gradient_steps
@@ -115,6 +125,7 @@ class SNMODQN(SNDRLOracle):
             'gamma': self.gamma,
             'lr': self.dqn_lr,
             'hidden_layers': self.dqn_hidden_layers,
+            'pretrain_freq': self.pretrain_freq,
             'train_freq': self.train_freq,
             'target_update_freq': self.target_update_freq,
             'gradient_steps': self.gradient_steps,
@@ -148,6 +159,19 @@ class SNMODQN(SNDRLOracle):
         self.target_network.apply(self.init_weights)
         if self.clear_buffer:
             self.replay_buffer.reset()
+
+    def save_model(self):
+        """Save the models."""
+        self.pretrained_model = {
+            "model_state_dict": self.target_network.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict()
+        }
+
+    def load_model(self, _):
+        """Load the models."""
+        self.q_network.load_state_dict(self.pretrained_model["model_state_dict"])
+        self.target_network.load_state_dict(self.pretrained_model["model_state_dict"])
+        self.optimizer.load_state_dict(self.pretrained_model["optimizer_state_dict"])
 
     def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal, ):
         """Select the greedy action.
@@ -237,6 +261,7 @@ class SNMODQN(SNDRLOracle):
               *args,
               **kwargs):
         """Train MODQN on the given environment."""
+        train_freq = self.pretrain_freq if self.phase == 'pretrain' else self.train_freq
         obs, _ = self.env.reset()
         obs = np.nan_to_num(obs, posinf=0)
         timestep = 0
@@ -276,7 +301,7 @@ class SNMODQN(SNDRLOracle):
                 timestep = 0
 
             if step > learning_start:
-                if step % self.train_freq == 0:
+                if step % train_freq == 0:
                     loss = self.train_network(referent, nadir, ideal, num_referents=num_referents)
                 if step % self.log_freq == 0:
                     self.log_dqn(step, loss)
@@ -288,8 +313,6 @@ class SNMODQN(SNDRLOracle):
         """Solve for problem for the given referent."""
         self.reset()
         self.setup_dqn_metrics()
-        self.target_network = self.target_network.load_state_dict(self.pretrained_model)
-        self.q_network = self.target_network.load_state_dict(self.pretrained_model)
         pareto_point = super().solve(referent,
                                      nadir=nadir,
                                      ideal=ideal,
@@ -298,7 +321,6 @@ class SNMODQN(SNDRLOracle):
                                      epsilon_start=self.online_epsilon_start,
                                      epsilon_end=self.online_epsilon_end,
                                      exploration_frac=self.online_exploration_frac,
-                                     num_referents=1,
                                      *args,
                                      **kwargs)
         return pareto_point

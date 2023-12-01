@@ -12,14 +12,16 @@ from oracles import init_oracle
 from outer_loops import init_outer_loop
 
 
-def run_experiment(config, outer_params, oracle_params, callback=None):
+def run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None):
     """Run an single experiment.
 
     Args:
-        config (dict): A dictionary containing the configuration parameters.
-        outer_params (dict): A dictionary containing the outer loop parameters.
-        oracle_params (dict): A dictionary containing the oracle parameters.
-        callback (function | None): A callback function to call at the end of each iteration.
+        method (str): The name of the outer loop method.
+        algorithm (str): The name of the oracle algorithm.
+        config (dict): The configuration dictionary.
+        outer_params (dict): The parameters for the outer loop.
+        oracle_params (dict): The parameters for the oracle.
+        callback (function | None): The callback function.
 
     Returns:
         float: The hypervolume of the final Pareto front.
@@ -31,8 +33,6 @@ def run_experiment(config, outer_params, oracle_params, callback=None):
     seed = config['seed']
     wandb_project_name = config['wandb_project_name']
     wandb_entity = config['wandb_entity']
-    method = outer_params.pop('method')
-    algorithm = oracle_params.pop('algorithm')
     run_name = f'{method}__{algorithm}__{env_id}__{seed}'
 
     # Seeding
@@ -108,4 +108,6 @@ if __name__ == '__main__':
 
     outer_params = config.pop('outer_loop')
     oracle_params = config.pop('oracle')
-    run_experiment(config, outer_params, oracle_params, callback=None)
+    method = config.pop('method')
+    algorithm = config.pop('algorithm')
+    run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None)
