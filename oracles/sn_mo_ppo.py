@@ -386,7 +386,7 @@ class SNMOPPO(SNDRLOracle):
             # Perform rollouts in the environments.
             for step in range(self.n_steps):
                 if global_step % self.log_freq == 0:
-                    print(f'Global step: {global_step}')
+                    print(f'{self.phase} step: {step}')
 
                 with torch.no_grad():
                     actions = self.select_action(aug_obs, acs, referent, nadir, ideal)

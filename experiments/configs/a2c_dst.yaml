@@ -6,7 +6,6 @@ gamma: 1.0
 seed: 1
 wandb_project_name: IPRO_runs
 wandb_entity: null
-n_trials: 10
 
 
 # Outer loop params

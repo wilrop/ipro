@@ -195,7 +195,7 @@ class SNMOA2C(SNDRLOracle):
 
             # Compute importance sampling ratios.
             actor_out = self.actor(aug_obs, exp_referents)
-            true_log_probs = self.policy.evaluate_actions(actor_out, actions)
+            true_log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
             ratios = torch.exp(true_log_probs - log_probs)
 
         if self.normalize_advantage:
@@ -223,7 +223,7 @@ class SNMOA2C(SNDRLOracle):
             actor_out = self.actor(aug_obs, referent.expand(len(aug_obs), self.num_objectives))
             log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
 
-        loss = torch.tensor(0, dtype=torch.float, requires_grad=True)
+        loss = torch.tensor(0, dtype=torch.float)
 
         for ref in referents:
             loss += self.perform_update(ref, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, log_probs)

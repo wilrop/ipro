@@ -3,11 +3,9 @@ env_id: deep-sea-treasure-concave-v0
 max_episode_steps: 50
 one_hot_wrapper: True
 gamma: 1.0
-study_name: sn_dqn_dst
 seed: 1
-wandb_project_name: IPRO_opt
+wandb_project_name: IPRO_runs
 wandb_entity: null
-n_trials: 10
 
 
 # Outer loop params
@@ -15,7 +13,7 @@ outer_loop:
   method: IPRO-2D
   tolerance: 0.0
   max_iterations: null
-  track: True
+  track: False
 
 
 # Oracle params
@@ -41,7 +39,7 @@ oracle:
   pre_epsilon_start: 0.5
   pre_epsilon_end: 0.05
   pre_exploration_frac: 0.5
-  pretraining_steps: 500
+  pretraining_steps: 1000
   pretrain_iters: 20
   num_referents: 4
   batch_size: 32
