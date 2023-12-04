@@ -123,7 +123,7 @@ class SNMODQN(SNDRLOracle):
                                                        rng=self.np_rng)
 
     def config(self):
-        """Return the configuration of the oracle."""
+        """Get the config of the algorithm."""
         config = super().config()
         config.update({
             'lr': self.dqn_lr,

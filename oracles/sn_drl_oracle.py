@@ -51,7 +51,7 @@ class SNDRLOracle(DRLOracle):
         self.episodic_lengths = deque(maxlen=window_size)
 
     def config(self):
-        """Return the configuration of the algorithm."""
+        """Get the config of the algorithm."""
         config = super().config()
         config.update({
             'pretrain_iters': self.pretrain_iters,

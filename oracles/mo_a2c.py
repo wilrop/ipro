@@ -103,7 +103,7 @@ class MOA2C(DRLOracle):
                                             rng=self.np_rng)
 
     def config(self):
-        """Return the configuration of the algorithm."""
+        """Get the config of the algorithm."""
         config = super().config()
         config.update({
             'lr_actor': self.lr_actor,

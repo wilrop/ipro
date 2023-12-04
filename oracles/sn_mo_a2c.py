@@ -111,7 +111,7 @@ class SNMOA2C(SNDRLOracle):
                                             rng=self.np_rng)
 
     def config(self):
-        """Return the configuration of the oracle."""
+        """Get the config of the algorithm."""
         config = super().config()
         config.update({
             'lr_actor': self.lr_actor,
