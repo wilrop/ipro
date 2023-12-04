@@ -100,7 +100,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run experiment.')
-    parser.add_argument('--config', type=str, default='./configs/sn_a2c_dst.yaml', help='Path to config file.')
+    parser.add_argument('--config', type=str, default='./configs/sn_ppo_dst.yaml', help='Path to config file.')
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:

@@ -24,7 +24,7 @@ oracle:
   aug: 0.01
   scale: 100
   lr: 0.001
-  train_freq: 1
+  train_freq: 8
   pretrain_freq: 8
   target_update_freq: 1
   gradient_steps: 1
@@ -33,7 +33,7 @@ oracle:
   online_epsilon_start: 0.5
   online_epsilon_end: 0.05
   online_exploration_frac: 0.25
-  online_steps: 1000
+  online_steps: 2000
   tau: 0.1
   buffer_size: 100000
   eval_episodes: 1
@@ -64,10 +64,10 @@ hyperparameters:
     choices: [ 250, 500, 1000 ]
   pretrain_iters:
     type: categorical
-    choices: [ 10, 20, 30 ]
+    choices: [ 25, 50, 75 ]
   num_referents:
     type: categorical
-    choices: [ 1, 2, 4 ]
+    choices: [ 1, 2, 4, 8 ]
   batch_size:
     type: categorical
     choices: [ 16, 32, 64 ]
