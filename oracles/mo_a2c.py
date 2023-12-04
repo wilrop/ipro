@@ -80,7 +80,7 @@ class MOA2C(DRLOracle):
         self.global_steps = int(global_steps)
         self.log_freq = log_freq
 
-        self.actor_output_dim = int(self.num_actions)
+        self.output_dim_actor = int(self.num_actions)
         self.output_dim_critic = int(self.num_objectives)
         self.actor_hidden = actor_hidden
         self.critic_hidden = critic_hidden
@@ -123,7 +123,7 @@ class MOA2C(DRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.aug_obs_dim, self.actor_hidden, self.actor_output_dim)
+        self.actor = Actor(self.aug_obs_dim, self.actor_hidden, self.output_dim_actor)
         self.critic = Critic(self.aug_obs_dim, self.critic_hidden, self.output_dim_critic)
         self.actor.apply(self.init_weights)
         self.critic.apply(self.init_weights)

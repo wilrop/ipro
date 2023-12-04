@@ -20,10 +20,6 @@ class SNDRLOracle(DRLOracle):
                  vary_ideal=False,
                  pretrain_iters=100,
                  num_referents=16,
-                 pre_learning_start=1000,
-                 pre_epsilon_start=1.0,
-                 pre_epsilon_end=0.01,
-                 pre_exploration_frac=0.5,
                  pretraining_steps=100000,
                  online_steps=10000,
                  eval_episodes=100,
@@ -48,10 +44,6 @@ class SNDRLOracle(DRLOracle):
 
         self.pretrain_iters = pretrain_iters  # The number of iterations to pretrain for.
         self.num_referents = num_referents  # The number of referents to train on.
-        self.pre_learning_start = pre_learning_start  # The number of steps to wait before training.
-        self.pre_epsilon_start = pre_epsilon_start  # The initial epsilon value.
-        self.pre_epsilon_end = pre_epsilon_end  # The final epsilon value.
-        self.pre_exploration_frac = pre_exploration_frac  # The fraction of the training steps to explore.
         self.pretraining_steps = pretraining_steps  # The number of training steps.
         self.online_steps = online_steps
 
@@ -85,31 +77,30 @@ class SNDRLOracle(DRLOracle):
         """Save the models."""
         raise NotImplementedError
 
+    def pretrain(self):
+        """Pretrain the algorithm."""
+        raise NotImplementedError
+
     # noinspection PyMethodOverriding
     def train(self, referent, nadir, ideal, *args, **kwargs):
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
-    def pretrain(self):
-        """Pretrain the algorithm."""
-        self.reset()
-        self.setup_dqn_metrics()
-        referents = torch.rand(size=(self.pretrain_iters, self.num_objectives),
-                               dtype=torch.float,
-                               generator=self.torch_rng) * (self.nadir - self.ideal) + self.ideal
-        for idx, referent in enumerate(referents):
-            print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
-            self.train(referent,
-                       self.nadir,
-                       self.ideal,
-                       self.pretraining_steps,
-                       self.pre_learning_start if idx == 0 else 0,  # Only fill the buffer on the first iteration.
-                       self.pre_epsilon_start,
-                       self.pre_epsilon_end,
-                       self.pre_exploration_frac,
-                       self.num_referents)
+    def sample_referents(self, num_referents, nadir, ideal):
+        """Sample a batch of referents.
 
-        self.save_model()
+        Args:
+            num_referents (int): The number of referents to sample.
+            nadir (torch.Tensor): The nadir point.
+            ideal (torch.Tensor): The ideal point.
+
+        Returns:
+            torch.Tensor: The sampled referents.
+        """
+        referents = torch.rand(size=(num_referents, self.num_objectives),
+                               dtype=torch.float,
+                               generator=self.torch_rng) * (nadir - ideal) + ideal
+        return referents
 
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""

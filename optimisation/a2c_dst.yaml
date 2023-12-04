@@ -3,7 +3,7 @@ env_id: deep-sea-treasure-concave-v0
 max_episode_steps: 50
 one_hot_wrapper: True
 gamma: 1.0
-study_name: dqn_dst
+study_name: a2c_dst
 seed: 1
 wandb_project_name: IPRO_opt
 wandb_entity: null

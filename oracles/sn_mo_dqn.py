@@ -78,10 +78,6 @@ class SNMODQN(SNDRLOracle):
                          gamma=gamma,
                          pretrain_iters=pretrain_iters,
                          num_referents=num_referents,
-                         pre_learning_start=pre_learning_start,
-                         pre_epsilon_start=pre_epsilon_start,
-                         pre_epsilon_end=pre_epsilon_end,
-                         pre_exploration_frac=pre_exploration_frac,
                          pretraining_steps=pretraining_steps,
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
@@ -99,6 +95,10 @@ class SNMODQN(SNDRLOracle):
         self.target_update_freq = target_update_freq
         self.gradient_steps = gradient_steps
         self.tau = tau
+        self.pre_learning_start = pre_learning_start  # The number of steps to wait before training.
+        self.pre_epsilon_start = pre_epsilon_start  # The initial epsilon value.
+        self.pre_epsilon_end = pre_epsilon_end  # The final epsilon value.
+        self.pre_exploration_frac = pre_exploration_frac  # The fraction of the training steps to explore.
 
         self.log_freq = log_freq
 
@@ -121,34 +121,30 @@ class SNMODQN(SNDRLOracle):
                                                        rng=self.np_rng)
 
     def config(self):
-        return {
-            'gamma': self.gamma,
+        """Return the configuration of the oracle."""
+        config = super().config()
+        config.update({
             'lr': self.dqn_lr,
             'hidden_layers': self.dqn_hidden_layers,
             'pretrain_freq': self.pretrain_freq,
             'train_freq': self.train_freq,
             'target_update_freq': self.target_update_freq,
             'gradient_steps': self.gradient_steps,
-            'pretrain_iters': self.pretrain_iters,
-            'num_referents': self.num_referents,
             'pre_learning_start': self.pre_learning_start,
             'pre_epsilon_start': self.pre_epsilon_start,
             'pre_epsilon_end': self.pre_epsilon_end,
             'pre_exploration_frac': self.pre_exploration_frac,
-            'pretraining_steps': self.pretraining_steps,
             'online_learning_start': self.online_learning_start,
             'online_epsilon_start': self.online_epsilon_start,
             'online_epsilon_end': self.online_epsilon_end,
             'online_exploration_frac': self.online_exploration_frac,
-            'online_steps': self.online_steps,
             'tau': self.tau,
             'buffer_size': self.buffer_size,
             'batch_size': self.batch_size,
             'clear_buffer': self.clear_buffer,
-            'eval_episodes': self.eval_episodes,
-            'log_freq': self.log_freq,
-            'seed': self.seed
-        }
+            'log_freq': self.log_freq
+        })
+        return config
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
@@ -173,7 +169,7 @@ class SNMODQN(SNDRLOracle):
         self.target_network.load_state_dict(self.pretrained_model["model_state_dict"])
         self.optimizer.load_state_dict(self.pretrained_model["optimizer_state_dict"])
 
-    def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal, ):
+    def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal):
         """Select the greedy action.
 
         Args:
@@ -214,10 +210,11 @@ class SNMODQN(SNDRLOracle):
         for _ in range(self.gradient_steps):
             batch = self.replay_buffer.sample(self.batch_size, to_tensor=True)
             aug_obs, accrued_rewards, actions, rewards, aug_next_obs, dones, timesteps = batch
-            additional_referents = torch.rand(size=(num_referents - 1, self.num_objectives),
-                                              generator=self.torch_rng) * (nadir - ideal) + ideal
-            referents = torch.cat((torch.unsqueeze(referent, dim=0), additional_referents), dim=0)
-            loss = torch.tensor([0], dtype=torch.float)
+            referents = torch.unsqueeze(referent, dim=0)
+            if num_referents > 1:
+                additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
+                referents = torch.cat((referents, additional_referents), dim=0)
+            loss = torch.tensor(0, dtype=torch.float)
             for referent in referents:
                 referent = referent.expand(self.batch_size, self.num_objectives)
                 with torch.no_grad():
@@ -247,6 +244,25 @@ class SNMODQN(SNDRLOracle):
             loss.backward()
             self.optimizer.step()
             return loss.item()
+
+    def pretrain(self):
+        """Pretrain the algorithm."""
+        self.reset()
+        self.setup_dqn_metrics()
+        referents = self.sample_referents(self.pretrain_iters, self.nadir, self.ideal)
+        for idx, referent in enumerate(referents):
+            print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
+            self.train(referent,
+                       self.nadir,
+                       self.ideal,
+                       steps=self.pretraining_steps,
+                       learning_start=self.pre_learning_start if idx == 0 else 0,  # Only fill buffer first iteration.
+                       epsilon_start=self.pre_epsilon_start,
+                       epsilon_end=self.pre_epsilon_end,
+                       exploration_frac=self.pre_exploration_frac,
+                       num_referents=self.num_referents)
+
+        self.save_model()
 
     def train(self,
               referent,
