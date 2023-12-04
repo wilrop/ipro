@@ -21,7 +21,9 @@ class Actor(nn.Module):
         self.layers = nn.Sequential(*self.layers)
 
     def forward(self, obs, ref):
-        x = torch.cat((obs, ref), dim=-1)
+        concat_shape = obs.shape[:-1] + ref.shape[-1:]
+        exp_ref = ref.expand(*concat_shape)
+        x = torch.cat((obs, exp_ref), dim=-1)
         x = self.layers(x)
         x = F.log_softmax(x, dim=-1)
         return x
@@ -39,7 +41,9 @@ class Critic(nn.Module):
         self.layers = nn.Sequential(*self.layers)
 
     def forward(self, obs, ref):
-        x = torch.cat((obs, ref), dim=-1)
+        concat_shape = obs.shape[:-1] + ref.shape[-1:]
+        exp_ref = ref.expand(*concat_shape)
+        x = torch.cat((obs, exp_ref), dim=-1)
         return self.layers(x)
 
 
@@ -107,8 +111,9 @@ class SNMOA2C(SNDRLOracle):
                                             rng=self.np_rng)
 
     def config(self):
-        """Get the config of the algorithm."""
-        return {
+        """Return the configuration of the oracle."""
+        config = super().config()
+        config.update({
             'lr_actor': self.lr_actor,
             'lr_critic': self.lr_critic,
             'actor_hidden': self.actor_hidden,
@@ -119,8 +124,9 @@ class SNMOA2C(SNDRLOracle):
             'normalize_advantage': self.normalize_advantage,
             'n_steps': self.n_steps,
             'gae_lambda': self.gae_lambda,
-            'log_freq': self.log_freq,
-        }
+            'log_freq': self.log_freq
+        })
+        return config
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
@@ -129,6 +135,7 @@ class SNMOA2C(SNDRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic)
+        self.rollout_buffer.reset()
 
     def save_model(self):
         """Save the models."""
@@ -166,7 +173,7 @@ class SNMOA2C(SNDRLOracle):
             advantages[t] = td_errors[t] + self.gamma * self.gae_lambda * advantages[t + 1] * (1 - dones[t])
         return advantages
 
-    def perform_update(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, probs):
+    def perform_update(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, log_probs):
         """Perform an update step."""
         with torch.no_grad():
             v_s0 = self.critic(self.s0, referent)
@@ -187,10 +194,9 @@ class SNMOA2C(SNDRLOracle):
             returns = advantages + values
 
             # Compute importance sampling ratios.
-            log_probs = self.actor(aug_obs, exp_referents)
-            log_probs_old = torch.tensor(probs, dtype=torch.float)
-            ratios = torch.exp(log_probs - log_probs_old)
-            ratios = ratios.gather(1, actions.unsqueeze(1))
+            actor_out = self.actor(aug_obs, exp_referents)
+            true_log_probs = self.policy.evaluate_actions(actor_out, actions)
+            ratios = torch.exp(true_log_probs - log_probs)
 
         if self.normalize_advantage:
             advantages = (advantages - advantages.mean(dim=0)) / (advantages.std(dim=0) + 1e-8)
@@ -207,16 +213,20 @@ class SNMOA2C(SNDRLOracle):
 
     def update_policy(self, referent, nadir, ideal, num_referents=1):
         """Update the policy using the rollout buffer."""
-        aug_obs, actions, rewards, aug_next_obs, dones, probs = self.rollout_buffer.get_all_data(to_tensor=True)
+        aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
         referents = torch.unsqueeze(referent, dim=0)
         if num_referents > 1:
             additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
             referents = torch.cat((referents, additional_referents), dim=0)
 
-        loss = torch.tensor(0, dtype=torch.float)
+        with torch.no_grad():
+            actor_out = self.actor(aug_obs, referent.expand(len(aug_obs), self.num_objectives))
+            log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
 
-        for referent in referents:
-            loss += self.perform_update(referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, probs)
+        loss = torch.tensor(0, dtype=torch.float, requires_grad=True)
+
+        for ref in referents:
+            loss += self.perform_update(ref, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, log_probs)
 
         loss /= num_referents
 
@@ -333,7 +343,7 @@ class SNMOA2C(SNDRLOracle):
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                self.save_episode_stats(torch.tensor(accrued_reward), timestep, referent, nadir, ideal)
+                self.save_episode_stats(accrued_reward, timestep, referent, nadir, ideal)
                 aug_obs, accrued_reward, timestep = self.reset_env()
 
     def solve(self, referent, nadir=None, ideal=None, *args, **kwargs):
@@ -343,7 +353,5 @@ class SNMOA2C(SNDRLOracle):
         pareto_point = super().solve(referent,
                                      nadir=nadir,
                                      ideal=ideal,
-                                     steps=self.online_steps,
-                                     *args,
-                                     **kwargs)
+                                     steps=self.online_steps)
         return pareto_point

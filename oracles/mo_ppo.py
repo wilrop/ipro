@@ -160,7 +160,6 @@ class MOPPO(DRLOracle):
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic, eps=self.eps)
-        self.policy_returns = []
         self.rollout_buffer.reset()
 
     def calc_generalised_advantages(self, rewards, dones, values):
@@ -184,7 +183,7 @@ class MOPPO(DRLOracle):
     def update_policy(self):
         """Update the policy using the rollout buffer."""
         with torch.no_grad():
-            aug_obs, actions, rewards, aug_next_obs, dones, _ = self.rollout_buffer.get_all_data(to_tensor=True)
+            aug_obs, actions, rewards, aug_next_obs, dones  = self.rollout_buffer.get_all_data(to_tensor=True)
             values = self.critic(torch.cat((aug_obs, aug_next_obs[-1:]), dim=0))  # Predict values of observations.
             advantages = self.calc_generalised_advantages(rewards, dones, values)  # Calculate the advantages.
             returns = advantages + values[:-1]  # Calculate the returns.
@@ -260,7 +259,7 @@ class MOPPO(DRLOracle):
 
         return loss.item(), pg_loss.item(), value_loss.item(), entropy_loss.item()
 
-    def select_action(self, aug_obs, acs):
+    def select_action(self, aug_obs, acs, *args, **kwargs):
         """Select an action from the policy.
 
         Args:
@@ -277,7 +276,7 @@ class MOPPO(DRLOracle):
         else:
             return np.array(actions.squeeze())
 
-    def select_greedy_action(self, aug_obs, accrued_reward):
+    def select_greedy_action(self, aug_obs, accrued_reward, *args, **kwargs):
         """Select a greedy action. Used by the solve method in the super class.
 
         Args:

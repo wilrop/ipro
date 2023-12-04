@@ -20,7 +20,9 @@ class QNetwork(nn.Module):
         self.layers = nn.Sequential(*self.layers)
 
     def forward(self, obs, ref):
-        x = torch.cat((obs, ref), dim=-1)
+        concat_shape = obs.shape[:-1] + ref.shape[-1:]
+        exp_ref = ref.expand(*concat_shape)
+        x = torch.cat((obs, exp_ref), dim=-1)
         return self.layers(x)
 
 
@@ -309,7 +311,7 @@ class SNMODQN(SNDRLOracle):
             timestep += 1
 
             if terminated or truncated:  # If the episode is done, reset the environment and accrued reward.
-                self.save_episode_stats(torch.tensor(accrued_reward), timestep, referent, nadir, ideal)
+                self.save_episode_stats(accrued_reward, timestep, referent, nadir, ideal)
                 obs, _ = self.env.reset()
                 obs = np.nan_to_num(obs, posinf=0)
                 accrued_reward = np.zeros(self.num_objectives)
@@ -336,7 +338,5 @@ class SNMODQN(SNDRLOracle):
                                      learning_start=self.online_learning_start,
                                      epsilon_start=self.online_epsilon_start,
                                      epsilon_end=self.online_epsilon_end,
-                                     exploration_frac=self.online_exploration_frac,
-                                     *args,
-                                     **kwargs)
+                                     exploration_frac=self.online_exploration_frac)
         return pareto_point

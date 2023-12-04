@@ -153,7 +153,7 @@ class MOA2C(DRLOracle):
 
     def update_policy(self):
         """Update the policy using the rollout buffer."""
-        aug_obs, actions, rewards, aug_next_obs, dones, _ = self.rollout_buffer.get_all_data(to_tensor=True)
+        aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
         with torch.no_grad():
             v_s0 = self.critic(self.s0)  # Value of s0.
         v_s0.requires_grad = True

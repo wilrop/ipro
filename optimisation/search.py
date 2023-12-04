@@ -142,7 +142,7 @@ def search(parameters, study_name='study', n_trials=100, report_intermediate=Tru
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--params', type=str, default='sn_a2c_dst.yaml',
+    parser.add_argument('--params', type=str, default='sn_ppo_dst.yaml',
                         help='path of a yaml file containing the parameters of this study')
     parser.add_argument('--report_intermediate', default=False, action='store_true')
     parser.add_argument('--log_dir', type=str, default='./')

@@ -406,11 +406,10 @@ class RolloutBuffer:
         self.obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.next_obs = np.zeros((max_size,) + obs_shape, dtype=obs_dtype)
         self.actions = np.zeros((max_size,) + action_shape, dtype=action_dtype)
-        self.probs = np.zeros((max_size, 1), dtype=np.float32)  # Necessary for importance sampling.
         self.rewards = np.zeros((max_size,) + rew_dim, dtype=np.float32)
         self.dones = np.zeros((max_size,) + dones_dim, dtype=np.float32)
 
-    def add(self, obs, action, reward, next_obs, done, prob=1.):
+    def add(self, obs, action, reward, next_obs, done):
         """Add a new experience to memory.
 
         Args:
@@ -426,7 +425,6 @@ class RolloutBuffer:
         self.actions[self.ptr] = np.array(action).copy()
         self.rewards[self.ptr] = np.array(reward).copy()
         self.dones[self.ptr] = np.array(done).copy()
-        self.probs[self.ptr] = np.array(prob).copy()
 
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
@@ -453,7 +451,6 @@ class RolloutBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
-            self.probs[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))
@@ -491,7 +488,6 @@ class RolloutBuffer:
             self.rewards[inds],
             self.next_obs[inds],
             self.dones[inds],
-            self.probs[inds],
         )
         if to_tensor:
             return tuple(map(lambda x: th.tensor(x).to(device), experience_tuples))

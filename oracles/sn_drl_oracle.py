@@ -146,6 +146,7 @@ class SNDRLOracle(DRLOracle):
     # noinspection PyMethodOverriding
     def save_episode_stats(self, episodic_return, episodic_length, referent, nadir, ideal, *args, **kwargs):
         """Save the episodic statistics for a single environment."""
+        episodic_return = torch.tensor(episodic_return, dtype=torch.float32, requires_grad=False)
         episodic_utility = aasf(episodic_return,
                                 referent,
                                 nadir,
