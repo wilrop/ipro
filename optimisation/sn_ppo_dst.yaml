@@ -68,4 +68,4 @@ hyperparameters:
     choices: [ 10, 20, 30 ]
   num_referents:
     type: categorical
-    choices: [ 1, 2, 4 ]
+    choices: [ 1, 2, 4, 8 ]

@@ -159,7 +159,13 @@ class SNMOPPO(SNDRLOracle):
             'clip_range_vf': self.clip_range_vf,
             'gae_lambda': self.gae_lambda,
             'n_steps': self.n_steps,
+            'pretrain_iters': self.pretrain_iters,
+            'num_referents': self.num_referents,
+            'pretraining_steps': self.pretraining_steps,
+            'online_steps': self.online_steps,
+            'eval_episodes': self.eval_episodes,
             'log_freq': self.log_freq,
+            'seed': self.seed
         })
         return config
 
