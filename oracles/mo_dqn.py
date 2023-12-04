@@ -118,7 +118,8 @@ class MODQN(DRLOracle):
 
     def config(self):
         """Get the config of the algorithm."""
-        config = {
+        config = super().config()
+        config.update({
             'dqn_lr': self.dqn_lr,
             'learning_start': self.learning_start,
             'train_freq': self.train_freq,
@@ -135,8 +136,7 @@ class MODQN(DRLOracle):
             'batch_size': self.batch_size,
             'global_steps': self.global_steps,
             'log_freq': self.log_freq,
-            'seed': self.seed,
-        }
+        })
         return config
 
     def reset(self):

@@ -51,17 +51,15 @@ class SNDRLOracle(DRLOracle):
         self.episodic_lengths = deque(maxlen=window_size)
 
     def config(self):
-        """Get the config of the algorithm."""
-        return {
+        """Return the configuration of the algorithm."""
+        config = super().config()
+        config.update({
             'pretrain_iters': self.pretrain_iters,
             'num_referents': self.num_referents,
-            'pre_learning_start': self.pre_learning_start,
-            'pre_epsilon_start': self.pre_epsilon_start,
-            'pre_epsilon_end': self.pre_epsilon_end,
-            'pre_exploration_frac': self.pre_exploration_frac,
             'pretraining_steps': self.pretraining_steps,
             'online_steps': self.online_steps,
-        }
+        })
+        return config
 
     # noinspection PyMethodOverriding
     def select_greedy_action(self, aug_obs, accrued_reward, referent, nadir, ideal):
