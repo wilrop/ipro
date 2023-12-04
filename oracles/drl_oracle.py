@@ -12,15 +12,14 @@ class DRLOracle:
 
     def __init__(self,
                  env,
-                 aug=0.2,
-                 scale=100,
                  gamma=0.99,
+                 aug=0.1,
+                 scale=100,
                  warm_start=False,
                  vary_nadir=False,
                  vary_ideal=False,
                  eval_episodes=100,
                  deterministic_eval=True,
-                 window_size=100,
                  track=False,
                  seed=0):
         self.seed = seed
@@ -52,9 +51,8 @@ class DRLOracle:
 
         self.warm_start = warm_start
 
-        self.window_size = window_size
-        self.episodic_returns = deque(maxlen=window_size)
-        self.episodic_lengths = deque(maxlen=window_size)
+        self.episodic_returns = deque(maxlen=eval_episodes)
+        self.episodic_lengths = deque(maxlen=eval_episodes)
 
         self.track = track
 
@@ -69,7 +67,6 @@ class DRLOracle:
             "vary_ideal": self.vary_ideal,
             "eval_episodes": self.eval_episodes,
             "deterministic_eval": self.deterministic_eval,
-            "window_size": self.window_size,
             "seed": self.seed,
         }
 

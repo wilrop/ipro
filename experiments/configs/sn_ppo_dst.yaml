@@ -1,0 +1,50 @@
+# Experiment params
+env_id: deep-sea-treasure-concave-v0
+max_episode_steps: 50
+one_hot_wrapper: True
+gamma: 1.0
+study_name: sn_ppo_dst
+seed: 1
+wandb_project_name: IPRO_opt
+wandb_entity: null
+n_trials: 10
+
+
+# Outer loop params
+outer_loop:
+  method: IPRO-2D
+  tolerance: 0.0
+  max_iterations: null
+  track: False
+
+
+# Oracle params
+oracle:
+  algorithm: SN-MO-PPO
+  aug: 0.01
+  scale: 100
+  eps: 1.e-8
+  anneal_lr: False
+  e_coef: 0.01
+  v_coef: 0.5
+  num_envs: 4
+  num_minibatches: 4
+  update_epochs: 4
+  normalize_advantage: False
+  gae_lambda: 0.95
+  target_kl: None
+  clip_coef: 0.2
+  clip_range_vf: 0.2
+  n_steps: 128
+  online_steps: 8000
+  lr_actor: 0.0003
+  lr_critic: 0.0003
+  num_hidden_layers: 2
+  hidden_size: 64
+  max_grad_norm: 0.5
+  pretraining_steps: 5000
+  pretrain_iters: 20
+  num_referents: 4
+  eval_episodes: 1
+  log_freq: 1000
+  track: False

@@ -9,7 +9,6 @@ def load_parameters_from_wandb(run_id):
 
     # Remove unused parameters.
     parameters.pop('seed', None)
-    parameters.pop('window_size', None)
     parameters.pop('track', None)
     parameters.pop('method', None)
     parameters.pop('max_steps', None)

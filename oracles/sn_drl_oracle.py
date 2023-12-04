@@ -13,9 +13,9 @@ class SNDRLOracle(DRLOracle):
 
     def __init__(self,
                  env,
-                 aug=0.2,
-                 scale=100,
                  gamma=0.99,
+                 aug=0.1,
+                 scale=100,
                  vary_nadir=False,
                  vary_ideal=False,
                  pretrain_iters=100,
@@ -24,19 +24,17 @@ class SNDRLOracle(DRLOracle):
                  online_steps=10000,
                  eval_episodes=100,
                  deterministic_eval=True,
-                 window_size=100,
                  track=False,
                  seed=0):
         super().__init__(env,
+                         gamma=gamma,
                          aug=aug,
                          scale=scale,
-                         gamma=gamma,
                          warm_start=False,
                          vary_nadir=vary_nadir,
                          vary_ideal=vary_ideal,
                          eval_episodes=eval_episodes,
                          deterministic_eval=deterministic_eval,
-                         window_size=window_size,
                          track=track,
                          seed=seed)
         self.pretrained_model = None  # The pretrained model.
@@ -47,8 +45,7 @@ class SNDRLOracle(DRLOracle):
         self.pretraining_steps = pretraining_steps  # The number of training steps.
         self.online_steps = online_steps
 
-        self.episodic_utility = deque(maxlen=window_size)  # The episodic utility of the agent rather than the returns.
-        self.episodic_lengths = deque(maxlen=window_size)
+        self.episodic_utility = deque(maxlen=eval_episodes)  # Episodic utility of the agent rather than the returns.
 
     def config(self):
         """Get the config of the algorithm."""
