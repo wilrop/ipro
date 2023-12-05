@@ -36,7 +36,6 @@ oracle:
   clip_coef: 0.2
   clip_range_vf: 0.2
   n_steps: 128
-  online_steps: 5000
   eval_episodes: 100
   log_freq: 1000
   track: False
@@ -63,9 +62,12 @@ hyperparameters:
   pretraining_steps:
     type: categorical
     choices: [ 5000, 7500, 10000 ]
+  online_steps:
+    type: categorical
+    choices: [ 5000, 7500, 10000 ]
   pretrain_iters:
     type: categorical
     choices: [ 25, 50, 75 ]
   num_referents:
     type: categorical
-    choices: [ 1, 2, 4, 8 ]
+    choices: [ 2, 4, 8, 16 ]

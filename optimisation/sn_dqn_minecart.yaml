@@ -33,7 +33,6 @@ oracle:
   online_epsilon_start: 0.5
   online_epsilon_end: 0.05
   online_exploration_frac: 0.25
-  online_steps: 5000
   tau: 0.1
   buffer_size: 100000
   eval_episodes: 100
@@ -61,13 +60,16 @@ hyperparameters:
     choices: [ 0.25, 0.5, 0.75 ]
   pretraining_steps:
     type: categorical
+    choices: [ 5000, 7500, 10000 ]
+  online_steps:
+    type: categorical
     choices: [ 2500, 5000, 7500 ]
   pretrain_iters:
     type: categorical
     choices: [ 25, 50, 75 ]
   num_referents:
     type: categorical
-    choices: [ 1, 2, 4, 8 ]
+    choices: [ 2, 4, 8, 16 ]
   batch_size:
     type: categorical
     choices: [ 16, 32, 64 ]

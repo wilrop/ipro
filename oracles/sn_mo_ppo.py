@@ -371,11 +371,11 @@ class SNMOPPO(SNDRLOracle):
         """Train the agent."""
         global_step = 0
         obs, _ = self.envs.reset()
-        obs = torch.tensor(np.nan_to_num(obs, posinf=0))
+        obs = torch.tensor(np.nan_to_num(obs, posinf=0), dtype=torch.float)
         acs = torch.zeros((self.num_envs, self.num_objectives), dtype=torch.float)
         aug_obs = torch.hstack((obs, acs))
         self.s0 = aug_obs[0].detach()
-        timesteps = torch.zeros((self.num_envs, 1))
+        timesteps = torch.zeros((self.num_envs, 1), dtype=torch.float)
         steps_since_log = 0
 
         for update in range(num_updates):

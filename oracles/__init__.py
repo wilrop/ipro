@@ -1,3 +1,4 @@
+from oracles.debug_oracle import DebugOracle
 from oracles.finite_oracle import FiniteOracle
 from oracles.mo_dqn import MODQN
 from oracles.mo_a2c import MOA2C
@@ -32,5 +33,7 @@ def init_oracle(alg, *args, **kwargs):
         return SNMOA2C(*args, **kwargs)
     elif alg == 'SN-MO-PPO':
         return SNMOPPO(*args, **kwargs)
+    elif alg == 'debug':
+        return DebugOracle(*args, **kwargs)
     else:
         raise ValueError(f'Unknown oracle: {alg}')
