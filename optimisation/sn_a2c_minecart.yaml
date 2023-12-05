@@ -28,7 +28,7 @@ oracle:
   normalize_advantage: False
   n_steps: 16
   gae_lambda: 0.95
-  online_steps: 2000
+  online_steps: 5000
   eval_episodes: 100
   log_freq: 1000
   track: False
@@ -54,7 +54,7 @@ hyperparameters:
     choices: [ 0.5, 1.0, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 1000, 2500, 5000 ]
+    choices: [ 2500, 5000, 7500 ]
   pretrain_iters:
     type: categorical
     choices: [ 25, 50, 75 ]

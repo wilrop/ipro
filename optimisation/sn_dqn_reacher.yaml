@@ -61,7 +61,7 @@ hyperparameters:
     choices: [ 0.25, 0.5, 0.75 ]
   pretraining_steps:
     type: categorical
-    choices: [ 250, 500, 1000 ]
+    choices: [ 1000, 2000, 3000 ]
   pretrain_iters:
     type: categorical
     choices: [ 25, 50, 75 ]

@@ -24,7 +24,7 @@ oracle:
   aug: 0.01
   scale: 100
   lr: 0.001
-  train_freq: 8
+  train_freq: 1
   pretrain_freq: 8
   target_update_freq: 1
   gradient_steps: 1
