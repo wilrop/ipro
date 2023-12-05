@@ -21,7 +21,8 @@ class DRLOracle:
                  eval_episodes=100,
                  deterministic_eval=True,
                  track=False,
-                 seed=0):
+                 seed=0,
+                 alg_name=None):
         self.seed = seed
         self.np_rng = np.random.default_rng(seed=seed)
         self.torch_rng = torch.Generator()
@@ -55,10 +56,12 @@ class DRLOracle:
         self.episodic_lengths = deque(maxlen=eval_episodes)
 
         self.track = track
+        self.alg_name = alg_name
 
     def config(self):
         """Get the config of the algorithm."""
         return {
+            "alg_name": self.alg_name,
             "env_id": self.env.env_id,
             "aug": self.aug,
             "scale": self.scale,

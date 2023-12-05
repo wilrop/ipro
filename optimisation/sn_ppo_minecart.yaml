@@ -1,35 +1,43 @@
 # Experiment params
-env_id: deep-sea-treasure-concave-v0
-max_episode_steps: 50
-one_hot_wrapper: True
-gamma: 1.0
-study_name: sn_a2c_dst
+env_id: minecart-v0
+max_episode_steps: 1000
+one_hot_wrapper: False
+gamma: 0.98
+study_name: sn_ppo_minecart
 seed: 1
 wandb_project_name: IPRO_opt
 wandb_entity: null
-n_trials: 10
+n_trials: 1
 
 
 # Outer loop params
 outer_loop:
-  method: IPRO-2D
-  tolerance: 0.0
-  max_iterations: null
+  method: IPRO
+  tolerance: 1.e-5
+  max_iterations: 100
   track: True
 
 
 # Oracle params
 oracle:
-  algorithm: SN-MO-A2C
+  algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
+  eps: 1.e-8
+  anneal_lr: False
   e_coef: 0.01
   v_coef: 0.5
+  num_envs: 4
+  num_minibatches: 4
+  update_epochs: 4
   normalize_advantage: False
-  n_steps: 16
   gae_lambda: 0.95
-  online_steps: 2000
-  eval_episodes: 1
+  target_kl: None
+  clip_coef: 0.2
+  clip_range_vf: 0.2
+  n_steps: 128
+  online_steps: 8000
+  eval_episodes: 100
   log_freq: 1000
   track: False
 
@@ -54,7 +62,7 @@ hyperparameters:
     choices: [ 0.5, 1.0, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 1000, 2500, 5000 ]
+    choices: [ 2500, 5000, 7500 ]
   pretrain_iters:
     type: categorical
     choices: [ 25, 50, 75 ]

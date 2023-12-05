@@ -84,7 +84,8 @@ class SNMODQN(SNDRLOracle):
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='SN-MO-DQN')
         self.dqn_lr = lr
         self.online_learning_start = online_learning_start  # The number of steps before learning starts online.
         self.online_epsilon_start = online_epsilon_start  # The starting epsilon for online learning.

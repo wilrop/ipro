@@ -25,7 +25,8 @@ class SNDRLOracle(DRLOracle):
                  eval_episodes=100,
                  deterministic_eval=True,
                  track=False,
-                 seed=0):
+                 seed=0,
+                 alg_name=None):
         super().__init__(env,
                          gamma=gamma,
                          aug=aug,
@@ -36,7 +37,8 @@ class SNDRLOracle(DRLOracle):
                          eval_episodes=eval_episodes,
                          deterministic_eval=deterministic_eval,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name=alg_name)
         self.pretrained_model = None  # The pretrained model.
         self.phase = 'pretrain'  # The phase of the algorithm. Either 'pre' or 'online_{iteration}'.
 

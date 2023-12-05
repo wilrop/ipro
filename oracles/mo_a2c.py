@@ -70,7 +70,8 @@ class MOA2C(DRLOracle):
                          warm_start=warm_start,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='MO-A2C')
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.e_coef = e_coef

@@ -1,20 +1,20 @@
 # Experiment params
-env_id: deep-sea-treasure-concave-v0
-max_episode_steps: 50
-one_hot_wrapper: True
-gamma: 1.0
-study_name: sn_a2c_dst
+env_id: minecart-v0
+max_episode_steps: 1000
+one_hot_wrapper: False
+gamma: 0.98
+study_name: sn_a2c_minecart
 seed: 1
 wandb_project_name: IPRO_opt
 wandb_entity: null
-n_trials: 10
+n_trials: 1
 
 
 # Outer loop params
 outer_loop:
-  method: IPRO-2D
-  tolerance: 0.0
-  max_iterations: null
+  method: IPRO
+  tolerance: 1.e-5
+  max_iterations: 100
   track: True
 
 
@@ -29,7 +29,7 @@ oracle:
   n_steps: 16
   gae_lambda: 0.95
   online_steps: 2000
-  eval_episodes: 1
+  eval_episodes: 100
   log_freq: 1000
   track: False
 

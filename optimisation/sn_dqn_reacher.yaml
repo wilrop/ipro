@@ -1,0 +1,73 @@
+# Experiment params
+env_id: mo-reacher-v4
+max_episode_steps: 50
+one_hot_wrapper: False
+gamma: 0.99
+study_name: sn_dqn_reacher
+seed: 1
+wandb_project_name: IPRO_opt
+wandb_entity: null
+n_trials: 1
+
+
+# Outer loop params
+outer_loop:
+  method: IPRO
+  tolerance: 1.e-5
+  max_iterations: 200
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: SN-MO-DQN
+  aug: 0.01
+  scale: 100
+  lr: 0.001
+  train_freq: 8
+  pretrain_freq: 8
+  target_update_freq: 1
+  gradient_steps: 1
+  pre_learning_start: 1000
+  online_learning_start: 100
+  online_epsilon_start: 0.5
+  online_epsilon_end: 0.05
+  online_exploration_frac: 0.25
+  online_steps: 2000
+  tau: 0.1
+  buffer_size: 100000
+  eval_episodes: 100
+  log_freq: 500
+  track: False
+
+
+# Hyperparameter options to be selected during the optimisation
+hyperparameters:
+  num_hidden_layers:
+    type: int
+    min: 1
+    max: 3
+  hidden_size:
+    type: categorical
+    choices: [ 64, 128, 256 ]
+  pre_epsilon_start:
+    type: categorical
+    choices: [ 0.2, 0.5, 0.75, 1.0 ]
+  pre_epsilon_end:
+    type: categorical
+    choices: [ 0.05, 0.1, 0.2 ]
+  pre_exploration_frac:
+    type: categorical
+    choices: [ 0.25, 0.5, 0.75 ]
+  pretraining_steps:
+    type: categorical
+    choices: [ 250, 500, 1000 ]
+  pretrain_iters:
+    type: categorical
+    choices: [ 25, 50, 75 ]
+  num_referents:
+    type: categorical
+    choices: [ 1, 2, 4, 8 ]
+  batch_size:
+    type: categorical
+    choices: [ 16, 32, 64 ]

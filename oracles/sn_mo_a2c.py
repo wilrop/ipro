@@ -81,7 +81,8 @@ class SNMOA2C(SNDRLOracle):
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='SN-MO-A2C')
 
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic

@@ -89,7 +89,8 @@ class SNMOPPO(SNDRLOracle):
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='SN-MO-PPO')
 
         self.envs = envs
         self.lr_actor = lr_actor

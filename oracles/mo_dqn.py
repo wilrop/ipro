@@ -73,7 +73,8 @@ class MODQN(DRLOracle):
                          warm_start=warm_start,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='MO-DQN')
         self.dqn_lr = lr
         self.learning_start = learning_start
         self.train_freq = train_freq

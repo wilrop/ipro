@@ -78,7 +78,8 @@ class MOPPO(DRLOracle):
                          warm_start=warm_start,
                          eval_episodes=eval_episodes,
                          track=track,
-                         seed=seed)
+                         seed=seed,
+                         alg_name='MO-PPO')
         self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
