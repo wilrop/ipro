@@ -25,7 +25,6 @@ oracle:
   scale: 100
   eps: 1.e-8
   anneal_lr: False
-  e_coef: 0.01
   v_coef: 0.5
   num_envs: 4
   num_minibatches: 4
@@ -35,7 +34,6 @@ oracle:
   target_kl: None
   clip_coef: 0.2
   clip_range_vf: 0.2
-  n_steps: 128
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -71,3 +69,9 @@ hyperparameters:
   num_referents:
     type: categorical
     choices: [ 2, 4, 8, 16 ]
+  e_coef:
+    type: categorical
+    choices: [ 0.0, 0.01, 0.1 ]
+  n_steps:
+    type: categorical
+    choices: [ 16, 32, 64, 128 ]

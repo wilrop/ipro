@@ -23,7 +23,6 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
-  e_coef: 0.01
   v_coef: 0.5
   normalize_advantage: False
   n_steps: 16
@@ -63,3 +62,6 @@ hyperparameters:
   num_referents:
     type: categorical
     choices: [ 2, 4, 8, 16 ]
+  e_coef:
+    type: categorical
+    choices: [ 0.0, 0.01, 0.1 ]
