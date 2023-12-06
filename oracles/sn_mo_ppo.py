@@ -224,22 +224,17 @@ class SNMOPPO(SNDRLOracle):
                        mb_values,
                        mb_returns,
                        mb_advantages,
-                       mb_logprobs):
-        """Perform an update step."""
+                       mb_b_log_probs,
+                       mb_is_ratios):
+        """Perform an update step.
+        This rescales the clipping range as suggested in https://ojs.aaai.org/index.php/AAAI/article/view/26099
+        """
         # Get the current policy log probabilities and values.
         actor_out = self.actor(mb_aug_obs, referent)
         newlogprob, entropy = self.policy.evaluate_actions(actor_out, mb_actions)  # Evaluate actions.
         newvalue = self.critic(mb_aug_obs, referent)
-        logratio = newlogprob - mb_logprobs
+        logratio = newlogprob - mb_b_log_probs  # Logratio for the PPO loss.
         ratio = logratio.exp()  # Ratio is the same for all objectives.
-
-        if self.normalize_advantage:
-            mb_advantages = (mb_advantages - mb_advantages.mean(dim=0)) / (mb_advantages.std(dim=0) + 1e-8)
-
-        # Compute the policy loss.
-        pg_loss1 = mb_advantages * ratio
-        pg_loss2 = mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)  # PPO loss.
-        pg_loss3 = -torch.min(pg_loss1, pg_loss2).mean(dim=0)
 
         with torch.no_grad():
             v_s0 = self.critic(self.s0, referent)  # Value of s0.
@@ -253,6 +248,15 @@ class SNMOPPO(SNDRLOracle):
              scale=self.scale,
              backend='torch').backward()  # Gradient of utility function w.r.t. values.
 
+        if self.normalize_advantage:
+            mb_advantages = (mb_advantages - mb_advantages.mean(dim=0)) / (mb_advantages.std(dim=0) + 1e-8)
+
+        # Compute the policy loss.
+        lower_bound = (1 - self.clip_coef) * mb_is_ratios
+        upper_bound = (1 + self.clip_coef) * mb_is_ratios
+        pg_loss1 = mb_advantages * ratio
+        pg_loss2 = mb_advantages * torch.clamp(ratio, lower_bound, upper_bound)
+        pg_loss3 = -torch.min(pg_loss1, pg_loss2).mean(dim=0)
         pg_loss = torch.dot(v_s0.grad, pg_loss3)  # The policy loss for nonlinear utility functions.
 
         # Compute the value loss
@@ -268,52 +272,62 @@ class SNMOPPO(SNDRLOracle):
 
     def update_policy(self, referent, nadir, ideal, num_referents=1):
         """Update the policy using the rollout buffer."""
-        with torch.no_grad():
-            aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
-            all_obs = torch.cat((aug_obs, aug_next_obs[-1:]), dim=0)
-            values = self.critic(all_obs, referent)
-            advantages = self.calc_generalised_advantages(rewards, dones, values)  # Calculate the advantages.
-            returns = advantages + values[:-1]  # Calculate the returns.
-            actor_out = self.actor(aug_obs, referent)
-            log_prob, _ = self.policy.evaluate_actions(actor_out, actions)
-
-            # Flatten the data.
-            aug_obs = aug_obs.view(-1, self.aug_obs_dim)
-            actions = actions.view(-1)
-            log_prob = log_prob.view(-1, 1)
-            values = values.view(-1, self.num_objectives)
-            advantages = advantages.view(-1, self.num_objectives)
-            returns = returns.view(-1, self.num_objectives)
-
         referents = torch.unsqueeze(referent, dim=0)
         if num_referents > 1:
             additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
             referents = torch.cat((referents, additional_referents), dim=0)
 
+        with torch.no_grad():
+            aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
+            all_obs = torch.cat((aug_obs, aug_next_obs[-1:]), dim=0)
+            values = torch.zeros(num_referents, self.n_steps + 1, self.num_envs, self.num_objectives)
+            advantages = torch.zeros(num_referents, self.n_steps, self.num_envs, self.num_objectives)
+            returns = torch.zeros(num_referents, self.n_steps, self.num_envs, self.num_objectives)
+            log_prob = torch.zeros(num_referents, self.n_steps, self.num_envs, 1)
+
+            for idx, referent in enumerate(referents):
+                values[idx] = self.critic(all_obs, referent)
+                advantages[idx] = self.calc_generalised_advantages(rewards, dones, values[idx])
+                returns[idx] = advantages[idx] + values[idx][:-1]
+                actor_out = self.actor(aug_obs, referent)
+                log_prob[idx], _ = self.policy.evaluate_actions(actor_out, actions)
+
+            # Flatten the data.
+            aug_obs = aug_obs.view(-1, self.aug_obs_dim)
+            actions = actions.view(-1)
+            log_prob = log_prob.view(num_referents, -1, 1)
+            values = values.view(num_referents, -1, self.num_objectives)
+            advantages = advantages.view(num_referents, -1, self.num_objectives)
+            returns = returns.view(num_referents, -1, self.num_objectives)
+
+            # Compute the log probabilities for the behaviour policy and importance weights.
+            b_log_probs = log_prob[0]  # Logprobs for the behaviour policy.
+            is_ratios = torch.exp(log_prob - b_log_probs)  # Importance sampling ratios.
+
         for epoch in range(self.update_epochs):
             shuffled_inds = torch.randperm(self.batch_size, generator=self.torch_rng)
             for mb_inds in torch.chunk(shuffled_inds, self.num_minibatches):
-                # Get the minibatch data.
-                mb_aug_obs = aug_obs[mb_inds]
-                mb_actions = actions[mb_inds]
-                mb_values = values[mb_inds]
-                mb_advantages = advantages[mb_inds]
-                mb_returns = returns[mb_inds]
-                mb_logprobs = log_prob[mb_inds]
-
                 loss = torch.tensor(0., dtype=torch.float)
 
-                for ref in referents:
-                    ref_loss = self.perform_update(ref,
-                                                   nadir,
-                                                   ideal,
-                                                   mb_aug_obs,
-                                                   mb_actions,
-                                                   mb_values,
-                                                   mb_returns,
-                                                   mb_advantages,
-                                                   mb_logprobs)
-                    loss += ref_loss
+                for idx, referent in enumerate(referents):
+                    # Get the minibatch data.
+                    mb_aug_obs = aug_obs[mb_inds]
+                    mb_actions = actions[mb_inds]
+                    mb_values = values[idx, mb_inds]
+                    mb_advantages = advantages[idx, mb_inds]
+                    mb_returns = returns[idx, mb_inds]
+                    mb_b_log_probs = b_log_probs[mb_inds]
+                    mb_is_ratios = is_ratios[idx, mb_inds]
+                    loss += self.perform_update(referent,
+                                                nadir,
+                                                ideal,
+                                                mb_aug_obs,
+                                                mb_actions,
+                                                mb_values,
+                                                mb_returns,
+                                                mb_advantages,
+                                                mb_b_log_probs,
+                                                mb_is_ratios)
 
                 loss /= num_referents
 

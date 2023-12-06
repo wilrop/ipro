@@ -174,7 +174,7 @@ class SNMOA2C(SNDRLOracle):
             advantages[t] = td_errors[t] + self.gamma * self.gae_lambda * advantages[t + 1] * (1 - dones[t])
         return advantages
 
-    def perform_update(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, log_probs):
+    def perform_update(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, b_log_probs):
         """Perform an update step."""
         with torch.no_grad():
             v_s0 = self.critic(self.s0, referent)
@@ -187,24 +187,22 @@ class SNMOA2C(SNDRLOracle):
              scale=self.scale,
              backend='torch').backward()  # Gradient of utility function w.r.t. values.
 
-        exp_referents = referent.expand(len(aug_obs), self.num_objectives)
-        values = self.critic(aug_obs, exp_referents)
+        values = self.critic(aug_obs, referent)
+        actor_out = self.actor(aug_obs, referent)  # Predict logits of actions.
+        ref_log_probs, entropy = self.policy.evaluate_actions(actor_out, actions)  # Evaluate actions.
+
         with torch.no_grad():
             v_next = self.critic(aug_next_obs[-1:], referent[None, ...])  # Predict values of next observations.
             advantages = self.calc_generalised_advantages(rewards, dones, values, v_next)
             returns = advantages + values
 
             # Compute importance sampling ratios.
-            actor_out = self.actor(aug_obs, exp_referents)
-            true_log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
-            ratios = torch.exp(true_log_probs - log_probs)
+            is_ratios = torch.exp(ref_log_probs - b_log_probs)
 
         if self.normalize_advantage:
             advantages = (advantages - advantages.mean(dim=0)) / (advantages.std(dim=0) + 1e-8)
 
-        actor_out = self.actor(aug_obs, exp_referents)  # Predict logits of actions.
-        log_prob, entropy = self.policy.evaluate_actions(actor_out, actions)  # Evaluate actions.
-        pg_loss = (advantages * log_prob * ratios).mean(dim=0)  # Policy gradient loss with advantage as baseline.
+        pg_loss = (advantages * ref_log_probs * is_ratios).mean(dim=0)  # PG loss corrected with importance sampling.
         policy_loss = -torch.dot(v_s0.grad, pg_loss)  # Gradient update rule for SER.
         entropy_loss = -torch.mean(entropy)  # Compute entropy bonus.
         value_loss = F.mse_loss(returns, values)
@@ -221,7 +219,7 @@ class SNMOA2C(SNDRLOracle):
             referents = torch.cat((referents, additional_referents), dim=0)
 
         with torch.no_grad():
-            actor_out = self.actor(aug_obs, referent.expand(len(aug_obs), self.num_objectives))
+            actor_out = self.actor(aug_obs, referent)
             log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
 
         loss = torch.tensor(0, dtype=torch.float)
