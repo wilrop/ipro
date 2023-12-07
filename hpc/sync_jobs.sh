@@ -13,7 +13,14 @@ wandb login 8966d6039f5932959dbc2d8d40621f3da0952c48
 export WANDB_DIR=$VSC_SCRATCH
 export OMP_NUM_THREADS=1
 
-FILE_LIST="${VSC_SCRATCH}/finished_logs.txt"
+# Get the directory to search for runs.
+DIRECTORY="${VSC_SCRATCH}/wandb"
+
+# Define a file to store the names of the finished runs.
+FINISHED_RUNS="${VSC_HOME}/finished_runs.txt"
+
+# Find all files and folders that start with 'offline-run'.
+find ${DIRECTORY} -type d -name 'offline-run*' >${FINISHED_RUNS}
 
 while read -r l1; do
   read -r l2
@@ -26,4 +33,4 @@ while read -r l1; do
   wandb sync $l4 &
   wandb sync $l5
   wait
-done <${FILE_LIST}
+done <${FINISHED_RUNS}
