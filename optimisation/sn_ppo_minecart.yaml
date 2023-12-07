@@ -26,7 +26,6 @@ oracle:
   eps: 1.e-8
   anneal_lr: False
   v_coef: 0.5
-  num_envs: 4
   num_minibatches: 4
   update_epochs: 4
   normalize_advantage: False
@@ -56,22 +55,25 @@ hyperparameters:
     choices: [ 64, 128, 256 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0 ]
+    choices: [ 0.5, 1.0, 5.0, 50.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000, 25000, 50000 ]
+    choices: [ 25000, 50000, 75000 ]
   online_steps:
     type: categorical
-    choices: [ 7500, 10000, 15000 ]
+    choices: [ 7500, 10000, 15000, 20000 ]
   pretrain_iters:
     type: categorical
-    choices: [ 25, 50, 75 ]
+    choices: [ 25, 50, 75, 100 ]
   num_referents:
     type: categorical
-    choices: [ 2, 4, 8, 16 ]
+    choices: [ 2, 4, 8, 16, 32 ]
   e_coef:
     type: categorical
     choices: [ 0.0, 0.01, 0.1 ]
   n_steps:
     type: categorical
     choices: [ 16, 32, 64, 128 ]
+  num_envs:
+    type: categorical
+    choices: [ 4, 8, 16 ]
