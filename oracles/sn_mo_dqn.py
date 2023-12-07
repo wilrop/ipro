@@ -50,8 +50,8 @@ class SNMODQN(SNDRLOracle):
                  scale=100,
                  lr=0.001,
                  hidden_layers=(64, 64),
-                 pretrain_freq=1,
-                 train_freq=1,
+                 pre_train_freq=1,
+                 online_train_freq=1,
                  target_update_freq=1,
                  gradient_steps=1,
                  pretrain_iters=100,
@@ -93,8 +93,8 @@ class SNMODQN(SNDRLOracle):
         self.online_exploration_frac = online_exploration_frac  # The fraction of online learning steps to explore.
         self.online_steps = online_steps  # The number of steps to learn online.
 
-        self.pretrain_freq = pretrain_freq
-        self.train_freq = train_freq
+        self.pre_train_freq = pre_train_freq
+        self.online_train_freq = online_train_freq
         self.target_update_freq = target_update_freq
         self.gradient_steps = gradient_steps
         self.tau = tau
@@ -129,8 +129,8 @@ class SNMODQN(SNDRLOracle):
         config.update({
             'lr': self.dqn_lr,
             'hidden_layers': self.dqn_hidden_layers,
-            'pretrain_freq': self.pretrain_freq,
-            'train_freq': self.train_freq,
+            'pre_train_freq': self.pre_train_freq,
+            'online_train_freq': self.online_train_freq,
             'target_update_freq': self.target_update_freq,
             'gradient_steps': self.gradient_steps,
             'pre_learning_start': self.pre_learning_start,
@@ -259,6 +259,7 @@ class SNMODQN(SNDRLOracle):
                        self.nadir,
                        self.ideal,
                        steps=self.pretraining_steps,
+                       train_freq=self.pre_train_freq,
                        learning_start=self.pre_learning_start if idx == 0 else 0,  # Only fill buffer first iteration.
                        epsilon_start=self.pre_epsilon_start,
                        epsilon_end=self.pre_epsilon_end,
@@ -272,6 +273,7 @@ class SNMODQN(SNDRLOracle):
               nadir,
               ideal,
               steps=None,
+              train_freq=None,
               learning_start=None,
               epsilon_start=None,
               epsilon_end=None,
@@ -280,7 +282,6 @@ class SNMODQN(SNDRLOracle):
               *args,
               **kwargs):
         """Train MODQN on the given environment."""
-        train_freq = self.pretrain_freq if self.phase == 'pretrain' else self.train_freq
         obs, _ = self.env.reset()
         obs = np.nan_to_num(obs, posinf=0)
         timestep = 0
@@ -336,6 +337,7 @@ class SNMODQN(SNDRLOracle):
                                      nadir=nadir,
                                      ideal=ideal,
                                      steps=self.online_steps,
+                                     train_freq=self.online_train_freq,
                                      learning_start=self.online_learning_start,
                                      epsilon_start=self.online_epsilon_start,
                                      epsilon_end=self.online_epsilon_end,
