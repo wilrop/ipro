@@ -13,8 +13,8 @@ n_trials: 1
 # Outer loop params
 outer_loop:
   method: IPRO
-  tolerance: 1.e-5
-  max_iterations: 200
+  tolerance: 1.e-15
+  max_iterations: 500
   track: True
 
 
@@ -25,7 +25,6 @@ oracle:
   scale: 100
   eps: 1.e-8
   anneal_lr: False
-  v_coef: 0.5
   num_minibatches: 4
   update_epochs: 4
   normalize_advantage: False
@@ -42,10 +41,10 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.001, 0.0003, 0.0001 ]
+    choices: [ 0.001 , 0.0007, 0.0003,  0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.001, 0.0003, 0.0001 ]
+    choices: [ 0.001 , 0.0007, 0.0003,  0.0001 ]
   num_hidden_layers:
     type: int
     min: 1
@@ -58,16 +57,19 @@ hyperparameters:
     choices: [ 0.5, 1.0, 5.0, 50.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 5000, 7500, 1000 ]
+    choices: [ 7500, 10000, 15000, 20000, 25000 ]
   online_steps:
     type: categorical
     choices: [ 2500, 5000, 7500 ]
   pretrain_iters:
     type: categorical
-    choices: [ 25, 50, 75 ]
+    choices: [ 25, 50, 75, 100 ]
   num_referents:
     type: categorical
-    choices: [ 2, 4, 8, 16, 32 ]
+    choices: [ 4, 8, 16, 32 ]
+  v_coef:
+    type: categorical
+    choices: [ 0.1, 0.3, 0.5 ]
   e_coef:
     type: categorical
     choices: [ 0.0, 0.01, 0.1 ]

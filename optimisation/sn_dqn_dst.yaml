@@ -43,7 +43,7 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.0001, 0.001, 0.003 ]
+    choices: [ 0.0001, 0.0003, 0.001 ]
   num_hidden_layers:
     type: int
     min: 1
@@ -71,7 +71,7 @@ hyperparameters:
     choices: [ 25, 50, 75, 100 ]
   num_referents:
     type: categorical
-    choices: [ 2, 4, 8, 16, 32 ]
+    choices: [ 4, 8, 16, 32 ]
   batch_size:
     type: categorical
     choices: [ 16, 32, 64 ]

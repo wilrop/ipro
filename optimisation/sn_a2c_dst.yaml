@@ -60,7 +60,7 @@ hyperparameters:
     choices: [ 25, 50, 75 ]
   num_referents:
     type: categorical
-    choices: [ 2, 4, 8, 16, 32 ]
+    choices: [ 4, 8, 16, 32 ]
   e_coef:
     type: categorical
     choices: [ 0.0, 0.01, 0.1 ]
