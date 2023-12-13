@@ -1,0 +1,496 @@
+{
+  "per": {
+    "desc": null,
+    "value": true
+  },
+  "tau": {
+    "desc": null,
+    "value": 0.1294
+  },
+  "algo": {
+    "desc": null,
+    "value": "Envelope"
+  },
+  "seed": {
+    "desc": null,
+    "value": 5
+  },
+  "gamma": {
+    "desc": null,
+    "value": 0.98
+  },
+  "_wandb": {
+    "desc": null,
+    "value": {
+      "m": [
+        {
+          "1": "global_step"
+        },
+        {
+          "1": "charts/timesteps_per_episode",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "charts/episode_time",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/scalarized_episode_return",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/discounted_scalarized_episode_return",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/episode_return_obj_0",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/disc_episode_return_obj_0",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/episode_return_obj_1",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/disc_episode_return_obj_1",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/episode_return_obj_2",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/disc_episode_return_obj_2",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "losses/grad_norm",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "losses/critic_loss",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/epsilon",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/homotopy_lambda",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "metrics/mean_priority",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/scalarized_return",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/scalarized_discounted_return",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/vec_0",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/discounted_vec_0",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/vec_1",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/discounted_vec_1",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/vec_2",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval_auto/discounted_vec_2",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/hypervolume",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/sparsity",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/eum",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front._type",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.sha256",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.size",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.artifact_path",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front._latest_artifact_path",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.path",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.ncols",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/front.nrows",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/igd",
+          "5": 1,
+          "6": [
+            1
+          ]
+        },
+        {
+          "1": "eval/mul",
+          "5": 1,
+          "6": [
+            1
+          ]
+        }
+      ],
+      "t": {
+        "1": [
+          1,
+          55
+        ],
+        "2": [
+          1,
+          55
+        ],
+        "3": [
+          7,
+          13,
+          16,
+          19,
+          23,
+          35
+        ],
+        "4": "3.8.10",
+        "5": "0.15.0",
+        "8": [
+          5
+        ]
+      },
+      "code_path": "code/experiments/benchmark/launch_experiment.py",
+      "framework": "torch",
+      "start_time": 1689751389.004551,
+      "cli_version": "0.15.0",
+      "is_jupyter_run": false,
+      "python_version": "3.8.10",
+      "is_kaggle_kernel": false
+    }
+  },
+  "env_id": {
+    "desc": null,
+    "value": "minecart-v0"
+  },
+  "net_arch": {
+    "desc": null,
+    "value": [
+      256,
+      256,
+      256,
+      256
+    ]
+  },
+  "ref_point": {
+    "desc": null,
+    "value": [
+      -1,
+      -1,
+      -200
+    ]
+  },
+  "batch_size": {
+    "desc": null,
+    "value": 32
+  },
+  "buffer_size": {
+    "desc": null,
+    "value": 1486469
+  },
+  "known_front": {
+    "desc": null,
+    "value": [
+      [
+        0.5561268712985739,
+        0.11092754963188364,
+        -0.650612959433078
+      ],
+      [
+        0.8519209738912995,
+        0.16992796246853845,
+        -0.8165040449913764
+      ],
+      [
+        0.6029337258330492,
+        0.1202638538952642,
+        -0.777430266180565
+      ],
+      [
+        0.923623571190163,
+        0.18423008277794245,
+        -0.9491770222344632
+      ],
+      [
+        0.40115733039743434,
+        0.2744199714114226,
+        -0.6729128596795184
+      ],
+      [
+        0.5827449672255672,
+        0.3986387512544214,
+        -0.8352190803379489
+      ],
+      [
+        0.6317921546918611,
+        0.4321904945791075,
+        -0.964832633230437
+      ],
+      [
+        0.6578427266679104,
+        0.4500109273001953,
+        -1.1152707484990034
+      ],
+      [
+        0.4712604616140905,
+        0.4712604616140905,
+        -0.7088049620504423
+      ],
+      [
+        0.5539268269840528,
+        0.5539268269840528,
+        -0.7961616482334731
+      ],
+      [
+        0.576766791945078,
+        0.576766791945078,
+        -1.1184211380143527
+      ],
+      [
+        0.2744199714114226,
+        0.40115733039743434,
+        -0.6729128596795184
+      ],
+      [
+        0.3986387512544214,
+        0.5827449672255672,
+        -0.8352190803379489
+      ],
+      [
+        0.4321904945791075,
+        0.6317921546918611,
+        -0.964832633230437
+      ],
+      [
+        0.4500109273001953,
+        0.6578427266679104,
+        -1.1152707484990034
+      ],
+      [
+        0.11092754963188364,
+        0.5561268712985739,
+        -0.650612959433078
+      ],
+      [
+        0.16992796246853845,
+        0.8519209738912995,
+        -0.8165040449913764
+      ],
+      [
+        0.1202638538952642,
+        0.6029337258330492,
+        -0.777430266180565
+      ],
+      [
+        0.18423008277794245,
+        0.923623571190163,
+        -0.9491770222344632
+      ],
+      [
+        0,
+        0,
+        -0.2492369774182144
+      ]
+    ]
+  },
+  "num_sample_w": {
+    "desc": null,
+    "value": 3
+  },
+  "use_envelope": {
+    "desc": null,
+    "value": true
+  },
+  "learning_rate": {
+    "desc": null,
+    "value": 0.00024
+  },
+  "clip_grand_norm": {
+    "desc": null,
+    "value": 1.2262
+  },
+  "initial_epsilon": {
+    "desc": null,
+    "value": 0.7293
+  },
+  "learning_starts": {
+    "desc": null,
+    "value": 167
+  },
+  "gradient_updates": {
+    "desc": null,
+    "value": 5
+  },
+  "epsilon_decay_steps:": {
+    "desc": null,
+    "value": 95463
+  },
+  "homotopy_decay_steps": {
+    "desc": null,
+    "value": 51843
+  },
+  "final_homotopy_lambda": {
+    "desc": null,
+    "value": 0.8728
+  },
+  "target_net_update_freq": {
+    "desc": null,
+    "value": 3022
+  },
+  "initial_homotopy_lambda": {
+    "desc": null,
+    "value": 0.9021
+  }
+}
