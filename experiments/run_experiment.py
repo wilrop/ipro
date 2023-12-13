@@ -47,12 +47,14 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
         env, num_objectives = setup_vector_env(env_id,
                                                oracle_params['num_envs'],
                                                seed,
+                                               gamma=gamma,
                                                max_episode_steps=max_episode_steps,
                                                one_hot=one_hot,
                                                capture_video=False,
                                                run_name=run_name)
     else:
         env, num_objectives = setup_env(env_id,
+                                        gamma=gamma,
                                         max_episode_steps=max_episode_steps,
                                         one_hot=one_hot,
                                         capture_video=False,

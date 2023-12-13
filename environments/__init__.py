@@ -21,7 +21,7 @@ def default_timesteps(env_id):
     return max_episode_steps
 
 
-def setup_env(env_id, max_episode_steps=None, one_hot=False, capture_video=False, run_name='run'):
+def setup_env(env_id, gamma=1.0, max_episode_steps=None, one_hot=False, capture_video=False, run_name='run'):
     """Setup the environment."""
     env = mo_gym.make(env_id)
     if one_hot is True:
@@ -30,16 +30,17 @@ def setup_env(env_id, max_episode_steps=None, one_hot=False, capture_video=False
         env = TimeLimit(env, max_episode_steps=max_episode_steps)
     if capture_video:
         env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
-    env = mo_gym.MORecordEpisodeStatistics(env)
+    env = mo_gym.MORecordEpisodeStatistics(env, gamma=gamma)
     env.env_id = env_id
     return env, env.reward_space.shape[0]
 
 
-def make_env(env_id, idx, seed, max_episode_steps=None, one_hot=False, capture_video=False, run_name='run'):
+def make_env(env_id, idx, seed, gamma=1.0, max_episode_steps=None, one_hot=False, capture_video=False, run_name='run'):
     """A function used in the vectorised environment generation."""
 
     def thunk():
         env, _ = setup_env(env_id,
+                           gamma=gamma,
                            max_episode_steps=max_episode_steps,
                            one_hot=one_hot,
                            capture_video=capture_video and idx == 0,
@@ -64,6 +65,7 @@ def make_env(env_id, idx, seed, max_episode_steps=None, one_hot=False, capture_v
 def setup_vector_env(env_id,
                      num_envs,
                      seed,
+                     gamma=1.0,
                      max_episode_steps=None,
                      one_hot=False,
                      capture_video=False,
@@ -74,6 +76,7 @@ def setup_vector_env(env_id,
         envs.append(make_env(env_id,
                              i,
                              seed + i,
+                             gamma=gamma,
                              max_episode_steps=max_episode_steps,
                              one_hot=one_hot,
                              capture_video=capture_video,
