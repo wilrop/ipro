@@ -35,10 +35,10 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.001, 0.0003, 0.0001 ]
+    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.001, 0.0003, 0.0001 ]
+    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
   num_hidden_layers:
     type: int
     min: 1

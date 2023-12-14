@@ -14,7 +14,7 @@ n_trials: 1
 outer_loop:
   method: IPRO
   tolerance: 1.e-15
-  max_iterations: 2000
+  max_iterations: 5000
   track: True
 
 
@@ -34,14 +34,14 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0003,  0.0001 ]
+    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
   lr_critic:
     type: categorical
     choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
   num_hidden_layers:
     type: int
     min: 1
-    max: 3
+    max: 4
   hidden_size:
     type: categorical
     choices: [ 64, 128, 256 ]
@@ -50,13 +50,13 @@ hyperparameters:
     choices: [ 0.5, 1.0, 5.0, 50.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 20000, 25000, 50000, 75000 ]
+    choices: [ 15000, 20000, 25000, 50000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 10000, 15000, 20000, 25000 ]
   pretrain_iters:
     type: categorical
-    choices: [ 25, 50, 75, 100 ]
+    choices: [ 100, 200, 300, 400, 500 ]
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]
