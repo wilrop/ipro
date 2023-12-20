@@ -178,18 +178,7 @@ class SNDRLOracle(DRLOracle):
         self.reset_stats()
         self.phase = f'online_{self.iteration}'
 
-        # Determine boundaries of the utility function.
-        if nadir is None:
-            nadir = self.nadir
-        else:
-            nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
-        if ideal is None:
-            ideal = self.ideal
-        else:
-            ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
-
-        referent = torch.tensor(referent, dtype=torch.float32, requires_grad=False)
-
+        referent, nadir, ideal = self.u_params(referent, nadir, ideal)
         self.load_model(None)  # We always load the pretrained model.
         self.train(referent,
                    nadir,

@@ -275,19 +275,23 @@ class DRLOracle:
             critic = critic.state_dict()
         self.trained_models[tuple(referent)] = (actor, critic)
 
-    def solve(self, referent, nadir=None, ideal=None):
-        """Run the inner loop of the outer loop."""
-        self.reset_stats()
-
+    def u_params(self, referent, nadir=None, ideal=None):
+        """Get the parameters for the utility function."""
         # Determine boundaries of the utility function.
         nadir = nadir if nadir is not None and self.vary_nadir else self.nadir
         ideal = ideal if ideal is not None and self.vary_ideal else self.ideal
 
-        # Make vectors tensors.
+        # Make arrays tensors.
         referent = torch.tensor(referent, dtype=torch.float32)
         nadir = torch.tensor(nadir, dtype=torch.float32)
         ideal = torch.tensor(ideal, dtype=torch.float32)
+        return referent, nadir, ideal
 
+    def solve(self, referent, nadir=None, ideal=None):
+        """Run the inner loop of the outer loop."""
+        self.reset_stats()
+
+        referent, nadir, ideal = self.u_params(referent, nadir, ideal)
         self.u_func = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=self.deterministic_eval)
