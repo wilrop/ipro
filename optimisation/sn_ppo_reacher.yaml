@@ -23,6 +23,7 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
+  pretrain_iters: 100
   eps: 1.e-8
   anneal_lr: False
   num_minibatches: 4
@@ -42,13 +43,20 @@ hyperparameters:
   lr_critic:
     type: categorical
     choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
-  num_hidden_layers:
+  hidden_size_actor:
+    type: categorical
+    choices: [ 64, 128, 256 ]
+  hidden_size_critic:
+    type: categorical
+    choices: [ 64, 128, 256 ]
+  num_hidden_layers_actor:
     type: int
     min: 1
     max: 4
-  hidden_size:
-    type: categorical
-    choices: [ 64, 128, 256 ]
+  num_hidden_layers_critic:
+    type: int
+    min: 1
+    max: 4
   max_grad_norm:
     type: categorical
     choices: [ 0.5, 1.0, 5.0, 50.0 ]
@@ -58,9 +66,6 @@ hyperparameters:
   online_steps:
     type: categorical
     choices: [ 2500, 5000, 7500 ]
-  pretrain_iters:
-    type: categorical
-    choices: [ 100, 200, 300, 400, 500 ]
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]
@@ -69,10 +74,10 @@ hyperparameters:
     choices: [ 0.1, 0.3, 0.5 ]
   e_coef:
     type: categorical
-    choices: [ 0.0, 0.01, 0.1 ]
+    choices: [ 0.0, 0.005, 0.01, 0.1 ]
   n_steps:
     type: categorical
-    choices: [ 16, 32, 64, 128 ]
+    choices: [ 32, 64, 128 ]
   num_envs:
     type: categorical
     choices: [ 4, 8, 16 ]

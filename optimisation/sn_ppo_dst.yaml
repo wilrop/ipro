@@ -25,14 +25,10 @@ oracle:
   scale: 100
   eps: 1.e-8
   anneal_lr: False
-  v_coef: 0.5
   num_minibatches: 4
-  update_epochs: 4
   normalize_advantage: False
   gae_lambda: 0.95
   target_kl: None
-  clip_coef: 0.2
-  clip_range_vf: 0.2
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -68,6 +64,9 @@ hyperparameters:
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]
+  v_coef:
+    type: categorical
+    choices: [ 0.1, 0.3, 0.5 ]
   e_coef:
     type: categorical
     choices: [ 0.0, 0.01, 0.1 ]
@@ -77,3 +76,12 @@ hyperparameters:
   num_envs:
     type: categorical
     choices: [ 4, 8, 16 ]
+  update_epochs:
+    type: categorical
+    choices: [ 4, 8, 16 ]
+  clip_coef:
+    type: categorical
+    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
+  clip_range_vf:
+    type: categorical
+    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
