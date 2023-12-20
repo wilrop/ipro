@@ -332,7 +332,7 @@ class SNMOA2C(SNDRLOracle):
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
 
             if (step + 1) % self.n_steps == 0:
-                loss = self.update_policy(referent, nadir, ideal, num_referents=1)
+                loss = self.update_policy(referent, nadir, ideal, num_referents=num_referents)
                 self.rollout_buffer.reset()
 
             if (step + 1) % self.log_freq == 0:
