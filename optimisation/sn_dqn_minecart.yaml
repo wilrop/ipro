@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-DQN
   aug: 0.01
   scale: 100
-  pretrain_iters: 100
+  pretrain_iters: 50
   online_train_freq: 1
   target_update_freq: 1
   gradient_steps: 1

@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
-  pretrain_iters: 100
+  pretrain_iters: 50
   eps: 1.e-8
   anneal_lr: False
   num_minibatches: 4
@@ -59,7 +59,7 @@ hyperparameters:
     max: 4
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0, 50.0 ]
+    choices: [ 0.5, 1.0, 5.0 ]
   pretraining_steps:
     type: categorical
     choices: [ 15000, 20000, 25000, 50000 ]

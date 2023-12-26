@@ -22,8 +22,8 @@ outer_loop:
 oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
-  scale: 100
-  pretrain_iters: 100
+  scale: 10
+  pretrain_iters: 50
   normalize_advantage: False
   gae_lambda: 0.95
   eval_episodes: 100
@@ -55,13 +55,13 @@ hyperparameters:
     max: 4
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0, 50.0 ]
+    choices: [ 0.5, 1.0, 5.0 ]
   pretraining_steps:
     type: categorical
     choices: [ 5000, 7500, 10000, 15000, 20000 ]
   online_steps:
     type: categorical
-    choices: [ 2500, 5000, 7500 ]
+    choices: [ 2500, 5000, 7500, 10000 ]
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]
