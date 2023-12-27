@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_all
-#SBATCH --time=12:00:00
+#SBATCH --time=72:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-5
+#SBATCH --array=1-105
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -21,6 +21,7 @@ export OMP_NUM_THREADS=1
 
 # Define variables.
 EXPERIMENT_DIR="${VSC_HOME}/ipro/experiments"
+JSON_DIR="evaluation"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
@@ -32,6 +33,6 @@ export WANDB_DIR=$VSC_SCRATCH
 sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
-python3 ${EXPERIMENT_DIR}/run_experiments.py \
+python3 ${EXPERIMENT_DIR}/reproduce_experiment.py \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
-  --exp_dir ${EXPERIMENT_DIR}
+  --exp_dir ${EXPERIMENT_DIR}/${JSON_DIR}
