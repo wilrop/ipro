@@ -5,6 +5,7 @@ from experiments.run_experiment import run_experiment
 
 
 def get_env_info(env_id):
+    """Get environment information."""
     if env_id == 'deep-sea-treasure-concave-v0':
         max_episode_steps = 50
         one_hot_wrapper = True
@@ -23,6 +24,7 @@ def get_env_info(env_id):
 
 
 def remove_unused_params(parameters):
+    """Remove unused parameters."""
     del parameters['seed']  # Use the seed from the experiments.json file.
     del parameters['tolerance']  # Use a fixed tolerance.
     del parameters['dimensions']  # Recomputed later.
@@ -57,6 +59,7 @@ def setup_config(parameters, seed, max_episode_steps, one_hot_wrapper):
 
 
 def setup_outer_params(tolerance):
+    """Setup the parameters for the outer loop."""
     outer_params = {
         'tolerance': tolerance,
         'max_iterations': None,
@@ -66,6 +69,7 @@ def setup_outer_params(tolerance):
 
 
 def setup_oracle_params(parameters):
+    """Setup the parameters for the oracle."""
     oracle_params = {
         **parameters,
         'track': False
