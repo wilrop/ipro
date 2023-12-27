@@ -60,7 +60,7 @@ def setup_outer_params(tolerance):
     outer_params = {
         'tolerance': tolerance,
         'max_iterations': None,
-        'track': False
+        'track': True
     }
     return outer_params
 
