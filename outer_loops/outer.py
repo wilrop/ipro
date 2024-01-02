@@ -121,7 +121,7 @@ class OuterLoop:
                 )
 
             wandb.define_metric('iteration')
-            wandb.define_metric('outer/hypervolume', step_metric='iteration', summary='max')
+            wandb.define_metric('outer/hypervolume', step_metric='iteration')
             wandb.define_metric('outer/dominated_hv', step_metric='iteration')
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
@@ -132,7 +132,6 @@ class OuterLoop:
         """Close wandb."""
         if self.track:
             wandb.run.summary['PF_size'] = len(self.pf)
-            wandb.run.summary['replay_triggered'] = self.replay_triggered
             wandb.finish()
 
     def log_iteration(self, iteration, referent=None, ideal=None, pareto_point=None):
@@ -151,6 +150,10 @@ class OuterLoop:
                 wandb.run.summary[f"referent_{iteration}"] = referent
                 wandb.run.summary[f"ideal_{iteration}"] = ideal
                 wandb.run.summary[f"pareto_point_{iteration}"] = pareto_point
+
+            wandb.run.summary['hypervolume'] = self.hv
+            wandb.run.summary['PF_size'] = len(self.pf)
+            wandb.run.summary['replay_triggered'] = self.replay_triggered
 
     def compute_hypervolume(self, points, ref):
         """Compute the hypervolume of a set of points.
