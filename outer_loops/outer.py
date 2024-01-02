@@ -121,7 +121,7 @@ class OuterLoop:
                 )
 
             wandb.define_metric('iteration')
-            wandb.define_metric('outer/hypervolume', step_metric='iteration')
+            wandb.define_metric('outer/hypervolume', step_metric='iteration', summary='max')
             wandb.define_metric('outer/dominated_hv', step_metric='iteration')
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
