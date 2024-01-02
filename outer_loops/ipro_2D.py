@@ -24,7 +24,9 @@ class IPRO2D(OuterLoop):
                  exp_name=None,
                  wandb_project_name=None,
                  wandb_entity=None,
-                 seed=None):
+                 seed=None,
+                 extra_config=None,
+                 ):
         super().__init__(problem,
                          2,
                          oracle,
@@ -38,7 +40,8 @@ class IPRO2D(OuterLoop):
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
                          wandb_entity=wandb_entity,
-                         seed=seed)
+                         seed=seed,
+                         extra_config=extra_config)
 
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
 

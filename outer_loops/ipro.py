@@ -23,6 +23,7 @@ class IPRO(OuterLoop):
                  wandb_entity=None,
                  rng=None,
                  seed=None,
+                 extra_config=None,
                  ):
         super().__init__(problem,
                          dimensions,
@@ -37,7 +38,8 @@ class IPRO(OuterLoop):
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
                          wandb_entity=wandb_entity,
-                         seed=seed)
+                         seed=seed,
+                         extra_config=extra_config)
         self.lower_points = []
         self.upper_points = []
 

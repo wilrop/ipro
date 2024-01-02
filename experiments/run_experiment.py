@@ -34,7 +34,7 @@ def construct_hidden(oracle_params):
     return oracle_params
 
 
-def run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None):
+def run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None, extra_config=None):
     """Run an single experiment.
 
     Args:
@@ -44,6 +44,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
         outer_params (dict): The parameters for the outer loop.
         oracle_params (dict): The parameters for the oracle.
         callback (function | None): The callback function.
+        extra_config (dict | None): Extra configuration parameters.
 
     Returns:
         float: The hypervolume of the final Pareto front.
@@ -101,6 +102,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
                          wandb_project_name=wandb_project_name,
                          wandb_entity=wandb_entity,
                          seed=seed,
+                         extra_config=extra_config,
                          **outer_params)
     ol.solve(callback=callback)
     return ol.hv

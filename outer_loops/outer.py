@@ -22,7 +22,8 @@ class OuterLoop:
                  exp_name=None,
                  wandb_project_name=None,
                  wandb_entity=None,
-                 seed=None):
+                 seed=None,
+                 extra_config=None):
         self.problem = problem
         self.dim = dimensions
         self.oracle = oracle
@@ -57,6 +58,8 @@ class OuterLoop:
 
         self.seed = seed
 
+        self.extra_config = extra_config
+
     def reset(self):
         self.bounding_box = None
         self.ideal = None
@@ -86,6 +89,7 @@ class OuterLoop:
 
     def config(self):
         """Get the config of the algorithm."""
+        extra_config = self.extra_config if self.extra_config is not None else {}
         return {
             "method": self.method,
             "env_id": self.problem.env_id,
@@ -94,6 +98,7 @@ class OuterLoop:
             "tolerance": self.tolerance,
             "max_iterations": self.max_iterations,
             "seed": self.seed,
+            **extra_config
         }
 
     def setup_wandb(self, mode='offline'):

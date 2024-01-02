@@ -84,6 +84,7 @@ def reproduce_experiment(exp_id, exp_dir):
     parameters = load_parameters_from_wandb(run_id)
     max_episode_steps, one_hot_wrapper, tolerance = get_env_info(env_id)
     parameters = remove_unused_params(parameters)
+    extra_config = {'parent_run_id': run_id}
 
     # Setup experiment parameters.
     method = parameters.pop('method')
@@ -92,7 +93,7 @@ def reproduce_experiment(exp_id, exp_dir):
     outer_params = setup_outer_params(tolerance)
     oracle_params = setup_oracle_params(parameters)
 
-    run_experiment(method, algorithm, config, outer_params, oracle_params)
+    run_experiment(method, algorithm, config, outer_params, oracle_params, extra_config=extra_config)
 
 
 if __name__ == '__main__':
