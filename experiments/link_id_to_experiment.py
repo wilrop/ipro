@@ -8,7 +8,7 @@ def link_experiments(num_seeds=5):
         'dqn': {
             'deep-sea-treasure-concave-v0': [],
             'minecart-v0': [],
-            'mo-reacher-v4': []
+            'mo-reacher-v4': ['wilrop/IPRO_opt/vbxkaso4']
         },
         'a2c': {
             'deep-sea-treasure-concave-v0': [],
@@ -24,33 +24,41 @@ def link_experiments(num_seeds=5):
 
     to_evaluate = {
         'dqn': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/2ihwzr76',
-                                             'wilrop/IPRO_opt/2ii52wzk',
-                                             'wilrop/IPRO_opt/3msxdhww',
-                                             'wilrop/IPRO_opt/2cysay30',
-                                             'wilrop/IPRO_opt/1moes42e'],
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/2tn5owa1',
+                                             'wilrop/IPRO_opt/zetw2qex'],
             'minecart-v0': [],
             'mo-reacher-v4': ['wilrop/IPRO_opt/vbxkaso4']
         },
         'a2c': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/3jgusppf',
-                                             'wilrop/IPRO_opt/3kcnlngp',
-                                             'wilrop/IPRO_opt/3ljj79w4',
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/g347p7nz',
+                                             'wilrop/IPRO_opt/10sl3sct',
+                                             'wilrop/IPRO_opt/239dy8eu',
+                                             'wilrop/IPRO_opt/37hzrb0t',
                                              'wilrop/IPRO_opt/2ilk1u5q',
-                                             'wilrop/IPRO_opt/3mrstqet'],
-            'minecart-v0': ['wilrop/IPRO_opt/2fgq90hl'],
+                                             'wilrop/IPRO_opt/2s5q3nff'],
+            'minecart-v0': [],
             'mo-reacher-v4': ['wilrop/IPRO_opt/2ga1y2rc',
+                              'wilrop/IPRO_opt/2i8jgu31',
+                              'wilrop/IPRO_opt/34omm1q6',
                               'wilrop/IPRO_opt/y5gcmdof',
-                              'wilrop/IPRO_opt/18kxy4la']
+                              'wilrop/IPRO_opt/18kxy4la',
+                              'wilrop/IPRO_opt/2niygvug',
+                              'wilrop/IPRO_opt/1hf09bbk',
+                              'wilrop/IPRO_opt/3abwo2bu',
+                              'wilrop/IPRO_opt/2cfpvgbm']
         },
         'ppo': {
-            'deep-sea-treasure-concave-v0': [],
+            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/3gyzdum4',
+                                             'wilrop/IPRO_opt/g1dxgkl4'],
             'minecart-v0': ['wilrop/IPRO_opt/14kyvvys',
-                            'wilrop/IPRO_opt/1ucq5ti1'],
+                            'wilrop/IPRO_opt/1ucq5ti1',
+                            'wilrop/IPRO_opt/31wg6d5l'],
             'mo-reacher-v4': ['wilrop/IPRO_opt/3jbowwrd',
                               'wilrop/IPRO_opt/3pzv9rk4',
                               'wilrop/IPRO_opt/14jtu9k9',
-                              'wilrop/IPRO_opt/1xox36av']
+                              'wilrop/IPRO_opt/1xox36av',
+                              'wilrop/IPRO_opt/2je0ir5m',
+                              'wilrop/IPRO_opt/19jh6tg4']
         }
     }
 
