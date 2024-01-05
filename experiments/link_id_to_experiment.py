@@ -1,8 +1,8 @@
-import os
 import json
+import argparse
 
 
-def link_experiments(num_seeds=5):
+def link_experiments(num_seeds):
     """Creates a json file that links an experiment id to a hyperparameter file and seed"""
     checked = {
         'dqn': {
@@ -78,4 +78,8 @@ def link_experiments(num_seeds=5):
 
 
 if __name__ == '__main__':
-    link_experiments()
+    parser = argparse.ArgumentParser(description='Link a job ID to a specific experiment.')
+    parser.add_argument('--num_seeds', type=int, default=5, help='Number of seeds to run.')
+    args = parser.parse_args()
+
+    link_experiments(args.num_seeds)
