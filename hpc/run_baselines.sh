@@ -29,6 +29,9 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
 # Set wandb directory.
 export WANDB_DIR=$VSC_SCRATCH
 
+# Set wandb in offline mode.
+wandb offline
+
 # Sleep for a random number of seconds to avoid overloading the file system.
 sleep $((($RANDOM % 20) + 1))s
 
