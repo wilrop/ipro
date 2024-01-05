@@ -7,20 +7,23 @@ from experiments.run_experiment import run_experiment
 def get_env_info(env_id):
     """Get environment information."""
     if env_id == 'deep-sea-treasure-concave-v0':
+        gamma = 1.0
         max_episode_steps = 50
         one_hot_wrapper = True
         tolerance = 0.0
     elif env_id == 'mo-reacher-v4':
+        gamma = 0.99
         max_episode_steps = 50
         one_hot_wrapper = False
         tolerance = 1.e-15
     elif env_id == 'minecart-v0':
+        gamma = 0.98
         max_episode_steps = 1000
         one_hot_wrapper = False
         tolerance = 1.e-15
     else:
         raise NotImplementedError
-    return max_episode_steps, one_hot_wrapper, tolerance
+    return gamma, max_episode_steps, one_hot_wrapper, tolerance
 
 
 def remove_unused_params(parameters):
@@ -82,7 +85,7 @@ def reproduce_experiment(exp_id, exp_dir):
     id_exp_dict = json.load(open(f'{exp_dir}/experiments.json', 'r'))
     alg, env_id, seed, run_id = id_exp_dict[str(exp_id)]
     parameters = load_parameters_from_wandb(run_id)
-    max_episode_steps, one_hot_wrapper, tolerance = get_env_info(env_id)
+    _, max_episode_steps, one_hot_wrapper, tolerance = get_env_info(env_id)
     parameters = remove_unused_params(parameters)
     extra_config = {'parent_run_id': run_id}
 
