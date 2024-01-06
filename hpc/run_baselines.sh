@@ -13,7 +13,6 @@ module load Python/3.10.4-GCCcore-11.3.0
 module load SciPy-bundle/2022.05-foss-2022a
 module load PyTorch/1.12.0-foss-2022a
 module load pygmo/2.18.0-foss-2022a
-module load Optuna/3.1.0-foss-2022a
 module load wandb/0.13.4-GCCcore-11.3.0
 module load MuJoCo/2.2.2-GCCcore-11.3.0
 
