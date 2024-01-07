@@ -35,7 +35,20 @@ def get_timesteps(alg_id, env_id):
     return total_timesteps
 
 
-def setup_agent(alg_id, env, gamma, seed, run_name):
+def get_scaling_factor(env_id):
+    """Get the scaling factor for the PCN algorithm."""
+    if env_id == 'deep-sea-treasure-concave-v0':
+        scaling_factor = np.array([0.1, 0.1, 0.01])
+    elif env_id == 'minecart-v0':
+        scaling_factor = np.array([1.0, 1.0, 0.1, 0.1])
+    elif env_id == 'mo-reacher-v4':
+        scaling_factor = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
+    else:
+        raise NotImplementedError
+    return scaling_factor
+
+
+def setup_agent(alg_id, env_id, env, gamma, seed, run_name):
     """Setup the agent using MORL-baselines."""
     if alg_id == 'GPI-PD':
         agent = GPILS(env,
@@ -44,7 +57,7 @@ def setup_agent(alg_id, env, gamma, seed, run_name):
                       seed=seed)
     elif alg_id == 'PCN':
         agent = PCN(env,
-                    scaling_factor=np.array([0.1, 0.1, 0.01]),
+                    scaling_factor=get_scaling_factor(env_id),
                     gamma=gamma,
                     experiment_name=run_name,
                     seed=seed)
@@ -71,7 +84,7 @@ def run_baseline(exp_id, exp_dir):
     env = MORecordEpisodeStatistics(env, gamma=gamma)  # wrapper for recording statistics
     eval_env = mo_gym.make(env_id)  # environment used for evaluation
 
-    agent = setup_agent(baseline, env, gamma, seed, run_name)
+    agent = setup_agent(baseline, env_id, env, gamma, seed, run_name)
     agent.train(total_timesteps, eval_env, ref_point)
 
 
