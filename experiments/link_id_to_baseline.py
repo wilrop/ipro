@@ -6,7 +6,7 @@ def link_baseline(num_seeds):
     """Link a job ID to a baseline experiment."""
     id_exp = {}
     idx = 0
-    baselines = ['PCN', 'GPI-PD', 'Envelope']
+    baselines = ['PCN']
     envs = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
     for baseline in baselines:
         for env_id in envs:

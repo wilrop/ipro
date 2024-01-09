@@ -18,11 +18,11 @@ def get_timesteps(alg_id, env_id):
         total_timesteps = 2000000
     elif alg_id == 'PCN' and env_id == 'mo-reacher-v4':
         total_timesteps = 200000
-    elif alg_id == 'GPI-PD' and env_id == 'deep-sea-treasure-concave-v0':
+    elif alg_id == 'GPI-LS' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
-    elif alg_id == 'GPI-PD' and env_id == 'minecart-v0':
+    elif alg_id == 'GPI-LS' and env_id == 'minecart-v0':
         total_timesteps = 100000
-    elif alg_id == 'GPI-PD' and env_id == 'mo-reacher-v4':
+    elif alg_id == 'GPI-LS' and env_id == 'mo-reacher-v4':
         total_timesteps = 200000
     elif alg_id == 'Envelope' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
@@ -48,23 +48,20 @@ def get_scaling_factor(env_id):
     return scaling_factor
 
 
-def setup_agent(alg_id, env_id, env, gamma, seed, run_name):
+def setup_agent(alg_id, env_id, env, gamma, seed):
     """Setup the agent using MORL-baselines."""
-    if alg_id == 'GPI-PD':
+    if alg_id == 'GPI-LS':
         agent = GPILS(env,
                       gamma=gamma,
-                      experiment_name=run_name,
                       seed=seed)
     elif alg_id == 'PCN':
         agent = PCN(env,
                     scaling_factor=get_scaling_factor(env_id),
                     gamma=gamma,
-                    experiment_name=run_name,
                     seed=seed)
     elif alg_id == 'Envelope':
         agent = Envelope(env,
                          gamma=gamma,
-                         experiment_name=run_name,
                          seed=seed)
     else:
         raise NotImplementedError
@@ -78,13 +75,12 @@ def run_baseline(exp_id, exp_dir):
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
     _, _, ref_point = get_bounding_box(env_id)
     total_timesteps = get_timesteps(baseline, env_id)
-    run_name = f'{baseline}__{env_id}__{seed}'
 
     env = mo_gym.make(env_id)
     env = MORecordEpisodeStatistics(env, gamma=gamma)  # wrapper for recording statistics
     eval_env = mo_gym.make(env_id)  # environment used for evaluation
 
-    agent = setup_agent(baseline, env_id, env, gamma, seed, run_name)
+    agent = setup_agent(baseline, env_id, env, gamma, seed)
     agent.train(total_timesteps, eval_env, ref_point)
 
 
