@@ -24,10 +24,11 @@ oracle:
   aug: 0.01
   scale: 10
   pretrain_iters: 50
+  pre_train_freq: 4
   online_train_freq: 1
   target_update_freq: 1
   gradient_steps: 1
-  pre_learning_start: 1000
+  pre_learning_start: 100
   online_learning_start: 100
   tau: 0.1
   buffer_size: 100000
@@ -78,6 +79,3 @@ hyperparameters:
   online_exploration_frac:
     type: categorical
     choices: [ 0.1, 0.25, 0.5 ]
-  pre_train_freq:
-    type: categorical
-    choices: [ 1, 4, 8 ]

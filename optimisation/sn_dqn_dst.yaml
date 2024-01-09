@@ -23,11 +23,12 @@ oracle:
   algorithm: SN-MO-DQN
   aug: 0.01
   scale: 100
+  pretrain_iters: 25
   online_train_freq: 1
   pre_train_freq: 4
   target_update_freq: 1
   gradient_steps: 1
-  pre_learning_start: 1000
+  pre_learning_start: 100
   online_learning_start: 100
   online_epsilon_start: 0.5
   online_epsilon_end: 0.05
@@ -43,7 +44,7 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.0001, 0.0007, 0.0003, 0.001 ]
+    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
   num_hidden_layers:
     type: int
     min: 1
@@ -66,9 +67,6 @@ hyperparameters:
   online_steps:
     type: categorical
     choices: [ 500, 1000, 2000 ]
-  pretrain_iters:
-    type: categorical
-    choices: [ 25, 50, 75, 100 ]
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]

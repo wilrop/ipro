@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
-  pretrain_iters: 50
+  pretrain_iters: 30
   eps: 1.e-8
   anneal_lr: False
   num_minibatches: 4

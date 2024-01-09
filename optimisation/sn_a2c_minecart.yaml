@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
-  pretrain_iters: 50
+  pretrain_iters: 30
   normalize_advantage: False
   gae_lambda: 0.95
   eval_episodes: 100

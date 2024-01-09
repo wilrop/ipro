@@ -23,6 +23,7 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
+  pretrain_iters: 25
   v_coef: 0.5
   normalize_advantage: False
   gae_lambda: 0.95
@@ -55,9 +56,6 @@ hyperparameters:
   online_steps:
     type: categorical
     choices: [ 1000, 2500, 5000 ]
-  pretrain_iters:
-    type: categorical
-    choices: [ 25, 50, 75 ]
   num_referents:
     type: categorical
     choices: [ 4, 8, 16, 32 ]
