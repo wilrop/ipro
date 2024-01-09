@@ -34,38 +34,30 @@ def plot_lineplot(env_id, metric, y_label):
 
     # Plot a lineplot for each algorithm.
     fig = plt.figure(figsize=(10, 5))
-    ax = sns.lineplot(x='Iteration', y='dqn', linewidth=2.0, data=dqn_data, errorbar='pi', label='DQN')
-    ax = sns.lineplot(x='Iteration', y='a2c', linewidth=2.0, data=a2c_data, errorbar='pi', label='A2C')
-    ax = sns.lineplot(x='Iteration', y='ppo', linewidth=2.0, data=ppo_data, errorbar='pi', label='PPO')
-    max_iter = ppo_data['Iteration'].max() + 1
+    ax = sns.lineplot(x='Step', y='dqn', linewidth=2.0, data=dqn_data, errorbar='pi', label='DQN')
+    ax = sns.lineplot(x='Step', y='a2c', linewidth=2.0, data=a2c_data, errorbar='pi', label='A2C')
+    ax = sns.lineplot(x='Step', y='ppo', linewidth=2.0, data=ppo_data, errorbar='pi', label='PPO')
+
+    # Read and plot baseline data.
+    if metric == 'hv':
+        gpils_data = pd.read_csv(f'results/GPI-LS_{env_id}_{metric}.csv')
+        pcn_data = pd.read_csv(f'results/PCN_{env_id}_{metric}.csv')
+        envelope_data = pd.read_csv(f'results/Envelope_{env_id}_{metric}.csv')
+        ax = sns.lineplot(x='Step', y='GPI-LS', linewidth=2.0, data=gpils_data, errorbar='pi', label='GPI-LS')
+        ax = sns.lineplot(x='Step', y='PCN', linewidth=2.0, data=pcn_data, errorbar='pi', label='PCN')
+        ax = sns.lineplot(x='Step', y='Envelope', linewidth=2.0, data=envelope_data, errorbar='pi', label='Envelope')
 
     # Plot the baselines.
-    if metric == 'hv':
-        if env_id == 'deep-sea-treasure-concave-v0':
-            baselines = {'True PF': np.full(max_iter, 4255)}
-        elif env_id == 'minecart-v0':
-            baselines = {
-                'GPI-LS': [722.835429391406, 722.0529849919758, 720.4498781838754, 716.5630230831209, 715.155832680495],
-                'PCN': [562.3794170629624, 562.2471920250745, 560.7465164701142, 499.2242079401762, 454.27223076180957]}
-        else:
-            baselines = {'GPI-LS': [36408302.37870406, 36273972.49959476, 36257568.87122492, 36255358.6213686,
-                                    36241249.26302673],
-                         'PCN': [24157119.610899586, 23846669.989973992, 23268621.59945868, 23095473.71940881,
-                                 22832642.24314286]}
-
-        baseline_colors = {'True PF': '#d62728', 'GPI-LS': '#9467bd', 'PCN': '#8c564b'}
-
-        for alg, hvs in baselines.items():
-            color = baseline_colors[alg]
-            mean_hv = np.mean(hvs)
-            ax = sns.lineplot(x=range(max_iter), y=np.full(max_iter, mean_hv), linewidth=2.0, label=alg, linestyle='--',
-                              color=color)
+    if metric == 'hv' and env_id == 'deep-sea-treasure-concave-v0':
+        max_step = int(ax.get_xlim()[1])
+        true_pf = np.full(max_step, 4255)
+        ax = sns.lineplot(x=range(max_step), y=true_pf, linewidth=2.0, label='True PF', linestyle='--')
 
     # Set the y-axis in log scale
     ax.set_xscale('log')
     sns.move_legend(ax, "lower right")
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
-    plt.xlabel("Iteration")
+    plt.xlabel("Step")
     plt.ylabel(y_label)
     plt.savefig(f"results/{env_id}_{metric}.pdf", dpi=fig.dpi)
     plt.clf()
@@ -78,5 +70,6 @@ def plot_hv_cov(env_id):
 
 
 if __name__ == '__main__':
-    env_id = "minecart-v0"
-    plot_hv_cov(env_id)
+    for env_id in ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']:
+        print(f'Plotting {env_id}')
+        plot_hv_cov(env_id)
