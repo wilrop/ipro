@@ -12,7 +12,7 @@ from oracles import init_oracle
 from outer_loops import init_outer_loop
 
 
-def construct_hidden(oracle_params):
+def construct_hidden(algorithm, oracle_params):
     if 'hidden_size' in oracle_params:
         hl_actor = (oracle_params['hidden_size'],) * oracle_params['num_hidden_layers']
         hl_critic = (oracle_params['hidden_size'],) * oracle_params['num_hidden_layers']
@@ -84,7 +84,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
                                         run_name=run_name)
 
     if 'hidden_layers' not in oracle_params and 'actor_hidden' not in oracle_params:
-        oracle_params = construct_hidden(oracle_params)
+        oracle_params = construct_hidden(algorithm, oracle_params)
 
     linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
     oracle = init_oracle(algorithm,
