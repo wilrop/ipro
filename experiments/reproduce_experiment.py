@@ -79,6 +79,7 @@ def reproduce_experiment(oracle, env_id, seed, run_id):
     run = api.run(f'{run_id}')
     parameters = run.config
     run.summary['reproduced'] = True  # Mark as reproduced.
+    run.update()
     _, max_episode_steps, one_hot_wrapper, tolerance = get_env_info(env_id)
     parameters = remove_unused_params(parameters)
     extra_config = {'parent_run_id': run_id}
