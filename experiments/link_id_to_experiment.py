@@ -1,85 +1,58 @@
+import wandb
 import json
-import argparse
+from itertools import zip_longest
 
 
-def link_experiments(num_seeds):
-    """Creates a json file that links an experiment id to a hyperparameter file and seed"""
-    checked = {
-        'dqn': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': ['wilrop/IPRO_opt/vbxkaso4']
-        },
-        'a2c': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': []
-        },
-        'ppo': {
-            'deep-sea-treasure-concave-v0': [],
-            'minecart-v0': [],
-            'mo-reacher-v4': []
-        }
-    }
+def link_id_to_experiment(algs, envs, num_seeds, max_runs_per_config=100):
+    """Generate a JSON of experiments to reproduce.
 
-    to_evaluate = {
-        'dqn': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/2tn5owa1',
-                                             'wilrop/IPRO_opt/zetw2qex'],
-            'minecart-v0': [],
-            'mo-reacher-v4': ['wilrop/IPRO_opt/vbxkaso4']
-        },
-        'a2c': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/g347p7nz',
-                                             'wilrop/IPRO_opt/10sl3sct',
-                                             'wilrop/IPRO_opt/239dy8eu',
-                                             'wilrop/IPRO_opt/37hzrb0t',
-                                             'wilrop/IPRO_opt/2ilk1u5q',
-                                             'wilrop/IPRO_opt/2s5q3nff'],
-            'minecart-v0': [],
-            'mo-reacher-v4': ['wilrop/IPRO_opt/2ga1y2rc',
-                              'wilrop/IPRO_opt/2i8jgu31',
-                              'wilrop/IPRO_opt/34omm1q6',
-                              'wilrop/IPRO_opt/y5gcmdof',
-                              'wilrop/IPRO_opt/18kxy4la',
-                              'wilrop/IPRO_opt/2niygvug',
-                              'wilrop/IPRO_opt/1hf09bbk',
-                              'wilrop/IPRO_opt/3abwo2bu',
-                              'wilrop/IPRO_opt/2cfpvgbm']
-        },
-        'ppo': {
-            'deep-sea-treasure-concave-v0': ['wilrop/IPRO_opt/3gyzdum4',
-                                             'wilrop/IPRO_opt/g1dxgkl4'],
-            'minecart-v0': ['wilrop/IPRO_opt/14kyvvys',
-                            'wilrop/IPRO_opt/1ucq5ti1',
-                            'wilrop/IPRO_opt/31wg6d5l'],
-            'mo-reacher-v4': ['wilrop/IPRO_opt/3jbowwrd',
-                              'wilrop/IPRO_opt/3pzv9rk4',
-                              'wilrop/IPRO_opt/14jtu9k9',
-                              'wilrop/IPRO_opt/1xox36av',
-                              'wilrop/IPRO_opt/2je0ir5m',
-                              'wilrop/IPRO_opt/19jh6tg4']
-        }
-    }
+    Args:
+        algs (list): The list of algorithms to reproduce.
+        envs (list): The list of environments to reproduce.
+        num_seeds (int): The number of seeds to reproduce.
+        max_runs_per_config (int): The maximum number of runs to reproduce per configuration.
+    """
+    to_reproduce = {(alg_name, env_id): [] for env_id in envs for alg_name in algs}
 
-    id_exp = {}
+    # Collect the possible runs for this task.
+    api = wandb.Api(timeout=120)
+    runs = api.runs("wilrop/IPRO_opt", order='-summary_metrics.outer/hypervolume')
+
+    print(f'Collecting runs')
+    for run in runs:
+        if all([len(runs) >= max_runs_per_config for runs in to_reproduce.values()]):
+            break
+        if 'reproduced' not in run.summary.keys() or not run.summary['reproduced']:
+            alg_name = run.config['alg_name']
+            env_id = run.config['env_id']
+            if alg_name in algs and env_id in envs and len(to_reproduce[(alg_name, env_id)]) < max_runs_per_config:
+                to_reproduce[(alg_name, env_id)].append(run)
+
+    for idx, ((alg_name, env_id), runs) in enumerate(to_reproduce.items()):
+        print(f'Processing {idx}/{len(to_reproduce)} - {alg_name} - {env_id}')
+        sorted_runs = sorted(runs, key=lambda x: x.summary['outer/hypervolume'], reverse=True)
+        sorted_runs = sorted_runs[:max_runs_per_config]
+        sorted_run_paths = ['/'.join(run.path) for run in sorted_runs]
+        reproduce_lst = []
+        for run_path in sorted_run_paths:
+            reproduce_lst.extend([(alg_name, env_id, seed, run_path) for seed in range(num_seeds)])
+        to_reproduce[(alg_name, env_id)] = reproduce_lst
+
+    print(f'Linking IDs')
     idx = 0
-
-    for alg, envs_dict in to_evaluate.items():
-        for env_id, run_ids in envs_dict.items():
-            for run_id in run_ids:
-                if run_id not in checked[alg][env_id]:
-                    for seed in range(num_seeds):
-                        idx += 1
-                        id_exp[idx] = (alg, env_id, seed, run_id)
+    id_exp = {}
+    for runs in zip_longest(*to_reproduce.values()):
+        for run in runs:
+            if run is not None:
+                idx += 1
+                id_exp[idx] = run
 
     json.dump(id_exp, open('evaluation/experiments.json', 'w'))
-    print(f'Number of experiments: {len(id_exp)}')
+    print(f'Number of experiments: {idx}')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Link a job ID to a specific experiment.')
-    parser.add_argument('--num_seeds', type=int, default=5, help='Number of seeds to run.')
-    args = parser.parse_args()
-
-    link_experiments(args.num_seeds)
+    algs = ['SN-MO-DQN', 'SN-MO-A2C', 'SN-MO-PPO']
+    envs = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
+    num_seeds = 5
+    link_id_to_experiment(algs, envs, num_seeds)

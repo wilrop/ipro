@@ -28,7 +28,8 @@ def get_env_info(env_id):
 
 def remove_unused_params(parameters):
     """Remove unused parameters."""
-    del parameters['seed']  # Use the seed from the experiments.json file.
+    del parameters['alg_name']  # Use the provided algorithm.
+    del parameters['seed']  # Use the provided seed.
     del parameters['tolerance']  # Use a fixed tolerance.
     del parameters['dimensions']  # Recomputed later.
     del parameters['vary_ideal']  # Defaults to false.
@@ -36,14 +37,6 @@ def remove_unused_params(parameters):
     del parameters['warm_start']  # Defaults to false.
     del parameters['max_iterations']  # Defaults to None.
     del parameters['deterministic_eval']  # Defaults to true.
-    return parameters
-
-
-def load_parameters_from_wandb(run_id):
-    """Load parameters from a wandb run."""
-    api = wandb.Api(timeout=120)
-    run = api.run(f'{run_id}')
-    parameters = run.config
     return parameters
 
 
@@ -80,23 +73,31 @@ def setup_oracle_params(parameters):
     return oracle_params
 
 
-def reproduce_experiment(exp_id, exp_dir):
+def reproduce_experiment(oracle, env_id, seed, run_id):
     """Reproduce an experiment."""
-    id_exp_dict = json.load(open(f'{exp_dir}/experiments.json', 'r'))
-    alg, env_id, seed, run_id = id_exp_dict[str(exp_id)]
-    parameters = load_parameters_from_wandb(run_id)
+    api = wandb.Api(timeout=120)
+    run = api.run(f'{run_id}')
+    parameters = run.config
+    run.summary['reproduced'] = True  # Mark as reproduced.
     _, max_episode_steps, one_hot_wrapper, tolerance = get_env_info(env_id)
     parameters = remove_unused_params(parameters)
     extra_config = {'parent_run_id': run_id}
 
     # Setup experiment parameters.
     method = parameters.pop('method')
-    algorithm = parameters.pop('alg_name')
     config = setup_config(parameters, seed, max_episode_steps, one_hot_wrapper)
     outer_params = setup_outer_params(tolerance)
     oracle_params = setup_oracle_params(parameters)
 
-    run_experiment(method, algorithm, config, outer_params, oracle_params, extra_config=extra_config)
+    # Run experiment and mark as reproduced.
+    run_experiment(method, oracle, config, outer_params, oracle_params, extra_config=extra_config)
+
+
+def reproduce_from_id(exp_id, exp_dir):
+    """Reproduce an experiment given its ID."""
+    id_exp_dict = json.load(open(f'{exp_dir}/experiments.json', 'r'))
+    alg, env_id, seed, run_id = id_exp_dict[str(exp_id)]
+    return reproduce_experiment(alg, env_id, seed, run_id)
 
 
 if __name__ == '__main__':
@@ -105,4 +106,4 @@ if __name__ == '__main__':
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
     args = parser.parse_args()
 
-    reproduce_experiment(args.exp_id, args.exp_dir)
+    reproduce_from_id(args.exp_id, args.exp_dir)
