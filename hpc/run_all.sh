@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_all
-#SBATCH --time=96:00:00
+#SBATCH --time=120:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
