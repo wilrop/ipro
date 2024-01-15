@@ -12,6 +12,7 @@ from morl_baselines.multi_policy.envelope.envelope import Envelope
 
 
 def get_kwargs(alg_id, env_id):
+    """Get the keyword arguments for the baseline."""
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
         setup_kwargs = {
@@ -51,12 +52,12 @@ def get_kwargs(alg_id, env_id):
         }
         train_kwargs = {}
     elif alg_id == 'GPI-LS' and env_id == 'minecart-v0':
-        total_timesteps = 400000
+        total_timesteps = 200000
         setup_kwargs = {
-            'per': False,
+            'per': True,
             'initial_epsilon': 1.0,
             'final_epsilon': 0.05,
-            'epsilon_decay_steps': 200000,
+            'epsilon_decay_steps': 100000,
             'target_net_update_freq': 200,
             'gradient_updates': 10
         }
