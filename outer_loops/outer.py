@@ -83,7 +83,7 @@ class OuterLoop:
         self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
         self.log_iteration(iteration + 1)
 
-        print(f'Algorithm finished in {time.time() - start_time:.2f} seconds.')
+        print(f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | HV {self.hv:.2f} | ')
 
         self.close_wandb()
 
