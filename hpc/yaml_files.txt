@@ -1,7 +1,2 @@
-sn_dqn_dst.yaml
 sn_dqn_minecart.yaml
 sn_dqn_reacher.yaml
-sn_a2c_dst.yaml
-sn_a2c_minecart.yaml
-sn_ppo_dst.yaml
-sn_ppo_minecart.yaml
