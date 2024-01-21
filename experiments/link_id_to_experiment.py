@@ -3,16 +3,15 @@ import json
 from itertools import zip_longest
 
 
-def link_id_to_experiment(algs, envs, num_seeds, max_runs_per_config=100):
+def link_id_to_experiment(combos, num_seeds, max_runs_per_config=100):
     """Generate a JSON of experiments to reproduce.
 
     Args:
-        algs (list): The list of algorithms to reproduce.
-        envs (list): The list of environments to reproduce.
+        combos (list): The list of environment and algorithm combinations to reproduce.
         num_seeds (int): The number of seeds to reproduce.
         max_runs_per_config (int): The maximum number of runs to reproduce per configuration.
     """
-    to_reproduce = {(alg_name, env_id): [] for env_id in envs for alg_name in algs}
+    to_reproduce = {combo: [] for combo in combos}
 
     # Collect the possible runs for this task.
     api = wandb.Api(timeout=120)
@@ -25,10 +24,10 @@ def link_id_to_experiment(algs, envs, num_seeds, max_runs_per_config=100):
         if 'reproduced' not in run.summary.keys() or not run.summary['reproduced']:
             alg_name = run.config['alg_name']
             env_id = run.config['env_id']
-            if alg_name in algs and env_id in envs and len(to_reproduce[(alg_name, env_id)]) < max_runs_per_config:
-                to_reproduce[(alg_name, env_id)].append(run)
+            if (env_id, alg_name) in to_reproduce and len(to_reproduce[(env_id, alg_name)]) < max_runs_per_config:
+                to_reproduce[(env_id, alg_name)].append(run)
 
-    for idx, ((alg_name, env_id), runs) in enumerate(to_reproduce.items()):
+    for idx, ((env_id, alg_name), runs) in enumerate(to_reproduce.items()):
         print(f'Processing {idx}/{len(to_reproduce)} - {alg_name} - {env_id}')
         sorted_runs = sorted(runs, key=lambda x: x.summary['outer/hypervolume'], reverse=True)
         sorted_runs = sorted_runs[:max_runs_per_config]
@@ -36,7 +35,7 @@ def link_id_to_experiment(algs, envs, num_seeds, max_runs_per_config=100):
         reproduce_lst = []
         for run_path in sorted_run_paths:
             reproduce_lst.extend([(alg_name, env_id, seed, run_path) for seed in range(num_seeds)])
-        to_reproduce[(alg_name, env_id)] = reproduce_lst
+        to_reproduce[(env_id, alg_name)] = reproduce_lst
 
     print(f'Linking IDs')
     idx = 0
@@ -52,7 +51,13 @@ def link_id_to_experiment(algs, envs, num_seeds, max_runs_per_config=100):
 
 
 if __name__ == '__main__':
-    algs = ['SN-MO-DQN', 'SN-MO-A2C', 'SN-MO-PPO']
-    envs = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
+    combos = [
+        ('deep-sea-treasure-concave-v0', 'SN-MO-DQN'),
+        ('deep-sea-treasure-concave-v0', 'SN-MO-A2C'),
+        ('deep-sea-treasure-concave-v0', 'SN-MO-PPO'),
+        ('minecart-v0', 'SN-MO-DQN'),
+        ('minecart-v0', 'SN-MO-A2C'),
+        ('mo-reacher-v4', 'SN-MO-DQN')
+    ]
     num_seeds = 5
-    link_id_to_experiment(algs, envs, num_seeds)
+    link_id_to_experiment(combos, num_seeds)
