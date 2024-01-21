@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_baselines
-#SBATCH --time=72:00:00
+#SBATCH --time=120:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=3gb
 #SBATCH --mail-user=willem.ropke@vub.be
