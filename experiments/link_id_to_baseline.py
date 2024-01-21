@@ -6,13 +6,14 @@ def link_baseline(num_seeds):
     """Link a job ID to a baseline experiment."""
     id_exp = {}
     idx = 0
-    baselines = ['PCN', 'GPI-LS', 'Envelope']
-    envs = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
-    for baseline in baselines:
-        for env_id in envs:
-            for seed in range(num_seeds):
-                idx += 1
-                id_exp[idx] = (baseline, env_id, seed)
+    combos = [('GPI-LS', 'deep-sea-treasure-concave-v0'),
+              ('PCN', 'deep-sea-treasure-concave-v0'),
+              ('PCN', 'mo-reacher-v4'),
+              ('Envelope', 'deep-sea-treasure-concave-v0')]
+    for baseline, env_id in combos:
+        for seed in range(num_seeds):
+            idx += 1
+            id_exp[idx] = (baseline, env_id, seed)
 
     json.dump(id_exp, open('evaluation/baselines.json', 'w'))
     print(f'Number of baseline experiments: {len(id_exp)}')
