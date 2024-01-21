@@ -1,9 +1,8 @@
 import json
 import argparse
 import numpy as np
-import mo_gymnasium as mo_gym
 
-from mo_gymnasium.utils import MORecordEpisodeStatistics
+from environments import setup_env
 from experiments.reproduce_experiment import get_env_info
 from environments.bounding_boxes import get_bounding_box
 from morl_baselines.multi_policy.pcn.pcn import PCN
@@ -17,10 +16,14 @@ def get_kwargs(alg_id, env_id):
         total_timesteps = 100000
         setup_kwargs = {
             'scaling_factor': np.array([0.1, 0.1, 0.01]),
+            'learning_rate': 1e-2,
+            'batch_size': 256,
         }
         train_kwargs = {
             'max_return': np.array([124, -1.0]),
-            'max_buffer_size': 200
+            'max_buffer_size': 200,
+            'num_model_updates': 10,
+            'num_er_episodes': 50,
         }
     elif alg_id == 'PCN' and env_id == 'minecart-v0':
         total_timesteps = 2000000
@@ -37,7 +40,7 @@ def get_kwargs(alg_id, env_id):
             'scaling_factor': np.array([0.1, 0.1, 0.1, 0.1, 0.1])
         }
         train_kwargs = {
-            'max_return': 50.0,
+            'max_return': np.array([50.0, 50.0, 50.0, 50.0]),
             'max_buffer_size': 200
         }
     elif alg_id == 'GPI-LS' and env_id == 'deep-sea-treasure-concave-v0':
@@ -152,9 +155,12 @@ def run_baseline(exp_id, exp_dir):
     _, _, ref_point = get_bounding_box(env_id)
     total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id)
 
-    env = mo_gym.make(env_id)
-    env = MORecordEpisodeStatistics(env, gamma=gamma)  # wrapper for recording statistics
-    eval_env = mo_gym.make(env_id)  # environment used for evaluation
+    if env_id == 'deep-sea-treasure-concave-v0':
+        one_hot = True
+    else:
+        one_hot = False
+    env = setup_env(env_id, gamma=gamma, max_episode_steps=max_episode_steps, one_hot=one_hot)
+    eval_env = setup_env(env_id, gamma=gamma, max_episode_steps=max_episode_steps, one_hot=one_hot)
 
     agent = setup_agent(baseline, env, gamma, seed, setup_kwargs)
     agent.train(total_timesteps, eval_env, ref_point, **train_kwargs)
