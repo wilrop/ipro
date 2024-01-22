@@ -15,7 +15,7 @@ def get_kwargs(alg_id, env_id):
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
         setup_kwargs = {
-            'scaling_factor': np.array([0.1, 0.1, 0.01]),
+            'scaling_factor': np.array([0.1, 0.1, 0.05]),
             'learning_rate': 1e-2,
             'batch_size': 256,
         }
@@ -168,7 +168,7 @@ def run_baseline(exp_id, exp_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run baseline.')
-    parser.add_argument('--exp_id', type=str, default=18)
+    parser.add_argument('--exp_id', type=str, default=2)
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
     args = parser.parse_args()
 
