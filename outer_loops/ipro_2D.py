@@ -192,8 +192,7 @@ class IPRO2D(OuterLoop):
         Returns:
             ndarray: The Pareto front.
         """
-        self.setup_wandb()
-        start = time.time()
+        start = self.setup()
         self.init_phase()
         iteration = 0
         self.log_iteration(iteration)

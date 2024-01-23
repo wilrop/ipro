@@ -269,8 +269,7 @@ class IPRO(OuterLoop):
         Returns:
             set: The Pareto front.
         """
-        self.setup_wandb()
-        start = time.time()
+        start = self.setup()
         done = self.init_phase()
         iteration = 0
 

@@ -101,12 +101,15 @@ class OuterLoop:
             **extra_config
         }
 
-    def setup_wandb(self, mode='offline'):
+    def setup(self, mode='offline'):
         """Setup wandb."""
-        cluster = not platform.platform().startswith('macOS')  # Hack to differentiate between my laptop and cluster.
+        config = self.config()
+        config.update(self.oracle.config())
+
+        print(f'Running with config: {config}')
+
         if self.track:
-            config = self.config()
-            config.update(self.oracle.config())
+            cluster = not platform.platform().startswith('macOS')  # Hack to check if running on my device or cluster.
             if cluster:
                 wandb.init(
                     settings=wandb.Settings(log_internal=str('/scratch/brussel/103/vsc10340/wandb/null'), ),
@@ -132,6 +135,8 @@ class OuterLoop:
             wandb.define_metric('outer/coverage', step_metric='iteration')
             wandb.define_metric('outer/error', step_metric='iteration')
             self.run_id = wandb.run.id
+
+        return time.time()
 
     def close_wandb(self):
         """Close wandb."""
