@@ -7,7 +7,7 @@ study_name: sn_ppo_dst
 seed: 1
 wandb_project_name: IPRO_opt
 wandb_entity: null
-n_trials: 10
+n_trials: 1
 
 
 # Outer loop params
@@ -23,13 +23,17 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
-  pretrain_iters: 25
+  pretrain_iters: 40
   v_coef: 0.5
+  e_coef: 0.01
   eps: 1.e-8
   anneal_lr: False
   num_minibatches: 4
   normalize_advantage: False
   gae_lambda: 0.95
+  num_envs: 8
+  num_referents: 4
+  update_epochs: 4
   target_kl: None
   eval_episodes: 1
   log_freq: 1000
@@ -60,21 +64,9 @@ hyperparameters:
   online_steps:
     type: categorical
     choices: [ 2500, 5000 ]
-  num_referents:
-    type: categorical
-    choices: [ 4, 8, 16, 32 ]
-  e_coef:
-    type: categorical
-    choices: [ 0.0, 0.01, 0.1 ]
   n_steps:
     type: categorical
     choices: [ 16, 32, 64, 128 ]
-  num_envs:
-    type: categorical
-    choices: [ 4, 8, 16 ]
-  update_epochs:
-    type: categorical
-    choices: [ 4, 8, 16 ]
   clip_coef:
     type: categorical
     choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
