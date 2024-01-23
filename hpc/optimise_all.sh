@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=optimise
-#SBATCH --time=3:00:00
+#SBATCH --time=5:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
