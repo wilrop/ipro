@@ -3,15 +3,17 @@ import json
 from itertools import zip_longest
 
 
-def link_id_to_experiment(combos, num_seeds, max_runs_per_config=100):
+def link_id_to_experiment(combos, num_seeds, necessary_params=None, max_runs_per_config=100):
     """Generate a JSON of experiments to reproduce.
 
     Args:
         combos (list): The list of environment and algorithm combinations to reproduce.
         num_seeds (int): The number of seeds to reproduce.
+        necessary_params (dict): The necessary parameters to reproduce.
         max_runs_per_config (int): The maximum number of runs to reproduce per configuration.
     """
     to_reproduce = {combo: [] for combo in combos}
+    necessary_params = necessary_params or {}
 
     # Collect the possible runs for this task.
     api = wandb.Api(timeout=120)
@@ -25,7 +27,13 @@ def link_id_to_experiment(combos, num_seeds, max_runs_per_config=100):
             alg_name = run.config['alg_name']
             env_id = run.config['env_id']
             if (env_id, alg_name) in to_reproduce and len(to_reproduce[(env_id, alg_name)]) < max_runs_per_config:
-                to_reproduce[(env_id, alg_name)].append(run)
+                to_include = True
+                for param, value in necessary_params.items():  # Check if the run has the necessary parameters.
+                    if run.config[param] != value:
+                        to_include = False
+                        break
+                if to_include:
+                    to_reproduce[(env_id, alg_name)].append(run)
 
     for idx, ((env_id, alg_name), runs) in enumerate(to_reproduce.items()):
         print(f'Processing {idx}/{len(to_reproduce)} - {alg_name} - {env_id}')
@@ -55,9 +63,7 @@ if __name__ == '__main__':
         ('deep-sea-treasure-concave-v0', 'SN-MO-DQN'),
         ('deep-sea-treasure-concave-v0', 'SN-MO-A2C'),
         ('deep-sea-treasure-concave-v0', 'SN-MO-PPO'),
-        ('minecart-v0', 'SN-MO-DQN'),
-        ('minecart-v0', 'SN-MO-A2C'),
-        ('mo-reacher-v4', 'SN-MO-DQN')
     ]
+    necessary_params = {'pretrain_iters': 40}  # Only include runs with this parameter.
     num_seeds = 5
-    link_id_to_experiment(combos, num_seeds)
+    link_id_to_experiment(combos, num_seeds, necessary_params=necessary_params)
