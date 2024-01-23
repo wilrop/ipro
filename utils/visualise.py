@@ -26,50 +26,141 @@ def create_gif(log_dir, name):
     iio.imwrite(os.path.join(log_dir, f"{name}.gif"), images, format='GIF', duration=1000)
 
 
-def plot_lineplot(env_id, metric, y_label):
-    # Read the data for each individual algorithm.
-    ppo_data = pd.read_csv(f'results/ppo_{env_id}_{metric}.csv')
-    dqn_data = pd.read_csv(f'results/dqn_{env_id}_{metric}.csv')
-    a2c_data = pd.read_csv(f'results/a2c_{env_id}_{metric}.csv')
+def read_data(env_id, metric, algs):
+    """Read the data for each individual algorithm."""
+    datasets = []
+    for alg in algs:
+        data = pd.read_csv(f'results/{alg}_{env_id}_{metric}.csv')
+        datasets.append(data)
+    return datasets
 
-    # Plot a lineplot for each algorithm.
+
+def plot_hv(env_id, algs, alg_colors, baselines, baseline_colors, log_scale=True, include_baselines=True):
+    """Plot the hypervolume for each algorithm."""
+    method = 'IPRO-2D' if env_id == 'deep-sea-treasure-concave-v0' else 'IPRO'
+    alg_ids, alg_labels = zip(*algs)
+    datasets = read_data(env_id, 'hv', alg_ids)
+
     fig = plt.figure(figsize=(10, 5))
-    ax = sns.lineplot(x='Step', y='dqn', linewidth=2.0, data=dqn_data, errorbar='pi', label='DQN')
-    ax = sns.lineplot(x='Step', y='a2c', linewidth=2.0, data=a2c_data, errorbar='pi', label='A2C')
-    ax = sns.lineplot(x='Step', y='ppo', linewidth=2.0, data=ppo_data, errorbar='pi', label='PPO')
+    last_step_vals = []
+    for alg_id, alg_label, data in zip(alg_ids, alg_labels, datasets):
+        ax = sns.lineplot(x='Step', y=alg_id, linewidth=2.0, data=data, errorbar='pi', label=f'{method} ({alg_label})',
+                          color=alg_colors[alg_label])
+        last_step = int(data['Step'].iloc[-1])
+        last_val = ax.lines[-1].get_ydata()[-1]
+        last_step_vals.append((last_step, last_val))
+        ax.scatter(last_step, last_val, marker='*', s=200, color=alg_colors[alg_label])
 
-    # Read and plot baseline data.
-    if metric == 'hv':
-        gpils_data = pd.read_csv(f'results/GPI-LS_{env_id}_{metric}.csv')
-        pcn_data = pd.read_csv(f'results/PCN_{env_id}_{metric}.csv')
-        envelope_data = pd.read_csv(f'results/Envelope_{env_id}_{metric}.csv')
-        ax = sns.lineplot(x='Step', y='GPI-LS', linewidth=2.0, data=gpils_data, errorbar='pi', label='GPI-LS')
-        ax = sns.lineplot(x='Step', y='PCN', linewidth=2.0, data=pcn_data, errorbar='pi', label='PCN')
-        ax = sns.lineplot(x='Step', y='Envelope', linewidth=2.0, data=envelope_data, errorbar='pi', label='Envelope')
+    if include_baselines:
+        baseline_datasets = read_data(env_id, 'hv', baselines)
+        for baseline, data in zip(baselines, baseline_datasets):
+            ax = sns.lineplot(x='Step', y=baseline, linewidth=2.0, data=data, errorbar='pi', label=baseline,
+                              color=baseline_colors[baseline])
+            last_step = data['Step'].iloc[-1]
+            last_val = ax.lines[-1].get_ydata()[-1]
+            last_step_vals.append((last_step, last_val))
+            ax.scatter(last_step, last_val, marker='*', s=200, color=baseline_colors[baseline])
 
-    # Plot the baselines.
-    if metric == 'hv' and env_id == 'deep-sea-treasure-concave-v0':
-        max_step = int(ax.get_xlim()[1])
+    max_step = max([step for step, _ in last_step_vals])
+    if env_id == 'deep-sea-treasure-concave-v0':
+        max_step += 100000
+
+    if env_id == 'deep-sea-treasure-concave-v0':
         true_pf = np.full(max_step, 4255)
-        ax = sns.lineplot(x=range(max_step), y=true_pf, linewidth=2.0, label='True PF', linestyle='--')
+        ax = sns.lineplot(x=range(max_step), y=true_pf, linewidth=2.0, label='True PF', linestyle='--',
+                          color=baseline_colors['True PF'])
 
-    # Set the y-axis in log scale
-    ax.set_xscale('log')
+    for (step, val), label in zip(last_step_vals, list(alg_labels) + baselines):
+        if label in alg_colors:
+            color = alg_colors[label]
+        else:
+            color = baseline_colors[label]
+        x_data = np.linspace(step, max_step)
+        y_data = np.full(len(x_data), val)
+        ax = sns.lineplot(x=x_data, y=y_data, linewidth=2.0, linestyle='--', color=color)
+
+    if log_scale:  # Set the y-axis in log scale
+        ax.set_xscale('log')
+
     sns.move_legend(ax, "lower right")
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
-    plt.ylabel(y_label)
-    plt.savefig(f"results/{env_id}_{metric}.pdf", dpi=fig.dpi)
+    plt.ylabel('Hypervolume')
+    plt.savefig(f"results/{env_id}_hv.pdf", dpi=fig.dpi)
     plt.clf()
 
 
-def plot_hv_cov(env_id):
+def plot_cov(env_id, algs, alg_colors, log_scale=True):
+    """Plot the coverage for each algorithm."""
+    method = 'IPRO-2D' if env_id == 'deep-sea-treasure-concave-v0' else 'IPRO'
+    alg_ids, alg_labels = zip(*algs)
+    datasets = read_data(env_id, 'cov', alg_ids)
+
+    # Plot a lineplot for each algorithm.
+    fig = plt.figure(figsize=(10, 5))
+    for alg_id, alg_label, data in zip(alg_ids, alg_labels, datasets):
+        ax = sns.lineplot(x='Step', y=alg_id, linewidth=2.0, data=data, errorbar='pi', label=f'{method} ({alg_label})',
+                          color=alg_colors[alg_label])
+
+    if log_scale:  # Set the y-axis in log scale
+        ax.set_xscale('log')
+
+    sns.move_legend(ax, "lower right")
+    plt.setp(ax.get_legend().get_texts(), fontsize='15')
+    plt.xlabel("Step")
+    plt.ylabel('Coverage')
+    plt.savefig(f"results/{env_id}_cov.pdf", dpi=fig.dpi)
+    plt.clf()
+
+
+def plot_hv_cov(env_id,
+                algs,
+                alg_colors,
+                baselines,
+                baseline_colors,
+                hv_log_scale=True,
+                cov_log_scale=True,
+                include_baselines=True):
     """Plot the hypervolume and coverage for each algorithm."""
-    plot_lineplot(env_id, 'cov', "Coverage")
-    plot_lineplot(env_id, 'hv', "Hypervolume")
+    plot_cov(env_id,
+             algs,
+             alg_colors,
+             log_scale=cov_log_scale)
+    plot_hv(env_id,
+            algs,
+            alg_colors,
+            baselines,
+            baseline_colors,
+            log_scale=hv_log_scale,
+            include_baselines=include_baselines)
 
 
 if __name__ == '__main__':
-    for env_id in ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']:
+    algs = [('SN-MO-PPO', 'PPO'), ('SN-MO-DQN', 'DQN'), ('SN-MO-A2C', 'A2C')]
+    alg_colors = {
+        'PPO': '#1f77b4',
+        'DQN': '#ff7f0e',
+        'A2C': '#2ca02c',
+    }
+    baselines = ['GPI-LS', 'PCN']
+    baseline_colors = {
+        'GPI-LS': '#d62728',
+        'PCN': '#9467bd',
+        'Envelope': '#8c564b',
+        'True PF': '#e377c2'
+    }
+    env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
+
+    for env_id in env_ids:
         print(f'Plotting {env_id}')
-        plot_hv_cov(env_id)
+        include_baselines = True
+        cov_log_scale = True
+        hv_log_scale = True
+        plot_hv_cov(env_id,
+                    algs,
+                    alg_colors,
+                    baselines,
+                    baseline_colors,
+                    include_baselines=include_baselines,
+                    cov_log_scale=cov_log_scale,
+                    hv_log_scale=hv_log_scale)
