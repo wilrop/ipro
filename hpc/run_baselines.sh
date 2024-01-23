@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_baselines
-#SBATCH --time=120:00:00
+#SBATCH --time=24:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=3gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-6
+#SBATCH --array=1-
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0

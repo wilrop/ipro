@@ -15,8 +15,8 @@ def get_kwargs(alg_id, env_id):
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
         setup_kwargs = {
-            'scaling_factor': np.array([0.1, 0.1, 0.05]),
-            'learning_rate': 1e-2,
+            'scaling_factor': np.array([0.1, 0.1, 0.04]),
+            'learning_rate': 5e-3,
             'batch_size': 256,
         }
         train_kwargs = {
