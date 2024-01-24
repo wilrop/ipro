@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
-  pretrain_iters: 40
+  pretrain_iters: 50
   num_referents: 4
   v_coef: 0.5
   e_coef: 0.01
@@ -51,10 +51,10 @@ hyperparameters:
     choices: [ 64, 128, 256 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0, 50.0 ]
+    choices: [ 0.5, 1.0, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 1000, 2500, 5000 ]
+    choices: [ 1000, 2500, 5000, 7500 ]
   online_steps:
     type: categorical
     choices: [ 1000, 2500, 5000 ]
