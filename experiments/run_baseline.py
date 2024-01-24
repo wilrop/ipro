@@ -177,7 +177,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run baseline.')
     parser.add_argument('--exp_id', type=str, default=2)
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
-    parser.add_argument('--leftovers', type=bool, default=False, action='store_true')
+    parser.add_argument('--leftovers', default=False, action='store_true')
     args = parser.parse_args()
 
     run_baseline(args.exp_id, args.exp_dir, args.leftovers)
