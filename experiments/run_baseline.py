@@ -30,9 +30,6 @@ class DSTModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c * self.scaling_factor
-        state = state[:, 0] * 11 + state[:, 1]
-        # convert state index to one-hot encoding for Deep Sea Treasure
-        state = F.one_hot(state.long(), num_classes=121).to(state.device).float()
         s = self.s_emb(state)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command

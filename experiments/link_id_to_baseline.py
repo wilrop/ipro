@@ -21,5 +21,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     combos = [
         ('PCN', 'deep-sea-treasure-concave-v0'),
+        ('PCN', 'minecart-v0'),
+        ('PCN', 'mo-reacher-v4')
     ]
     link_baseline(combos, args.num_seeds)
