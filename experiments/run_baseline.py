@@ -147,10 +147,17 @@ def setup_agent(alg_id, env, gamma, seed, setup_kwargs):
     return agent
 
 
-def run_baseline(exp_id, exp_dir):
+def load_details(exp_dir, exp_id, leftovers=False):
+    if leftovers:
+        id_exp_dict = json.load(open(f'{exp_dir}/baselines.json', 'r'))
+    else:
+        id_exp_dict = json.load(open(f'{exp_dir}/leftovers.json', 'r'))
+    return id_exp_dict[str(exp_id)]
+
+
+def run_baseline(exp_id, exp_dir, leftovers=False):
     """Run a baseline on the environment."""
-    id_exp_dict = json.load(open(f'{exp_dir}/baselines.json', 'r'))
-    baseline, env_id, seed = id_exp_dict[str(exp_id)]
+    baseline, env_id, seed = load_details(exp_dir, exp_id, leftovers)
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
     _, _, ref_point = get_bounding_box(env_id)
     total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id)
@@ -170,6 +177,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run baseline.')
     parser.add_argument('--exp_id', type=str, default=2)
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
+    parser.add_argument('--leftovers', type=bool, default=False, action='store_true')
     args = parser.parse_args()
 
-    run_baseline(args.exp_id, args.exp_dir)
+    run_baseline(args.exp_id, args.exp_dir, args.leftovers)

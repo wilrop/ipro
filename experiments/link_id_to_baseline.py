@@ -2,13 +2,10 @@ import argparse
 import json
 
 
-def link_baseline(num_seeds):
+def link_baseline(combos, num_seeds):
     """Link a job ID to a baseline experiment."""
     id_exp = {}
     idx = 0
-    combos = [
-        ('PCN', 'deep-sea-treasure-concave-v0'),
-    ]
     for baseline, env_id in combos:
         for seed in range(num_seeds):
             idx += 1
@@ -22,5 +19,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Link a job ID to a baseline experiment.')
     parser.add_argument('--num_seeds', type=int, default=5, help='Number of seeds to run.')
     args = parser.parse_args()
-
-    link_baseline(args.num_seeds)
+    combos = [
+        ('PCN', 'deep-sea-treasure-concave-v0'),
+    ]
+    link_baseline(combos, args.num_seeds)
