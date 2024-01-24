@@ -94,9 +94,12 @@ def reproduce_experiment(oracle, env_id, seed, run_id):
     run_experiment(method, oracle, config, outer_params, oracle_params, extra_config=extra_config)
 
 
-def reproduce_from_id(exp_id, exp_dir):
+def reproduce_from_id(exp_id, exp_dir, leftovers=False):
     """Reproduce an experiment given its ID."""
-    id_exp_dict = json.load(open(f'{exp_dir}/experiments.json', 'r'))
+    if leftovers:
+        id_exp_dict = json.load(open(f'{exp_dir}/leftovers.json', 'r'))
+    else:
+        id_exp_dict = json.load(open(f'{exp_dir}/experiments.json', 'r'))
     alg, env_id, seed, run_id = id_exp_dict[str(exp_id)]
     return reproduce_experiment(alg, env_id, seed, run_id)
 
@@ -105,6 +108,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Reproduce experiments given in a JSON file.')
     parser.add_argument('--exp_id', type=str, default=1)
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
+    parser.add_argument('--leftovers', default=False, action='store_true')
     args = parser.parse_args()
 
-    reproduce_from_id(args.exp_id, args.exp_dir)
+    reproduce_from_id(args.exp_id, args.exp_dir, args.leftovers)
