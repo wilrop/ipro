@@ -2,12 +2,42 @@ import json
 import argparse
 import numpy as np
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from environments import setup_env
 from experiments.reproduce_experiment import get_env_info
 from environments.bounding_boxes import get_bounding_box
 from morl_baselines.multi_policy.pcn.pcn import PCN
 from morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS
 from morl_baselines.multi_policy.envelope.envelope import Envelope
+
+
+class DSTModel(nn.Module):
+
+    def __init__(self, observation_dim, nA, reward_dim, scaling_factor, hidden_dim=64):
+        super(DSTModel, self).__init__()
+
+        self.scaling_factor = nn.Parameter(torch.tensor(scaling_factor).float(), requires_grad=False)
+        self.s_emb = nn.Sequential(nn.Linear(121, 64),
+                                   nn.Sigmoid())
+        self.c_emb = nn.Sequential(nn.Linear(3, 64),
+                                   nn.Sigmoid())
+        self.fc = nn.Sequential(nn.Linear(64, nA),
+                                nn.LogSoftmax(1))
+
+    def forward(self, state, desired_return, desired_horizon):
+        c = torch.cat((desired_return, desired_horizon), dim=-1)
+        # commands are scaled by a fixed factor
+        c = c * self.scaling_factor
+        state = state[:, 0] * 11 + state[:, 1]
+        # convert state index to one-hot encoding for Deep Sea Treasure
+        state = F.one_hot(state.long(), num_classes=121).to(state.device).float()
+        s = self.s_emb(state)
+        c = self.c_emb(c)
+        # element-wise multiplication of state-embedding and command
+        log_prob = self.fc(s * c)
+        return log_prob
 
 
 def get_kwargs(alg_id, env_id):
@@ -18,6 +48,7 @@ def get_kwargs(alg_id, env_id):
             'scaling_factor': np.array([0.1, 0.1, 0.04]),
             'learning_rate': 5e-3,
             'batch_size': 256,
+            'model_class': DSTModel,
         }
         train_kwargs = {
             'max_return': np.array([124, -1.0]),
