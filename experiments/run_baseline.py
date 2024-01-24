@@ -147,9 +147,10 @@ def setup_agent(alg_id, env, gamma, seed, setup_kwargs):
     return agent
 
 
-def run_baseline(exp_id, exp_dir, leftovers=False):
+def run_baseline(exp_id, exp_dir):
     """Run a baseline on the environment."""
-    baseline, env_id, seed = load_details(exp_dir, exp_id, leftovers)
+    id_exp_dict = json.load(open(f'{exp_dir}/baselines.json', 'r'))
+    baseline, env_id, seed = id_exp_dict[str(exp_id)]
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
     _, _, ref_point = get_bounding_box(env_id)
     total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id)
