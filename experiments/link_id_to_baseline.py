@@ -6,10 +6,9 @@ def link_baseline(num_seeds):
     """Link a job ID to a baseline experiment."""
     id_exp = {}
     idx = 0
-    combos = [('GPI-LS', 'deep-sea-treasure-concave-v0'),
-              ('PCN', 'deep-sea-treasure-concave-v0'),
-              ('PCN', 'mo-reacher-v4'),
-              ('Envelope', 'deep-sea-treasure-concave-v0')]
+    combos = [
+        ('PCN', 'deep-sea-treasure-concave-v0'),
+    ]
     for baseline, env_id in combos:
         for seed in range(num_seeds):
             idx += 1

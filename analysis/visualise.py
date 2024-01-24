@@ -30,7 +30,7 @@ def read_data(env_id, metric, algs):
     """Read the data for each individual algorithm."""
     datasets = []
     for alg in algs:
-        data = pd.read_csv(f'results/{alg}_{env_id}_{metric}.csv')
+        data = pd.read_csv(f'data/{alg}_{env_id}_{metric}.csv')
         datasets.append(data)
     return datasets
 
@@ -86,7 +86,7 @@ def plot_hv(env_id, algs, alg_colors, baselines, baseline_colors, log_scale=True
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
     plt.ylabel('Hypervolume')
-    plt.savefig(f"results/{env_id}_hv.pdf", dpi=fig.dpi)
+    plt.savefig(f"plots/{env_id}_hv.pdf", dpi=fig.dpi)
     plt.clf()
 
 
@@ -109,7 +109,7 @@ def plot_cov(env_id, algs, alg_colors, log_scale=True):
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
     plt.ylabel('Coverage')
-    plt.savefig(f"results/{env_id}_cov.pdf", dpi=fig.dpi)
+    plt.savefig(f"plots/{env_id}_cov.pdf", dpi=fig.dpi)
     plt.clf()
 
 

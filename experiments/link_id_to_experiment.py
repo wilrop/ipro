@@ -1,9 +1,10 @@
 import wandb
 import json
+from datetime import datetime
 from itertools import zip_longest
 
 
-def link_id_to_experiment(combos, num_seeds, necessary_params=None, max_runs_per_config=100):
+def link_id_to_experiment(combos, num_seeds, cutoff_date=None, max_runs_per_config=100):
     """Generate a JSON of experiments to reproduce.
 
     Args:
@@ -13,7 +14,6 @@ def link_id_to_experiment(combos, num_seeds, necessary_params=None, max_runs_per
         max_runs_per_config (int): The maximum number of runs to reproduce per configuration.
     """
     to_reproduce = {combo: [] for combo in combos}
-    necessary_params = necessary_params or {}
 
     # Collect the possible runs for this task.
     api = wandb.Api(timeout=120)
@@ -27,12 +27,13 @@ def link_id_to_experiment(combos, num_seeds, necessary_params=None, max_runs_per
             alg_name = run.config['alg_name']
             env_id = run.config['env_id']
             if (env_id, alg_name) in to_reproduce and len(to_reproduce[(env_id, alg_name)]) < max_runs_per_config:
-                to_include = True
-                for param, value in necessary_params.items():  # Check if the run has the necessary parameters.
-                    if run.config[param] != value:
-                        to_include = False
-                        break
-                if to_include:
+                if cutoff_date is not None:
+                    run_time = run.created_at
+                    run_time_obj = datetime.strptime(run_time, '%Y-%m-%dT%H:%M:%S')
+                    cutoff_date_obj = datetime.strptime(cutoff_date, '%d/%m/%Y')
+                    if run_time_obj > cutoff_date_obj:
+                        to_reproduce[(env_id, alg_name)].append(run)
+                else:
                     to_reproduce[(env_id, alg_name)].append(run)
 
     for idx, ((env_id, alg_name), runs) in enumerate(to_reproduce.items()):
@@ -64,6 +65,6 @@ if __name__ == '__main__':
         ('deep-sea-treasure-concave-v0', 'SN-MO-A2C'),
         ('deep-sea-treasure-concave-v0', 'SN-MO-PPO'),
     ]
-    necessary_params = {'pretrain_iters': 40}  # Only include runs with this parameter.
+    cutoff_date = "22/01/2024"
     num_seeds = 5
-    link_id_to_experiment(combos, num_seeds, necessary_params=necessary_params)
+    link_id_to_experiment(combos, num_seeds, cutoff_date=cutoff_date)

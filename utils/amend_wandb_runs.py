@@ -4,7 +4,7 @@ import wandb
 def amend_wandb_runs():
     """Amend the hypervolume of runs."""
     api = wandb.Api(timeout=120)
-    runs = api.runs("wilrop/IPRO_opt")
+    runs = api.runs("wilrop/IPRO_runs")
     for run in runs:
         if 'outer/hypervolume' not in run.summary:
             try:

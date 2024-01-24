@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_all
-#SBATCH --time=120:00:00
+#SBATCH --time=5:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-22
+#SBATCH --array=1-1500
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
