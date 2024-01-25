@@ -30,7 +30,7 @@ def read_data(env_id, metric, algs):
     """Read the data for each individual algorithm."""
     datasets = []
     for alg in algs:
-        data = pd.read_csv(f'data/{alg}_{env_id}_{metric}.csv')
+        data = pd.read_csv(f'./data/{alg}_{env_id}_{metric}.csv')
         datasets.append(data)
     return datasets
 
@@ -164,3 +164,4 @@ if __name__ == '__main__':
                     include_baselines=include_baselines,
                     cov_log_scale=cov_log_scale,
                     hv_log_scale=hv_log_scale)
+    print('Done')
