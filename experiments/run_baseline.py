@@ -30,7 +30,7 @@ class DSTModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c * self.scaling_factor
-        s = self.s_emb(state)
+        s = self.s_emb(state.float())
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
         log_prob = self.fc(s * c)
@@ -196,7 +196,7 @@ def run_baseline(exp_id, exp_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run baseline.')
-    parser.add_argument('--exp_id', type=str, default=2)
+    parser.add_argument('--exp_id', type=str, default=1)
     parser.add_argument('--exp_dir', type=str, default='./evaluation')
     args = parser.parse_args()
 
