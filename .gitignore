@@ -166,5 +166,9 @@ studies/
 utils/results
 utils/results_old
 
+weights/
 utils/*.json
+analysis/data
+analysis/fronts
+analysis/results
 *.csv

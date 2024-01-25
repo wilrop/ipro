@@ -20,8 +20,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_seeds', type=int, default=5, help='Number of seeds to run.')
     args = parser.parse_args()
     combos = [
-        ('PCN', 'deep-sea-treasure-concave-v0'),
-        ('PCN', 'minecart-v0'),
-        ('PCN', 'mo-reacher-v4')
+        ('GPI-LS', 'deep-sea-treasure-concave-v0'),
     ]
     link_baseline(combos, args.num_seeds)
