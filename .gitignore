@@ -171,4 +171,5 @@ utils/*.json
 analysis/data
 analysis/fronts
 analysis/results
+analysis/plots
 *.csv

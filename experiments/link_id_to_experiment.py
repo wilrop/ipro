@@ -4,7 +4,7 @@ from datetime import datetime
 from itertools import zip_longest
 
 
-def link_id_to_experiment(combos, num_seeds, cutoff_date=None, max_runs_per_config=100):
+def link_id_to_experiment(combos, num_seeds, cutoff_date=None, max_runs_per_config=200):
     """Generate a JSON of experiments to reproduce.
 
     Args:
