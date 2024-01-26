@@ -27,7 +27,7 @@ oracle:
   grid_sample: True
   v_coef: 0.5
   e_coef: 0.01
-  eps: 1.e-8
+  eps: 1.e-5
   anneal_lr: False
   num_minibatches: 4
   normalize_advantage: False
@@ -66,7 +66,7 @@ hyperparameters:
     choices: [ 2500, 5000, 7500 ]
   online_steps:
     type: categorical
-    choices: [ 2500, 5000 ]
+    choices: [ 2500, 5000, 7500 ]
   n_steps:
     type: categorical
     choices: [ 8, 16, 32 ]
