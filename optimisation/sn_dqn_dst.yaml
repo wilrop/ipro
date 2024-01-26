@@ -24,6 +24,7 @@ oracle:
   aug: 0.01
   scale: 100
   pretrain_iters: 50
+  grid_sample: True
   online_train_freq: 1
   pre_train_freq: 4
   target_update_freq: 1
@@ -47,7 +48,7 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0005, 0.0003, 0.0001 ]
+    choices: [ 0.001, 0.0007, 0.0005, 0.0003, 0.0002, 0.0001 ]
   num_hidden_layers:
     type: int
     min: 1
