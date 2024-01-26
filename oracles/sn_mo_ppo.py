@@ -72,6 +72,7 @@ class SNMOPPO(SNDRLOracle):
                  gae_lambda=0.95,
                  n_steps=128,
                  pretrain_iters=100,
+                 grid_sample=False,
                  num_referents=16,
                  pretraining_steps=500000,
                  online_steps=500000,
@@ -84,6 +85,7 @@ class SNMOPPO(SNDRLOracle):
                          aug=aug,
                          scale=scale,
                          pretrain_iters=pretrain_iters,
+                         grid_sample=grid_sample,
                          num_referents=num_referents,
                          pretraining_steps=pretraining_steps,
                          online_steps=online_steps,
@@ -274,7 +276,7 @@ class SNMOPPO(SNDRLOracle):
         """Update the policy using the rollout buffer."""
         referents = torch.unsqueeze(referent, dim=0)
         if num_referents > 1:
-            additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
+            additional_referents = self.uniform_sample_referents(num_referents - 1, nadir, ideal)
             referents = torch.cat((referents, additional_referents), dim=0)
 
         with torch.no_grad():

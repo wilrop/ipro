@@ -64,6 +64,7 @@ class SNMOA2C(SNDRLOracle):
                  n_steps=16,
                  gae_lambda=0.5,
                  pretrain_iters=100,
+                 grid_sample=False,
                  num_referents=16,
                  pretraining_steps=100000,
                  online_steps=100000,
@@ -78,6 +79,7 @@ class SNMOA2C(SNDRLOracle):
                          pretrain_iters=pretrain_iters,
                          num_referents=num_referents,
                          pretraining_steps=pretraining_steps,
+                         grid_sample=grid_sample,
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
                          track=track,
@@ -215,7 +217,7 @@ class SNMOA2C(SNDRLOracle):
         aug_obs, actions, rewards, aug_next_obs, dones = self.rollout_buffer.get_all_data(to_tensor=True)
         referents = torch.unsqueeze(referent, dim=0)
         if num_referents > 1:
-            additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
+            additional_referents = self.uniform_sample_referents(num_referents - 1, nadir, ideal)
             referents = torch.cat((referents, additional_referents), dim=0)
 
         with torch.no_grad():

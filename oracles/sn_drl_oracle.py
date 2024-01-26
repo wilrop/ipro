@@ -19,6 +19,7 @@ class SNDRLOracle(DRLOracle):
                  vary_nadir=False,
                  vary_ideal=False,
                  pretrain_iters=100,
+                 grid_sample=False,
                  num_referents=16,
                  pretraining_steps=100000,
                  online_steps=10000,
@@ -43,6 +44,7 @@ class SNDRLOracle(DRLOracle):
         self.phase = 'pretrain'  # The phase of the algorithm. Either 'pre' or 'online_{iteration}'.
 
         self.pretrain_iters = pretrain_iters  # The number of iterations to pretrain for.
+        self.grid_sample = grid_sample  # Whether to sample a grid of referents or uniformly sample.
         self.num_referents = num_referents  # The number of referents to train on.
         self.pretraining_steps = pretraining_steps  # The number of training steps.
         self.online_steps = online_steps
@@ -54,6 +56,7 @@ class SNDRLOracle(DRLOracle):
         config = super().config()
         config.update({
             'pretrain_iters': self.pretrain_iters,
+            'grid_sample': self.grid_sample,
             'num_referents': self.num_referents,
             'pretraining_steps': self.pretraining_steps,
             'online_steps': self.online_steps,
@@ -83,8 +86,21 @@ class SNDRLOracle(DRLOracle):
         """Train the algorithm on the given environment."""
         raise NotImplementedError
 
-    def sample_referents(self, num_referents, nadir, ideal):
-        """Sample a batch of referents.
+    def grid_sample_referents(self, num_referents, nadir, ideal):
+        """Sample a grid of evenly space points from a box described by nadir and ideal."""
+        atoms_per_dim = int(num_referents ** (1 / self.num_objectives))
+        dim_atoms = [atoms_per_dim] * self.num_objectives
+        linspaces = []
+        for d in range(self.num_objectives):
+            linspace = torch.linspace(nadir[d], ideal[d], dim_atoms[d] + 1)[:-1]
+            linspaces.append(linspace)
+        mesh = torch.meshgrid(*linspaces)
+        coordinates = torch.stack(mesh, dim=-1)
+        grid = coordinates.view(-1, self.num_objectives)
+        return grid
+
+    def uniform_sample_referents(self, num_referents, nadir, ideal):
+        """Sample a batch of referents uniformly.
 
         Args:
             num_referents (int): The number of referents to sample.
@@ -98,6 +114,22 @@ class SNDRLOracle(DRLOracle):
                                dtype=torch.float,
                                generator=self.torch_rng) * (nadir - ideal) + ideal
         return referents
+
+    def sample_referents(self, num_referents, nadir, ideal):
+        """Sample referents between the given nadir and ideal points.
+
+        Args:
+            num_referents (int): The number of referents to sample.
+            nadir (torch.Tensor): The nadir point.
+            ideal (torch.Tensor): The ideal point.
+
+        Returns:
+            torch.Tensor: The sampled referents.
+        """
+        if self.grid_sample:
+            return self.grid_sample_referents(num_referents, nadir, ideal)
+        else:
+            return self.uniform_sample_referents(num_referents, nadir, ideal)
 
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""

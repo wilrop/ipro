@@ -55,6 +55,7 @@ class SNMODQN(SNDRLOracle):
                  target_update_freq=1,
                  gradient_steps=1,
                  pretrain_iters=100,
+                 grid_sample=False,
                  num_referents=16,
                  pre_learning_start=1000,
                  pre_epsilon_start=1.0,
@@ -81,6 +82,7 @@ class SNMODQN(SNDRLOracle):
                          pretrain_iters=pretrain_iters,
                          num_referents=num_referents,
                          pretraining_steps=pretraining_steps,
+                         grid_sample=grid_sample,
                          online_steps=online_steps,
                          eval_episodes=eval_episodes,
                          track=track,
@@ -215,7 +217,7 @@ class SNMODQN(SNDRLOracle):
             aug_obs, accrued_rewards, actions, rewards, aug_next_obs, dones, timesteps = batch
             referents = torch.unsqueeze(referent, dim=0)
             if num_referents > 1:
-                additional_referents = self.sample_referents(num_referents - 1, nadir, ideal)
+                additional_referents = self.uniform_sample_referents(num_referents - 1, nadir, ideal)
                 referents = torch.cat((referents, additional_referents), dim=0)
             loss = torch.tensor(0, dtype=torch.float)
             for referent in referents:
