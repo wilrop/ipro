@@ -72,7 +72,7 @@ def setup_oracle_params(parameters, grid=False):
     }
     if grid:
         oracle_params['grid_sample'] = True
-        oracle_params['pretrain_iters'] = 25
+        oracle_params['pretrain_iters'] = 49
     return oracle_params
 
 
