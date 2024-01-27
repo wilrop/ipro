@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.helpers import load_activation_fn
 from oracles.policy import Categorical
 from oracles.sn_drl_oracle import SNDRLOracle
 from oracles.replay_buffer import RolloutBuffer
@@ -10,12 +11,13 @@ from oracles.vector_u import aasf
 
 
 class Actor(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation='tanh'):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+        activation_fn = load_activation_fn(activation)
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -30,12 +32,13 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation='tanh'):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+        activation_fn = load_activation_fn(activation)
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
