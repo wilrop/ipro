@@ -1,3 +1,27 @@
+import torch
+
+
+def load_activation_fn(activation):
+    """Load the activation function.
+
+    Args:
+        activation (str): The name of the activation function.
+
+    Returns:
+        torch.nn.Module: The activation function.
+    """
+    if activation == 'relu':
+        return torch.nn.ReLU
+    elif activation == 'leaky_relu':
+        return torch.nn.LeakyReLU
+    elif activation == 'tanh':
+        return torch.nn.Tanh
+    elif activation == 'sigmoid':
+        return torch.nn.Sigmoid
+    else:
+        raise ValueError(f'Invalid activation function: {activation}')
+
+
 def strtobool(val):
     """Convert a string representation of truth to True or False.
 
