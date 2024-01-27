@@ -3,18 +3,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.helpers import load_activation_fn
 from oracles.replay_buffer import AccruedRewardReplayBuffer
 from oracles.sn_drl_oracle import SNDRLOracle
 from oracles.vector_u import aasf
 
 
 class QNetwork(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation='relu'):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.ReLU()]
+        activation_fn = load_activation_fn(activation)
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.ReLU()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -50,6 +52,7 @@ class SNMODQN(SNDRLOracle):
                  scale=100,
                  lr=0.001,
                  hidden_layers=(64, 64),
+                 activation='relu',
                  pre_train_freq=1,
                  online_train_freq=1,
                  target_update_freq=1,
@@ -110,6 +113,7 @@ class SNMODQN(SNDRLOracle):
         self.input_dim = self.aug_obs_dim + self.num_objectives  # Obs + accrued reward + referent.
         self.output_dim = int(self.num_actions * self.num_objectives)
         self.dqn_hidden_layers = hidden_layers
+        self.activation = activation
 
         self.q_network = None
         self.target_network = None
@@ -131,6 +135,7 @@ class SNMODQN(SNDRLOracle):
         config.update({
             'lr': self.dqn_lr,
             'hidden_layers': self.dqn_hidden_layers,
+            'activation': self.activation,
             'pre_train_freq': self.pre_train_freq,
             'online_train_freq': self.online_train_freq,
             'target_update_freq': self.target_update_freq,
@@ -153,8 +158,11 @@ class SNMODQN(SNDRLOracle):
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
-        self.q_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim)
-        self.target_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim)
+        self.q_network = QNetwork(self.input_dim, self.dqn_hidden_layers, self.output_dim, activation=self.activation)
+        self.target_network = QNetwork(self.input_dim,
+                                       self.dqn_hidden_layers,
+                                       self.output_dim,
+                                       activation=self.activation)
         self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)

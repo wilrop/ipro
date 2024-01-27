@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.helpers import load_activation_fn
 from oracles.policy import Categorical
 from oracles.sn_drl_oracle import SNDRLOracle
 from oracles.replay_buffer import RolloutBuffer
@@ -10,12 +11,13 @@ from oracles.vector_u import aasf
 
 
 class Actor(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation='tanh'):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+        activation_fn = load_activation_fn(activation)
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -30,12 +32,13 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim):
+    def __init__(self, input_dim, hidden_dims, output_dim, activation='tanh'):
         super().__init__()
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), nn.Tanh()]
+        activation_fn = load_activation_fn(activation)
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), nn.Tanh()])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
@@ -58,6 +61,8 @@ class SNMOPPO(SNDRLOracle):
                  eps=1e-8,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
+                 actor_activation='tanh',
+                 critic_activation='tanh',
                  anneal_lr=False,
                  e_coef=0.01,
                  v_coef=0.5,
@@ -126,6 +131,8 @@ class SNMOPPO(SNDRLOracle):
         self.output_dim_critic = int(self.num_objectives)
         self.actor_hidden = actor_hidden
         self.critic_hidden = critic_hidden
+        self.actor_activation = actor_activation
+        self.critic_activation = critic_activation
 
         self.actor = None
         self.critic = None
@@ -149,6 +156,8 @@ class SNMOPPO(SNDRLOracle):
             'eps': self.eps,
             'actor_hidden': self.actor_hidden,
             'critic_hidden': self.critic_hidden,
+            'actor_activation': self.actor_activation,
+            'critic_activation': self.critic_activation,
             'anneal_lr': self.anneal_lr,
             'e_coef': self.e_coef,
             'v_coef': self.v_coef,
@@ -174,9 +183,15 @@ class SNMOPPO(SNDRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_hidden, self.output_dim_actor)
+        self.actor = Actor(self.input_dim,
+                           self.actor_hidden,
+                           self.output_dim_actor,
+                           activation=self.actor_activation)
         self.actor.apply(self.init_weights)
-        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
+        self.critic = Critic(self.input_dim,
+                             self.critic_hidden,
+                             self.output_dim_critic,
+                             activation=self.critic_activation)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)

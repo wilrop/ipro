@@ -57,6 +57,8 @@ class SNMOA2C(SNDRLOracle):
                  lr_critic=0.001,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
+                 actor_activation='tanh',
+                 critic_activation='tanh',
                  e_coef=0.01,
                  v_coef=0.5,
                  max_grad_norm=0.5,
@@ -90,6 +92,8 @@ class SNMOA2C(SNDRLOracle):
         self.lr_critic = lr_critic
         self.actor_hidden = actor_hidden
         self.critic_hidden = critic_hidden
+        self.actor_activation = actor_activation
+        self.critic_activation = critic_activation
         self.e_coef = e_coef
         self.v_coef = v_coef
         self.max_grad_norm = max_grad_norm
@@ -121,6 +125,8 @@ class SNMOA2C(SNDRLOracle):
             'lr_critic': self.lr_critic,
             'actor_hidden': self.actor_hidden,
             'critic_hidden': self.critic_hidden,
+            'actor_activation': self.actor_activation,
+            'critic_activation': self.critic_activation,
             'e_coef': self.e_coef,
             'v_coef': self.v_coef,
             'max_grad_norm': self.max_grad_norm,
@@ -133,8 +139,14 @@ class SNMOA2C(SNDRLOracle):
 
     def reset(self):
         """Reset the actor and critic networks, optimizers and policy."""
-        self.actor = Actor(self.input_dim, self.actor_hidden, self.output_dim_actor)
-        self.critic = Critic(self.input_dim, self.critic_hidden, self.output_dim_critic)
+        self.actor = Actor(self.input_dim,
+                           self.actor_hidden,
+                           self.output_dim_actor,
+                           activation=self.actor_activation)
+        self.critic = Critic(self.input_dim,
+                             self.critic_hidden,
+                             self.output_dim_critic,
+                             activation=self.critic_activation)
         self.policy = Categorical()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic)
