@@ -13,10 +13,10 @@ class QNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim, activation='relu'):
         super().__init__()
         activation_fn = load_activation_fn(activation)
-        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn]
+        self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
-            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn])
+            self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
         self.layers.append(nn.Linear(hidden_dims[-1], output_dim))
         self.layers = nn.Sequential(*self.layers)
