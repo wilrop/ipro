@@ -5,7 +5,7 @@ one_hot_wrapper: True
 gamma: 1.0
 study_name: sn_ppo_dst
 seed: 1
-wandb_project_name: IPRO_opt
+wandb_project_name: IPRO_dst
 wandb_entity: null
 n_trials: 1
 
@@ -23,6 +23,8 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
+  actor_activation: relu
+  critic_activation: relu
   pretrain_iters: 50
   grid_sample: True
   v_coef: 0.5
