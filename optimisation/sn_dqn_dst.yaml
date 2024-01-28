@@ -23,7 +23,7 @@ oracle:
   algorithm: SN-MO-DQN
   aug: 0.01
   scale: 100
-  activation: relu
+  activation: tanh
   pretrain_iters: 50
   grid_sample: True
   online_train_freq: 1
