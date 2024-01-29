@@ -30,14 +30,17 @@ oracle:
   pre_train_freq: 1
   target_update_freq: 1
   gradient_steps: 1
+  pretraining_steps: 6000
   pre_learning_start: 100
   pre_epsilon_start: 1.0
   pre_epsilon_end: 0.05
   pre_exploration_frac: 0.5
+  online_steps: 6000
   online_learning_start: 100
   online_epsilon_start: 1.0
   online_epsilon_end: 0.05
   online_exploration_frac: 0.3
+  buffer_size: 10000
   tau: 0.1
   num_referents: 4
   eval_episodes: 1
@@ -49,7 +52,7 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0005, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0007, 0.0006, 0.0005 ]
   num_hidden_layers:
     type: int
     min: 1
@@ -57,15 +60,6 @@ hyperparameters:
   hidden_size:
     type: categorical
     choices: [ 64, 128, 256 ]
-  pretraining_steps:
-    type: categorical
-    choices: [ 2000, 3000, 5000 ]
-  online_steps:
-    type: categorical
-    choices: [ 2000, 3000, 5000 ]
   batch_size:
     type: categorical
-    choices: [ 16, 32, 64 ]
-  buffer_size:
-    type: categorical
-    choices: [ 10000, 50000, 100000 ]
+    choices: [ 16, 32 ]
