@@ -1,14 +1,1 @@
-{
-  "1": [
-    "SN-MO-DQN",
-    "deep-sea-treasure-concave-v0",
-    0,
-    "wilrop/IPRO_opt/y8aiis8l"
-  ],
-  "2": [
-    "SN-MO-DQN",
-    "deep-sea-treasure-concave-v0",
-    2,
-    "wilrop/IPRO_opt/y8aiis8l"
-  ]
-}
+{"1": ["SN-MO-A2C", "deep-sea-treasure-concave-v0", 4, "wilrop/IPRO_opt/1t2wkzoa"]}

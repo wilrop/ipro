@@ -137,35 +137,35 @@ GPI-LS        & ${}$ & ${}$ \\\\
 
     add_table = """
 \\begin{{table}}[t]
-\caption{{The additive and multiplicative $\\varepsilon$ indicator. The highest means are highlighted in bold.}}
-\label{{tab:epsilon-indicator}}
+\caption{{The minimum $\\varepsilon$ shift necessary to obtain any undiscovered Pareto optimal solution. The best mean is in bold.}}
+\label{{tab:approx-quality}}
 \\vskip 0.15in
 \\begin{{center}}
 \\begin{{small}}
 \\begin{{sc}}
 \\begin{{tabular}}{{llc}}
 \\toprule
-Env & Algorithm & $\\varepsilon^+$ \\\\
+Env & Algorithm & $\\varepsilon$ \\\\
 \midrule
-DST & PRO (PPO)    & ${}$ \\\\
-DST & IPRO (A2C)    & ${}$ \\\\
+& IPRO (PPO)    & ${}$ \\\\
+& IPRO (A2C)    & ${}$ \\\\
 DST & IPRO (DQN)    & ${}$ \\\\
-DST & PCN           & ${}$ \\\\
-DST & GPI-LS        & ${}$ \\\\
+& PCN           & ${}$ \\\\
+& GPI-LS        & ${}$ \\\\
 %Envelope      & ${}$ \\\\
 \midrule
-Minecart & IPRO (PPO)    & ${}$ \\\\
-Minecart & IPRO (A2C)    & ${}$ \\\\
+& IPRO (PPO)    & ${}$ \\\\
+& IPRO (A2C)    & ${}$ \\\\
 Minecart & IPRO (DQN)    & ${}$ \\\\
-Minecart & PCN           & ${}$ \\\\
-Minecart & GPI-LS        & ${}$ \\\\
+& PCN           & ${}$ \\\\
+& GPI-LS        & ${}$ \\\\
 %Envelope      & ${}$ \\\\
 \midrule
-MO-Reacher & IPRO (PPO)    & ${}$ \\\\
-MO-Reacher & IPRO (A2C)    & ${}$ \\\\
+& IPRO (PPO)    & ${}$ \\\\
+& IPRO (A2C)    & ${}$ \\\\
 MO-Reacher & IPRO (DQN)    & ${}$ \\\\
-MO-Reacher & PCN           & ${}$ \\\\
-MO-Reacher & GPI-LS        & ${}$ \\\\
+& PCN           & ${}$ \\\\
+& GPI-LS        & ${}$ \\\\
 %Envelope      & ${}$ \\\\
 \\bottomrule
 \end{{tabular}}

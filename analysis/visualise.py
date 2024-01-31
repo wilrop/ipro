@@ -35,7 +35,7 @@ def read_data(env_id, metric, algs):
     return datasets
 
 
-def plot_hv(env_id, algs, alg_colors, baselines, baseline_colors, log_scale=True, include_baselines=True):
+def plot_hv(env_id, algs, alg_colors, baselines, baseline_colors, log_scale=True, include_baselines=True, suffix=''):
     """Plot the hypervolume for each algorithm."""
     method = 'IPRO-2D' if env_id == 'deep-sea-treasure-concave-v0' else 'IPRO'
     alg_ids, alg_labels = zip(*algs)
@@ -82,15 +82,24 @@ def plot_hv(env_id, algs, alg_colors, baselines, baseline_colors, log_scale=True
     if log_scale:  # Set the y-axis in log scale
         ax.set_xscale('log')
 
-    sns.move_legend(ax, "lower right")
-    plt.setp(ax.get_legend().get_texts(), fontsize='15')
+    if env_id == 'deep-sea-treasure-concave-v0' and suffix == '_complete':
+        sns.move_legend(ax, "lower left")
+    else:
+        sns.move_legend(ax, "lower right")
     plt.xlabel("Step")
     plt.ylabel('Hypervolume')
-    plt.savefig(f"plots/{env_id}_hv.pdf", dpi=fig.dpi)
+
+    plt.setp(ax.get_legend().get_texts(), fontsize='15')
+    # Set fontsize for the x and y axes
+    for item in ([ax.xaxis.label, ax.yaxis.label] +
+                 ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(15)
+
+    plt.savefig(f"plots/{env_id}_hv{suffix}.pdf", dpi=fig.dpi)
     plt.clf()
 
 
-def plot_cov(env_id, algs, alg_colors, log_scale=True):
+def plot_cov(env_id, algs, alg_colors, log_scale=True, suffix=''):
     """Plot the coverage for each algorithm."""
     method = 'IPRO-2D' if env_id == 'deep-sea-treasure-concave-v0' else 'IPRO'
     alg_ids, alg_labels = zip(*algs)
@@ -109,7 +118,7 @@ def plot_cov(env_id, algs, alg_colors, log_scale=True):
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
     plt.ylabel('Coverage')
-    plt.savefig(f"plots/{env_id}_cov.pdf", dpi=fig.dpi)
+    plt.savefig(f"plots/{env_id}_cov{suffix}.pdf", dpi=fig.dpi)
     plt.clf()
 
 
@@ -120,19 +129,22 @@ def plot_hv_cov(env_id,
                 baseline_colors,
                 hv_log_scale=True,
                 cov_log_scale=True,
-                include_baselines=True):
+                include_baselines=True,
+                suffix=''):
     """Plot the hypervolume and coverage for each algorithm."""
     plot_cov(env_id,
              algs,
              alg_colors,
-             log_scale=cov_log_scale)
+             log_scale=cov_log_scale,
+             suffix=suffix)
     plot_hv(env_id,
             algs,
             alg_colors,
             baselines,
             baseline_colors,
             log_scale=hv_log_scale,
-            include_baselines=include_baselines)
+            include_baselines=include_baselines,
+            suffix=suffix)
 
 
 if __name__ == '__main__':
@@ -142,7 +154,8 @@ if __name__ == '__main__':
         'DQN': '#ff7f0e',
         'A2C': '#2ca02c',
     }
-    baselines = ['GPI-LS', 'PCN']
+    baselines_best = ['GPI-LS', 'PCN']
+    baselines_complete = ['GPI-LS', 'Envelope', 'PCN']
     baseline_colors = {
         'GPI-LS': '#d62728',
         'PCN': '#9467bd',
@@ -150,18 +163,21 @@ if __name__ == '__main__':
         'True PF': '#e377c2'
     }
     env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
+    suffixes = ['', '_complete']
 
     for env_id in env_ids:
         print(f'Plotting {env_id}')
-        include_baselines = True
-        cov_log_scale = True
-        hv_log_scale = True
-        plot_hv_cov(env_id,
-                    algs,
-                    alg_colors,
-                    baselines,
-                    baseline_colors,
-                    include_baselines=include_baselines,
-                    cov_log_scale=cov_log_scale,
-                    hv_log_scale=hv_log_scale)
+        for suffix, baselines in zip(suffixes, [baselines_best, baselines_complete]):
+            include_baselines = True
+            cov_log_scale = True
+            hv_log_scale = True
+            plot_hv_cov(env_id,
+                        algs,
+                        alg_colors,
+                        baselines,
+                        baseline_colors,
+                        include_baselines=include_baselines,
+                        cov_log_scale=cov_log_scale,
+                        hv_log_scale=hv_log_scale,
+                        suffix=suffix)
     print('Done')
