@@ -41,13 +41,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
     parser.add_argument('--params', type=str, default='grid_ppo_dst.yaml',
                         help='path of a yaml file containing the parameters of this study')
-    parser.add_argument('--exp_id', type=str, default=1)
+    parser.add_argument('--exp_id', type=int, default=1)
     parser.add_argument('--offset', type=int, default=0)
     args = parser.parse_args()
 
     with open(args.params, 'r') as file:
         params = yaml.safe_load(file)
 
-    exp_id = int(args.exp_id)
-    offset = int(args.offset)
     grid_search(params, args.exp_id, args.offset)
