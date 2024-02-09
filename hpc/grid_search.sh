@@ -31,7 +31,7 @@ export WANDB_DIR=$VSC_SCRATCH
 sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
-python3 ${OPTIMISATION_DIR}/search.py \
+python3 ${OPTIMISATION_DIR}/grid_search.py \
   --params ${OPTIMISATION_DIR}/grid_ppo_dst.yaml \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
