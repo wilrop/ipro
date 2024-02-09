@@ -48,4 +48,6 @@ if __name__ == '__main__':
     with open(args.params, 'r') as file:
         params = yaml.safe_load(file)
 
+    exp_id = int(args.exp_id)
+    offset = int(args.offset)
     grid_search(params, args.exp_id, args.offset)
