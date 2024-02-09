@@ -15,7 +15,7 @@ outer_loop:
   method: IPRO-2D
   tolerance: 0.0
   max_iterations: null
-  track: False
+  track: True
 
 
 # Oracle params
