@@ -32,6 +32,6 @@ sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
-  --params ${OPTIMISATION_DIR}/grid_ppo_dst.yaml \
+  --params ${OPTIMISATION_DIR}/grid_a2c_dst.yaml \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
