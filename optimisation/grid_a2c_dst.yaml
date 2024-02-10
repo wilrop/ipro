@@ -1,0 +1,63 @@
+# Experiment params
+env_id: deep-sea-treasure-concave-v0
+max_episode_steps: 50
+one_hot_wrapper: True
+gamma: 1.0
+seeds: [ 0, 1, 2, 3, 4 ]
+wandb_project_name: IPRO_a2c_grid
+wandb_entity: null
+
+
+# Outer loop params
+outer_loop:
+  method: IPRO-2D
+  tolerance: 0.0
+  max_iterations: null
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: SN-MO-A2C
+  aug: 0.01
+  scale: 100
+  actor_activation: tanh
+  critic_activation: tanh
+  pretrain_iters: 50
+  grid_sample: True
+  num_referents: 4
+  v_coef: 0.5
+  e_coef: 0.01
+  normalize_advantage: False
+  gae_lambda: 0.95
+  eval_episodes: 1
+  log_freq: 1000
+  track: False
+
+
+# Hyperparameter options to be selected during the optimisation
+hyperparameters:
+  lr_actor:
+    type: categorical
+    choices: [ 0.0006, 0.0005, 0.0003 ]
+  lr_critic:
+    type: categorical
+    choices: [ 0.0006, 0.0005, 0.0003 ]
+  num_hidden_layers:
+    type: categorical
+    choices: [ 1, 2 ]
+  hidden_size:
+    type: categorical
+    choices: [ 64, 128 ]
+  max_grad_norm:
+    type: categorical
+    choices: [ 1.0, 5.0 ]
+  pretraining_steps:
+    type: categorical
+    choices: [ 5000, 7500, 10000 ]
+  online_steps:
+    type: categorical
+    choices: [ 5000, 7500, 10000 ]
+  n_steps:
+    type: categorical
+    choices: [ 8, 16, 32 ]

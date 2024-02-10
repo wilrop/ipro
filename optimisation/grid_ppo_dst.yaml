@@ -3,11 +3,9 @@ env_id: deep-sea-treasure-concave-v0
 max_episode_steps: 50
 one_hot_wrapper: True
 gamma: 1.0
-study_name: sn_ppo_dst
 seeds: [ 0, 1, 2, 3, 4 ]
 wandb_project_name: IPRO_ppo_grid
 wandb_entity: null
-n_trials: 1
 
 
 # Outer loop params
