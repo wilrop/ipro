@@ -25,7 +25,8 @@ oracle:
   critic_activation: tanh
   pretrain_iters: 50
   grid_sample: True
-  num_referents: 4
+  n_steps: 8
+  max_grad_norm: 5.0
   v_coef: 0.5
   e_coef: 0.01
   normalize_advantage: False
@@ -48,16 +49,13 @@ hyperparameters:
     choices: [ 1, 2 ]
   hidden_size:
     type: categorical
-    choices: [ 64, 128 ]
-  max_grad_norm:
-    type: categorical
-    choices: [ 1.0, 5.0 ]
+    choices: [ 64, 128, 256 ]
   pretraining_steps:
     type: categorical
     choices: [ 5000, 7500, 10000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 7500, 10000 ]
-  n_steps:
+  num_referents:
     type: categorical
-    choices: [ 8, 16, 32 ]
+    choices: [ 8, 16 ]

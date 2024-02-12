@@ -6,7 +6,7 @@
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-9720
+#SBATCH --array=1-4860
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -32,6 +32,6 @@ sleep $((($RANDOM % 20) + 1))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
-  --params ${OPTIMISATION_DIR}/grid_a2c_dst.yaml \
+  --config ${OPTIMISATION_DIR}/grid_a2c_dst.yaml \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
