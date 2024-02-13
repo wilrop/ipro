@@ -26,6 +26,7 @@ oracle:
   pretrain_iters: 50
   grid_sample: True
   n_steps: 8
+  num_referents: 4
   max_grad_norm: 5.0
   v_coef: 0.5
   e_coef: 0.01
@@ -40,22 +41,25 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003 ]
+    choices: [ 0.0006, 0.0005, 0.0003, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003 ]
-  num_hidden_layers:
+    choices: [ 0.0006, 0.0005, 0.0003, 0.0001 ]
+  num_hidden_layers_actor:
     type: categorical
     choices: [ 1, 2 ]
-  hidden_size:
+  hidden_size_actor:
     type: categorical
-    choices: [ 64, 128, 256 ]
+    choices: [ 128, 256 ]
+  num_hidden_layers_critic:
+    type: categorical
+    choices: [ 1, 2 ]
+  hidden_size_critic:
+    type: categorical
+    choices: [ 128, 256 ]
   pretraining_steps:
     type: categorical
     choices: [ 5000, 7500, 10000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 7500, 10000 ]
-  num_referents:
-    type: categorical
-    choices: [ 8, 16 ]
