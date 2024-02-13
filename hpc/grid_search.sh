@@ -28,7 +28,7 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
 export WANDB_DIR=$VSC_SCRATCH
 
 # Sleep for a random number of seconds to avoid overloading the file system.
-sleep $((($RANDOM % 20) + 1))s
+sleep $((($RANDOM % 120) + 1))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
