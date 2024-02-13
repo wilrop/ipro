@@ -62,4 +62,4 @@ hyperparameters:
     choices: [ 5000, 7500, 10000 ]
   online_steps:
     type: categorical
-    choices: [ 5000, 7500, 10000 ]
+    choices: [ 5000, 7500 ]
