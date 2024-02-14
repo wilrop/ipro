@@ -32,6 +32,12 @@ oracle:
   e_coef: 0.01
   normalize_advantage: False
   gae_lambda: 0.95
+  num_hidden_layers_actor: 1
+  num_hidden_layers_critic: 2
+  hidden_size_actor: 128
+  hidden_size_critic: 128
+  pretraining_steps: 5000
+  online_steps: 5000
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -41,25 +47,7 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003, 0.0001 ]
+    choices: [ 0.0005, 0.0004, 0.0003 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003, 0.0001 ]
-  num_hidden_layers_actor:
-    type: categorical
-    choices: [ 1, 2 ]
-  hidden_size_actor:
-    type: categorical
-    choices: [ 128, 256 ]
-  num_hidden_layers_critic:
-    type: categorical
-    choices: [ 1, 2 ]
-  hidden_size_critic:
-    type: categorical
-    choices: [ 128, 256 ]
-  pretraining_steps:
-    type: categorical
-    choices: [ 5000, 7500, 10000 ]
-  online_steps:
-    type: categorical
-    choices: [ 5000, 7500 ]
+    choices: [ 0.0002, 0.00015, 0.0001, 0.00007 ]
