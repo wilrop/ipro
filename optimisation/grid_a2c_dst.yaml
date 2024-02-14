@@ -47,7 +47,7 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.00008, 0.000075, 0.00007, 0.00006, 0.000065 ]
+    choices: [ 0.000077, 0.000075, 0.000073 ]
   lr_critic:
     type: categorical
-    choices: [ 0.00055, 0.0005, 0.00045, 0.0004 ]
+    choices: [ 0.00042, 0.0004, 0.00044 ]
