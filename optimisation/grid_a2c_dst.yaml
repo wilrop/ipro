@@ -36,7 +36,8 @@ oracle:
   num_hidden_layers_critic: 2
   hidden_size_actor: 128
   hidden_size_critic: 128
-  online_steps: 5000
+  online_steps: 7500
+  pretraining_steps: 7500
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -50,6 +51,3 @@ hyperparameters:
   lr_critic:
     type: categorical
     choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
-  pretraining_steps:
-    type: categorical
-    choices: [ 5000, 7500 ]
