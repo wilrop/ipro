@@ -21,6 +21,8 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
+  actor_activation: tanh
+  critic_activation: tanh
   pretrain_iters: 50
   grid_sample: True
   n_steps: 8
@@ -43,15 +45,9 @@ oracle:
 
 # Hyperparameter options to be selected during the optimisation
 hyperparameters:
-  actor_activation:
-    type: categorical
-    choices: [ relu, tanh ]
-  critic_activation:
-    type: categorical
-    choices: [ relu, tanh ]
   lr_actor:
     type: categorical
-    choices: [ 0.0001, 0.00008, 0.00007, 0.00006 ]
+    choices: [ 0.00008, 0.000075, 0.00007, 0.00006, 0.000065 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0007, 0.0006, 0.0005 ]
+    choices: [ 0.00055, 0.0005, 0.00045, 0.0004 ]
