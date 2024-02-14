@@ -34,7 +34,7 @@ oracle:
   gae_lambda: 0.95
   num_hidden_layers_actor: 1
   num_hidden_layers_critic: 2
-  hidden_size_actor: 128
+  hidden_size_actor: 256
   hidden_size_critic: 128
   eval_episodes: 1
   log_freq: 1000
@@ -45,13 +45,13 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.000077, 0.000075, 0.000073 ]
+    choices: [ 0.0003, 0.0001, 0.00008, 0.00007 ]
   lr_critic:
     type: categorical
-    choices: [ 0.00042, 0.0004, 0.00044 ]
+    choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
   online_steps:
     type: categorical
     choices: [ 7500, 8000, 9000, 10000 ]
   pretraining_steps:
     type: categorical
-    choices: [ 9000, 10000 ]
+    choices: [ 7500, 8000, 9000, 10000 ]
