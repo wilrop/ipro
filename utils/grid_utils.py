@@ -15,7 +15,7 @@ def num_experiments(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--config', type=str, default='../optimisation/grid_a2c_dst.yaml',
+    parser.add_argument('--config', type=str, default='../optimisation/grid_ppo_dst.yaml',
                         help='path of a yaml file containing the configuration of this grid search')
     args = parser.parse_args()
 

@@ -25,6 +25,7 @@ oracle:
   critic_activation: tanh
   pretrain_iters: 50
   grid_sample: True
+  max_grad_norm: 5.0
   v_coef: 0.5
   e_coef: 0.01
   eps: 1.e-5
@@ -32,11 +33,16 @@ oracle:
   num_minibatches: 4
   normalize_advantage: False
   gae_lambda: 0.95
+  num_hidden_layers_actor: 1
+  num_hidden_layers_critic: 2
+  hidden_size_actor: 256
+  hidden_size_critic: 256
   clip_coef: 0.2
   clip_range_vf: 0.2
   num_envs: 4
   num_referents: 4
   update_epochs: 4
+  n_steps: 8
   target_kl: None
   eval_episodes: 1
   log_freq: 1000
@@ -47,25 +53,13 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003 ]
+    choices: [ 0.00007, 0.00005, 0.00004, 0.00003 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0003 ]
-  num_hidden_layers:
-    type: categorical
-    choices: [ 1, 2 ]
-  hidden_size:
-    type: categorical
-    choices: [ 64, 128 ]
-  max_grad_norm:
-    type: categorical
-    choices: [ 1.0, 5.0 ]
+    choices: [ 0.0001, 0.00008, 0.00007, 0.00006 ]
   pretraining_steps:
     type: categorical
-    choices: [ 2500, 5000, 7500 ]
+    choices: [ 5000, 7500, 10000 ]
   online_steps:
     type: categorical
-    choices: [ 2500, 5000, 7500 ]
-  n_steps:
-    type: categorical
-    choices: [ 8, 16, 32 ]
+    choices: [ 5000, 7500, 10000 ]
