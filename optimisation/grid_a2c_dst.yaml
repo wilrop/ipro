@@ -35,7 +35,7 @@ oracle:
   num_hidden_layers_actor: 1
   num_hidden_layers_critic: 2
   hidden_size_actor: 256
-  hidden_size_critic: 128
+  hidden_size_critic: 256
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -45,10 +45,10 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.00007, 0.00006 ]
+    choices: [ 0.00007, 0.00006, 0.00005 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0004, 0.0003, 0.0002 ]
+    choices: [ 0.0005, 0.0004, 0.0003, 0.0002 ]
   online_steps:
     type: categorical
     choices: [ 7500, 8000, 9000 ]
