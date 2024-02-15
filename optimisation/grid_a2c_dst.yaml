@@ -45,13 +45,13 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0003, 0.0001, 0.00008, 0.00007 ]
+    choices: [ 0.00007, 0.00006 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
+    choices: [ 0.0004, 0.0003, 0.0002 ]
   online_steps:
     type: categorical
-    choices: [ 7500, 8000, 9000, 10000 ]
+    choices: [ 7500, 8000, 9000 ]
   pretraining_steps:
     type: categorical
-    choices: [ 7500, 8000, 9000, 10000 ]
+    choices: [ 7500, 8000, 9000 ]
