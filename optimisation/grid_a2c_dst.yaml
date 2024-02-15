@@ -27,7 +27,7 @@ oracle:
   grid_sample: True
   n_steps: 8
   num_referents: 4
-  max_grad_norm: 10.0
+  max_grad_norm: 1.0
   v_coef: 0.5
   e_coef: 0.01
   normalize_advantage: False
@@ -51,7 +51,7 @@ hyperparameters:
     choices: [ 0.00008, 0.00007, 0.00006 ]
   online_steps:
     type: categorical
-    choices: [ 8000 ]
+    choices: [ 7500, 8000, 10000 ]
   pretraining_steps:
     type: categorical
-    choices: [ 9000 ]
+    choices: [ 7500, 8000, 10000 ]
