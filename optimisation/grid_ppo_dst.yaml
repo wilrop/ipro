@@ -28,7 +28,7 @@ oracle:
   max_grad_norm: 5.0
   v_coef: 0.5
   e_coef: 0.01
-  eps: 1.e-5
+  eps: 1.e-8
   anneal_lr: False
   num_minibatches: 4
   normalize_advantage: False
