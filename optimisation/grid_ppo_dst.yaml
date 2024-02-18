@@ -37,8 +37,8 @@ oracle:
   num_hidden_layers_critic: 2
   hidden_size_actor: 256
   hidden_size_critic: 256
-  pretraining_steps: 5000
-  online_steps: 5000
+  pretraining_steps: 7500
+  online_steps: 7500
   num_envs: 4
   num_referents: 4
   update_epochs: 4
