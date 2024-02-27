@@ -152,21 +152,21 @@ Env & Algorithm & $\\varepsilon$ \\\\
 DST & IPRO (DQN)    & ${}$ \\\\
 & PCN           & ${}$ \\\\
 & GPI-LS        & ${}$ \\\\
-%Envelope      & ${}$ \\\\
+%& Envelope      & ${}$ \\\\
 \midrule
 & IPRO (PPO)    & ${}$ \\\\
 & IPRO (A2C)    & ${}$ \\\\
 Minecart & IPRO (DQN)    & ${}$ \\\\
 & PCN           & ${}$ \\\\
 & GPI-LS        & ${}$ \\\\
-%Envelope      & ${}$ \\\\
+%& Envelope      & ${}$ \\\\
 \midrule
 & IPRO (PPO)    & ${}$ \\\\
 & IPRO (A2C)    & ${}$ \\\\
 MO-Reacher & IPRO (DQN)    & ${}$ \\\\
 & PCN           & ${}$ \\\\
 & GPI-LS        & ${}$ \\\\
-%Envelope      & ${}$ \\\\
+%& Envelope      & ${}$ \\\\
 \\bottomrule
 \end{{tabular}}
 \end{{sc}}
