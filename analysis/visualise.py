@@ -26,11 +26,29 @@ def create_gif(log_dir, name):
     iio.imwrite(os.path.join(log_dir, f"{name}.gif"), images, format='GIF', duration=1000)
 
 
-def read_data(env_id, metric, algs):
+def compress_dataset(df, n=1000):
+    """Compress the number of samples per seed to a given number."""
+    seed0_df = df[df['Seed'] == 0]
+    max_samples = seed0_df.shape[0]
+    if max_samples < n:
+        return df
+    else:
+        sub_dfs = []
+        for seed in df['Seed'].unique():
+            seed_df = df[df['Seed'] == seed]
+            compressed_seed_df = seed_df[seed_df['Step'] % (max_samples // n) == 0]
+            sub_dfs.append(compressed_seed_df)
+        compressed_df = pd.concat(sub_dfs)
+        return compressed_df
+
+
+def read_data(env_id, metric, algs, compress=True):
     """Read the data for each individual algorithm."""
     datasets = []
     for alg in algs:
         data = pd.read_csv(f'./data/{alg}_{env_id}_{metric}.csv')
+        if compress:
+            data = compress_dataset(data)
         datasets.append(data)
     return datasets
 
