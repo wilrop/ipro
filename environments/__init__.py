@@ -16,6 +16,8 @@ def default_timesteps(env_id):
         max_episode_steps = 50
     elif env_id == 'minecart-v0':
         max_episode_steps = 1000
+    elif env_id == 'mo-walker2d-v4':
+        max_episode_steps = 100
     else:
         raise NotImplementedError
     return max_episode_steps

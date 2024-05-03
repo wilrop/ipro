@@ -32,7 +32,10 @@ class DRLOracle:
         self.aug = aug
         self.scale = scale
 
-        self.num_actions = env.action_space.n
+        try:
+            self.num_actions = env.action_space.n
+        except AttributeError:
+            self.num_actions = -1
         self.num_objectives = env.reward_space.shape[0]
         self.flat_obs_dim = np.prod(self.env.observation_space.shape)
         self.aug_obs_dim = self.flat_obs_dim + self.num_objectives
