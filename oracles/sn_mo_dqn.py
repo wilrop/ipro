@@ -235,7 +235,7 @@ class SNMODQN(SNDRLOracle):
                     target_pred = self.target_network(aug_next_obs, referent).view(-1,
                                                                                    self.num_actions,
                                                                                    self.num_objectives)
-                    total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred
+                    total_rewards = next_accr_rews.unsqueeze(1) + self.gamma * target_pred * (1 - dones)
                     utilities = aasf(total_rewards,
                                      referent.unsqueeze(1),
                                      nadir,

@@ -110,8 +110,9 @@ class Categorical(Policy):
         return torch.argmax(log_probs, dim=-1)
 
     def evaluate_actions(self, log_probs, actions):
-        dist = CDist(logits=log_probs)  # Distribution over actions.
-        return dist.log_prob(actions).unsqueeze(-1), dist.entropy()
+        probs = torch.exp(log_probs)
+        entropy = -torch.sum(probs * log_probs, dim=-1)
+        return self.log_prob(actions, log_probs), entropy
 
 
 class MultiCategorical(Policy):
