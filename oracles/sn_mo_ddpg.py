@@ -149,7 +149,7 @@ class SNMODDPG(SNDRLOracle):
 
         # Setup dims. Here actor and critic dim differ since the critic additionally takes a continuous action.
         self.input_dim_actor = self.aug_obs_dim + self.num_objectives
-        self.input_dim_critic = self.aug_obs_dim + self.num_objectives + self.env.action_space.shape
+        self.input_dim_critic = self.aug_obs_dim + self.num_objectives + np.prod(self.env.action_space.shape)
         self.output_dim_actor = 1
         self.output_dim_critic = self.num_objectives
 
