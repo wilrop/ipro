@@ -147,7 +147,9 @@ class SNMODDPG(SNDRLOracle):
 
         self.log_freq = log_freq
 
-        self.input_dim = self.aug_obs_dim + self.num_objectives  # Obs + accrued reward + referent.
+        # Setup dims. Here actor and critic dim differ since the critic additionally takes a continuous action.
+        self.input_dim_actor = self.aug_obs_dim + self.num_objectives
+        self.input_dim_critic = self.aug_obs_dim + self.num_objectives + self.env.action_space.shape
         self.output_dim_actor = 1
         self.output_dim_critic = self.num_objectives
 
@@ -200,19 +202,19 @@ class SNMODDPG(SNDRLOracle):
 
     def reset(self):
         """Reset the class for a new round of the inner loop."""
-        self.actor = ContinuousActor(self.input_dim,
+        self.actor = ContinuousActor(self.input_dim_actor,
                                      self.actor_hidden,
                                      self.env,
                                      activation=self.actor_activation)
-        self.actor_target = ContinuousActor(self.input_dim,
+        self.actor_target = ContinuousActor(self.input_dim_actor,
                                             self.actor_hidden,
                                             self.env,
                                             activation=self.actor_activation)
-        self.critic = Critic(self.input_dim,
+        self.critic = Critic(self.input_dim_critic,
                              self.critic_hidden,
                              self.output_dim_critic,
                              activation=self.critic_activation)
-        self.critic_target = Critic(self.input_dim,
+        self.critic_target = Critic(self.input_dim_critic,
                                     self.critic_hidden,
                                     self.output_dim_critic,
                                     activation=self.critic_activation)
