@@ -29,10 +29,9 @@ class Critic(nn.Module):
 
 
 class ContinuousActor(nn.Module):
-    def __init__(self, input_dim, hidden_dims, env, activation='relu', final_activation='tanh'):
+    def __init__(self, input_dim, hidden_dims, env, activation='relu'):
         super().__init__()
         activation_fn = load_activation_fn(activation)
-        self.final_activation = load_activation_fn(final_activation)
         self.layers = [nn.Linear(input_dim, hidden_dims[0]), activation_fn()]
 
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
@@ -53,7 +52,7 @@ class ContinuousActor(nn.Module):
         exp_ref = ref.expand(*concat_shape)
         x = torch.cat((obs, exp_ref), dim=-1)
         x = self.layers(x)
-        x = self.final_activation(x)
+        x = torch.tanh(x)
         return x * self.action_scale + self.action_bias
 
 
