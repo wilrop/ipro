@@ -247,7 +247,7 @@ class SNMODDPG(SNDRLOracle):
         """Select an action using epsilon-greedy exploration."""
         actions = self.actor(aug_obs, referent)
         actions += torch.normal(0, self.actor.action_scale * epsilon)
-        actions = actions.cpu().numpy().clip(self.envs.single_action_space.low, self.envs.single_action_space.high)
+        actions = actions.cpu().numpy().clip(self.env.action_space.low, self.env.action_space.high)
         return actions
 
     def add_to_buffer(self, aug_obs, accrued_reward, action, reward, aug_next_obs, done, timestep):
