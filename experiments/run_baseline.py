@@ -20,7 +20,7 @@ class DSTModel(nn.Module):
         super(DSTModel, self).__init__()
 
         self.scaling_factor = nn.Parameter(torch.tensor(scaling_factor).float(), requires_grad=False)
-        self.s_emb = nn.Sequential(nn.Linear(121, 64),
+        self.s_emb = nn.Sequential(nn.Linear(144, 64),
                                    nn.Sigmoid())
         self.c_emb = nn.Sequential(nn.Linear(3, 64),
                                    nn.Sigmoid())
