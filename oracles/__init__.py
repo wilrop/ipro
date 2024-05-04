@@ -6,6 +6,7 @@ from oracles.mo_ppo import MOPPO
 from oracles.sn_mo_dqn import SNMODQN
 from oracles.sn_mo_a2c import SNMOA2C
 from oracles.sn_mo_ppo import SNMOPPO
+from oracles.sn_mo_ddpg import SNMODDPG
 
 
 def init_oracle(alg, *args, **kwargs):
@@ -33,6 +34,8 @@ def init_oracle(alg, *args, **kwargs):
         return SNMOA2C(*args, **kwargs)
     elif alg == 'SN-MO-PPO':
         return SNMOPPO(*args, **kwargs)
+    elif alg == 'SN-MO-DDPG':
+        return SNMODDPG(*args, **kwargs)
     elif alg == 'debug':
         return DebugOracle(*args, **kwargs)
     else:
