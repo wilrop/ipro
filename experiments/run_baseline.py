@@ -161,7 +161,7 @@ def get_kwargs(alg_id, env_id, min_vals, max_vals):
         setup_kwargs = {
             'learning_rate': 3e-4,
             'tau': 0.005,
-            'buffer_size': 1e6,
+            'buffer_size': int(1e6),
             'net_arch': [256, 256],
             'batch_size': 128,
             'num_q_nets': 2,
