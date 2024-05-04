@@ -32,7 +32,7 @@ export WANDB_DIR=$VSC_SCRATCH
 wandb offline
 
 # Sleep for a random number of seconds to avoid overloading the file system.
-sleep $((($RANDOM % 20) + 1))s
+sleep $((($RANDOM % 60) + 1))s
 
 # Run the experiments.
 python3 ${EXPERIMENT_DIR}/run_baseline.py \
