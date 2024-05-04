@@ -43,6 +43,7 @@ class UtilityFunction(nn.Module):
         self.min_u, self.max_u = self.compute_utility(torch.stack([min_val, max_val]))
 
     def forward(self, x):
+        x = torch.tensor(x, dtype=torch.float32)
         utilities = self.compute_utility(x)
         if self.normalise:
             utilities = (utilities - self.min_u) / (self.max_u - self.min_u)
