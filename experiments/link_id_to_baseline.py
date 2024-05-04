@@ -21,5 +21,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     combos = [
         ('GPI-LS', 'deep-sea-treasure-concave-v0'),
+        ('GPI-LS', 'minecart-v0'),
+        ('GPI-LS', 'mo-reacher-v4'),
+        ('PCN', 'deep-sea-treasure-concave-v0'),
+        ('PCN', 'minecart-v0'),
+        ('PCN', 'mo-reacher-v4'),
+        ('Envelope', 'deep-sea-treasure-concave-v0'),
+        ('Envelope', 'minecart-v0'),
+        ('Envelope', 'mo-reacher-v4'),
+        ('GPILSContinuousAction', 'mo-walker2d-v4'),
+        ('CAPQL', 'mo-walker2d-v4'),
     ]
     link_baseline(combos, args.num_seeds)

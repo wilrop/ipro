@@ -4,12 +4,12 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from environments import setup_env
 from experiments.reproduce_experiment import get_env_info
 from environments.bounding_boxes import get_bounding_box
 from morl_baselines.multi_policy.pcn.pcn import PCN
 from morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS
+from morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import GPILSContinuousAction
 from morl_baselines.multi_policy.envelope.envelope import Envelope
 
 
@@ -37,7 +37,7 @@ class DSTModel(nn.Module):
         return log_prob
 
 
-def get_kwargs(alg_id, env_id):
+def get_kwargs(alg_id, env_id, min_vals, max_vals):
     """Get the keyword arguments for the baseline."""
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
@@ -104,13 +104,19 @@ def get_kwargs(alg_id, env_id):
             'gradient_updates': 10
         }
         train_kwargs = {}
+    elif alg_id == 'GPILSContinuousAction' and env_id == 'mo-walker2d-v4':
+        total_timesteps = 200000
+        setup_kwargs = {
+            'per': False,
+        }
+        train_kwargs = {}
     elif alg_id == 'Envelope' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
         setup_kwargs = {
             'initial_epsilon': 1.0,
             'final_epsilon': 0.05,
             'epsilon_decay_steps': 50000,
-            'target_net_update_freq': 200,
+            'target_net_update_freq': 500,
             'num_sample_w': 4,
             'batch_size': 64
         }
@@ -148,8 +154,29 @@ def get_kwargs(alg_id, env_id):
             'batch_size': 64
         }
         train_kwargs = {}
+    elif alg_id == 'CAPQL' and env_id == 'mo-walker2d-v4':
+        # These parameters are taken from the original paper.
+        total_timesteps = 2000000
+        setup_kwargs = {
+            'learning_rate': 3e-4,
+            'tau': 0.005,
+            'buffer_size': 1e6,
+            'net_arch': [256, 256],
+            'batch_size': 128,
+            'num_q_nets': 2,
+            'alpha': 0.05,
+            'learning_starts': 1000,
+            'gradient_updates': 1,
+        }
+        train_kwargs = {}
     else:
         raise NotImplementedError
+
+    min_val = np.min(min_vals, axis=0)
+    max_val = np.max(max_vals, axis=0)
+    setup_kwargs['min_val'] = min_val
+    setup_kwargs['max_val'] = max_val
+
     return total_timesteps, setup_kwargs, train_kwargs
 
 
@@ -170,6 +197,11 @@ def setup_agent(alg_id, env, gamma, seed, setup_kwargs):
                          gamma=gamma,
                          seed=seed,
                          **setup_kwargs)
+    elif alg_id == 'GPILSContinuousAction':
+        agent = GPILSContinuousAction(env,
+                                      gamma=gamma,
+                                      seed=seed,
+                                      **setup_kwargs)
     else:
         raise NotImplementedError
     return agent
@@ -180,8 +212,8 @@ def run_baseline(exp_id, exp_dir):
     id_exp_dict = json.load(open(f'{exp_dir}/baselines.json', 'r'))
     baseline, env_id, seed = id_exp_dict[str(exp_id)]
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
-    _, _, ref_point = get_bounding_box(env_id)
-    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id)
+    min_vals, max_vals, ref_point = get_bounding_box(env_id)
+    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id, min_vals, max_vals)
 
     if env_id == 'deep-sea-treasure-concave-v0':
         one_hot = True

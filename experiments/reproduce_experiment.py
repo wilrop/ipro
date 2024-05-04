@@ -21,6 +21,11 @@ def get_env_info(env_id):
         max_episode_steps = 1000
         one_hot_wrapper = False
         tolerance = 1.e-15
+    elif env_id == 'mo-walker2d-v4':
+        gamma = 0.99
+        max_episode_steps = 100
+        one_hot_wrapper = False
+        tolerance = 1.e-15
     else:
         raise NotImplementedError
     return gamma, max_episode_steps, one_hot_wrapper, tolerance
