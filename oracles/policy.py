@@ -104,7 +104,7 @@ class Categorical(Policy):
         return actions
 
     def log_prob(self, samples, log_probs):
-        return log_probs.gather(1, samples)
+        return log_probs.gather(-1, samples.unsqueeze(-1))
 
     def greedy(self, log_probs):
         return torch.argmax(log_probs, dim=-1)
