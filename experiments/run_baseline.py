@@ -11,6 +11,7 @@ from morl_baselines.multi_policy.pcn.pcn import PCN
 from morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS
 from morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import GPILSContinuousAction
 from morl_baselines.multi_policy.envelope.envelope import Envelope
+from morl_baselines.multi_policy.capql.capql import CAPQL
 
 
 class DSTModel(nn.Module):
@@ -202,6 +203,11 @@ def setup_agent(alg_id, env, gamma, seed, setup_kwargs):
                                       gamma=gamma,
                                       seed=seed,
                                       **setup_kwargs)
+    elif alg_id == 'CAPQL':
+        agent = CAPQL(env,
+                      gamma=gamma,
+                      seed=seed,
+                      **setup_kwargs)
     else:
         raise NotImplementedError
     return agent
