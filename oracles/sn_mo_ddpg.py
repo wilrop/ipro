@@ -38,7 +38,7 @@ class ContinuousActor(nn.Module):
         for hidden_in, hidden_out in zip(hidden_dims[:-1], hidden_dims[1:]):
             self.layers.extend([nn.Linear(hidden_in, hidden_out), activation_fn()])
 
-        self.layers.append(nn.Linear(hidden_dims[-1], np.prod(env.single_action_space.shape)))
+        self.layers.append(nn.Linear(hidden_dims[-1], np.prod(env.action_space.shape)))
         self.layers = nn.Sequential(*self.layers)
         # action rescaling
         self.register_buffer(
@@ -75,7 +75,7 @@ def linear_schedule(start_val: float, end_val: float, duration: int, t: int):
 
 class SNMODDPG(SNDRLOracle):
     def __init__(self,
-                 envs,
+                 env,
                  gamma=0.99,
                  aug=0.1,
                  scale=100,
@@ -110,7 +110,7 @@ class SNMODDPG(SNDRLOracle):
                  log_freq=1000,
                  track=False,
                  seed=0):
-        super().__init__(envs.unwrapped.envs[0],
+        super().__init__(env,
                          gamma=gamma,
                          aug=aug,
                          scale=scale,
@@ -123,7 +123,6 @@ class SNMODDPG(SNDRLOracle):
                          track=track,
                          seed=seed,
                          alg_name='SN-MO-DDPG')
-        self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.actor_hidden = actor_hidden
