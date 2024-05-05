@@ -4,6 +4,8 @@ import platform
 import numpy as np
 import pygmo as pg
 from utils.pareto import extreme_prune, batched_pareto_dominates
+from experiments.monotonic_utility import UtilityFunction
+from experiments.utility_eval import generalised_expected_utility, generalised_maximum_utility_loss
 
 
 class OuterLoop:
@@ -17,7 +19,8 @@ class OuterLoop:
                  offset=1,
                  tolerance=1e-1,
                  max_iterations=None,
-                 warm_start=False,
+                 known_pf=None,
+                 num_utility_fns=100,
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -33,7 +36,8 @@ class OuterLoop:
         self.offset = offset
         self.tolerance = tolerance
         self.max_iterations = max_iterations if max_iterations is not None else np.inf
-        self.warm_start = warm_start
+        self.known_pf = known_pf
+        self.num_utility_fns = num_utility_fns
 
         self.bounding_box = None
         self.ideal = None
@@ -41,6 +45,7 @@ class OuterLoop:
         self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
+        self.utility_fns = None
 
         self.hv = 0
         self.total_hv = 0
@@ -67,6 +72,7 @@ class OuterLoop:
         self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
+        self.utility_fns = None
 
         self.hv = 0
         self.total_hv = 0
@@ -94,12 +100,14 @@ class OuterLoop:
             "method": self.method,
             "env_id": self.problem.env_id,
             "dimensions": self.dim,
-            "warm_start": self.warm_start,
             "tolerance": self.tolerance,
             "max_iterations": self.max_iterations,
             "seed": self.seed,
             **extra_config
         }
+
+    def init_utility_fns(self):
+        self.utility_fns = [UtilityFunction(self.ideal, self.nadir, frozen=True) for _ in range(self.num_utility_fns)]
 
     def setup(self, mode='offline'):
         """Setup wandb."""
@@ -134,6 +142,8 @@ class OuterLoop:
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
             wandb.define_metric('outer/error', step_metric='iteration')
+            wandb.define_metric('outer/geu', step_metric='iteration')
+            wandb.define_metric('outer/gmul', step_metric='iteration')
             self.run_id = wandb.run.id
 
         return time.time()
@@ -147,12 +157,19 @@ class OuterLoop:
     def log_iteration(self, iteration, referent=None, ideal=None, pareto_point=None):
         """Log the iteration."""
         if self.track:
+            geu = generalised_expected_utility(self.pf, self.utility_fns)
+            if self.known_pf is not None:
+                gmul = generalised_maximum_utility_loss(self.pf, self.known_pf, self.utility_fns)
+            else:
+                gmul = 0
             wandb.log({
                 'outer/hypervolume': self.hv,
                 'outer/dominated_hv': self.dominated_hv,
                 'outer/discarded_hv': self.discarded_hv,
                 'outer/coverage': self.coverage,
                 'outer/error': self.error,
+                'outer/geu': geu,
+                'outer/gmul': gmul,
                 'iteration': iteration
             })
 
@@ -162,6 +179,7 @@ class OuterLoop:
                 wandb.run.summary[f"pareto_point_{iteration}"] = pareto_point
 
             wandb.run.summary['hypervolume'] = self.hv
+            wandb.run.summary['geu'] = geu
             wandb.run.summary['PF_size'] = len(self.pf)
             wandb.run.summary['replay_triggered'] = self.replay_triggered
 
