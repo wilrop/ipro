@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=grid_search
-#SBATCH --time=6:00:00
+#SBATCH --job-name=gs_dqn_reacher
+#SBATCH --time=72:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=2gb
+#SBATCH --mem=4gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-1600
+#SBATCH --array=1-120
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -20,6 +20,7 @@ export OMP_NUM_THREADS=1
 
 # Define variables.
 OPTIMISATION_DIR="${VSC_HOME}/ipro/optimisation"
+CONFIG_DIR="${VSC_HOME}/ipro/configs"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
@@ -32,6 +33,6 @@ sleep $((($RANDOM % 240) + 1))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
-  --config ${OPTIMISATION_DIR}/grid_ppo_dst.yaml \
+  --config ${CONFIG_DIR}/grid_dqn_reacher.yaml \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
