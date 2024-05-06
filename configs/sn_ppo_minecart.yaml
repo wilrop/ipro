@@ -5,7 +5,7 @@ one_hot_wrapper: False
 gamma: 0.98
 study_name: sn_ppo_minecart
 seed: 1
-wandb_project_name: IPRO_opt
+wandb_project_name: IPRO_minecart_neurips
 wandb_entity: null
 n_trials: 1
 
@@ -23,13 +23,22 @@ oracle:
   algorithm: SN-MO-PPO
   aug: 0.01
   scale: 100
-  pretrain_iters: 30
-  eps: 1.e-8
+  grid_sample: True
+  pretrain_iters: 25
+  eps: 1.e-5
   anneal_lr: False
   num_minibatches: 4
-  normalize_advantage: False
+  normalize_advantage: True
   gae_lambda: 0.95
   target_kl: None
+  num_referents: 4
+  v_coef: 0.5
+  e_coef: 0.01
+  n_steps: 128
+  num_envs: 4
+  update_epochs: 4
+  clip_coef: 0.2
+  clip_range_vf: 0.2
   eval_episodes: 100
   log_freq: 1000
   track: False
@@ -39,54 +48,28 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
+    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0003, 0.0001 ]
+    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   hidden_size_actor:
     type: categorical
-    choices: [ 64, 128, 256 ]
+    choices: [ 128, 256 ]
   hidden_size_critic:
     type: categorical
-    choices: [ 64, 128, 256 ]
+    choices: [ 128, 256 ]
   num_hidden_layers_actor:
-    type: int
-    min: 1
-    max: 4
+    type: categorical
+    choices: [ 2, 3, 4 ]
   num_hidden_layers_critic:
-    type: int
-    min: 1
-    max: 4
+    type: categorical
+    choices: [ 2, 3, 4 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0 ]
+    choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 15000, 20000, 25000, 50000 ]
+    choices: [ 25000, 50000 ]
   online_steps:
     type: categorical
-    choices: [ 5000, 10000, 15000, 20000, 25000 ]
-  num_referents:
-    type: categorical
-    choices: [ 4, 8, 16, 32 ]
-  v_coef:
-    type: categorical
-    choices: [ 0.1, 0.3, 0.5 ]
-  e_coef:
-    type: categorical
-    choices: [ 0.0, 0.005, 0.01, 0.1 ]
-  n_steps:
-    type: categorical
-    choices: [ 32, 64, 128 ]
-  num_envs:
-    type: categorical
-    choices: [ 4, 8, 16 ]
-  update_epochs:
-    type: categorical
-    choices: [ 4, 8, 16 ]
-  clip_coef:
-    type: categorical
-    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
-  clip_range_vf:
-    type: categorical
-    choices: [ 0.1, 0.2, 0.3, 0.4, 0.5 ]
+    choices: [ 10000, 25000 ]

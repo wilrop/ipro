@@ -5,7 +5,7 @@ one_hot_wrapper: True
 gamma: 1.0
 study_name: sn_a2c_dst
 seed: 1
-wandb_project_name: IPRO_dst
+wandb_project_name: IPRO_dst_neurips
 wandb_entity: null
 n_trials: 1
 
@@ -23,16 +23,17 @@ oracle:
   algorithm: SN-MO-A2C
   aug: 0.01
   scale: 100
+  grid_sample: True
   actor_activation: relu
   critic_activation: relu
-  pretrain_iters: 50
-  grid_sample: True
+  pretrain_iters: 25
   num_referents: 4
   v_coef: 0.5
   e_coef: 0.01
-  normalize_advantage: False
+  normalize_advantage: True
   gae_lambda: 0.95
   eval_episodes: 1
+  n_steps: 32
   log_freq: 1000
   track: False
 
@@ -41,26 +42,22 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0005, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.001, 0.0007, 0.0005, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   num_hidden_layers:
-    type: int
-    min: 1
-    max: 3
+    type: categorical
+    choices: [ 2, 3 ]
   hidden_size:
     type: categorical
-    choices: [ 64, 128, 256 ]
+    choices: [ 128, 256 ]
   max_grad_norm:
     type: categorical
-    choices: [ 0.5, 1.0, 5.0 ]
+    choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 2500, 5000, 7500 ]
+    choices: [ 10000, 20000 ]
   online_steps:
     type: categorical
-    choices: [ 2500, 5000, 7500 ]
-  n_steps:
-    type: categorical
-    choices: [ 8, 16, 32 ]
+    choices: [ 5000, 10000 ]
