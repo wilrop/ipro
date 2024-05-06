@@ -10,7 +10,7 @@ wandb_entity: null
 
 # Outer loop params
 outer_loop:
-  method: IPRO-2D
+  method: IPRO
   tolerance: 0.0
   max_iterations: null
   track: False
