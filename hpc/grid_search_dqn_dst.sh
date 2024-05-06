@@ -33,6 +33,6 @@ sleep $((($RANDOM % 240) + 1))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
-  --config ${CONFIG_DIR}/grid_dqn_dst.yaml \
+  --config ${CONFIG_DIR}/sn_dqn_dst.yaml \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
