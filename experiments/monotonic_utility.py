@@ -40,7 +40,7 @@ class UtilityFunction(nn.Module):
             self.make_frozen()
 
         # Compute min and max utility values
-        self.min_u, self.max_u = self.compute_utility(torch.stack([min_val, max_val]))
+        self.min_u, self.max_u = self.compute_utility(torch.stack([self.min_val, self.max_val]))
 
     def forward(self, x):
         x = torch.tensor(x, dtype=torch.float32)
