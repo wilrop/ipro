@@ -9,12 +9,12 @@
 #SBATCH --array=1-1152
 
 # Load the necessary modules.
-module load Python/3.10.4-GCCcore-11.3.0
-module load SciPy-bundle/2022.05-foss-2022a
-module load PyTorch/1.12.0-foss-2022a
-module load pygmo/2.18.0-foss-2022a
-module load wandb/0.13.4-GCCcore-11.3.0
-module load MuJoCo/2.2.2-GCCcore-11.3.0
+module load Python/3.10.4-GCCcore-11.3.0 \
+ SciPy-bundle/2022.05-foss-2022a \
+ PyTorch/1.12.0-foss-2022a \
+ pygmo/2.18.0-foss-2022a \
+ wandb/0.13.4-GCCcore-11.3.0 \
+ MuJoCo/2.2.2-GCCcore-11.3.0
 
 export OMP_NUM_THREADS=1
 
