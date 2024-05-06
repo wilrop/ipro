@@ -22,8 +22,8 @@ class UtilityFunction(nn.Module):
         super().__init__()
         # Initialize the variables
         self.reward_shape = len(min_val)
-        self.min_val = min_val
-        self.max_val = max_val
+        self.min_val = torch.tensor(min_val)
+        self.max_val = torch.tensor(max_val)
         self.normalise = normalise
 
         # Initialize the utility function
