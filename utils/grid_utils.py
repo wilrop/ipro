@@ -5,7 +5,7 @@ import numpy as np
 
 def num_experiments(config):
     # Extract and sort the grid which is useful for logging.
-    seeds = config.pop('seeds')
+    seeds = config.pop('seeds', 0)
     grid = list(config.pop('hyperparameters').items())
     grid = [(key, v['choices']) for key, v in grid]
     grid = sorted(grid, key=lambda x: x[0])

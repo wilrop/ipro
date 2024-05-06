@@ -18,7 +18,10 @@ def grid_search(config, exp_id, offset):
     oracle_params = config.pop('oracle')
     method = outer_params.pop('method')
     algorithm = oracle_params.pop('algorithm')
-    seeds = config.pop('seeds')
+    try:
+        seeds = config.pop('seeds')
+    except KeyError:
+        seeds = [config.pop('seed')]
 
     # Extract and sort the grid which is useful for logging.
     grid = list(config.pop('hyperparameters').items())
