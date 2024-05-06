@@ -151,6 +151,8 @@ class OuterLoop:
     def close_wandb(self):
         """Close wandb."""
         if self.track:
+            pf_table = wandb.Table(data=self.pf, columns=[f'obj_{i}' for i in range(self.dim)])
+            wandb.run.log({'pareto_front': pf_table})
             wandb.run.summary['PF_size'] = len(self.pf)
             wandb.finish()
 
