@@ -21,6 +21,7 @@ export OMP_NUM_THREADS=1
 # Define variables.
 OPTIMISATION_DIR="${VSC_HOME}/ipro/optimisation"
 CONFIG_DIR="${VSC_HOME}/ipro/configs"
+U_DIR="${VSC_HOME}/ipro/utility_function/utility_fns"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
@@ -34,5 +35,6 @@ sleep $((($RANDOM % 240) + 1))s
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
   --config ${CONFIG_DIR}/sn_dqn_minecart.yaml \
+  --u_dir ${U_DIR} \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --offset 0
