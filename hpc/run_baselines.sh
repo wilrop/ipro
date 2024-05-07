@@ -21,6 +21,7 @@ export OMP_NUM_THREADS=1
 # Define variables.
 EXPERIMENT_DIR="${VSC_HOME}/ipro/experiments"
 JSON_DIR="evaluation"
+U_DIR="${VSC_HOME}/ipro/utility_function/utility_fns"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
@@ -36,5 +37,6 @@ sleep $((($RANDOM % 60) + 1))s
 
 # Run the experiments.
 python3 ${EXPERIMENT_DIR}/run_baseline.py \
+  --u_dir ${U_DIR} \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
   --exp_dir ${EXPERIMENT_DIR}/${JSON_DIR}
