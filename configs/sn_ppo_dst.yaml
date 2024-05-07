@@ -37,7 +37,7 @@ oracle:
   clip_coef: 0.2
   clip_range_vf: 0.2
   num_envs: 4
-  n_steps: 32
+  n_steps: 16
   num_referents: 4
   update_epochs: 4
   target_kl: None
@@ -50,10 +50,10 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0005, 0.0004, 0.0003, 0.0002, 0.00025, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0005, 0.0004, 0.0003, 0.0002, 0.00025, 0.0001 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2, 3 ]
@@ -65,7 +65,7 @@ hyperparameters:
     choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000, 20000 ]
+    choices: [ 10000, 20000, 30000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 10000 ]

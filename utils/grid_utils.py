@@ -5,7 +5,7 @@ import numpy as np
 
 def num_experiments(config):
     # Extract and sort the grid which is useful for logging.
-    seeds = config.pop('seeds', 0)
+    seeds = config.pop('seeds', [0])
     grid = list(config.pop('hyperparameters').items())
     grid = [(key, v['choices']) for key, v in grid]
     grid = sorted(grid, key=lambda x: x[0])
@@ -15,7 +15,7 @@ def num_experiments(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--config', type=str, default='../optimisation/grid_ppo_dst.yaml',
+    parser.add_argument('--config', type=str, default='../configs/sn_ppo_dst.yaml',
                         help='path of a yaml file containing the configuration of this grid search')
     args = parser.parse_args()
 

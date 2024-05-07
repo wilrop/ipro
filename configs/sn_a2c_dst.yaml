@@ -33,7 +33,7 @@ oracle:
   normalize_advantage: True
   gae_lambda: 0.95
   eval_episodes: 1
-  n_steps: 32
+  n_steps: 16
   log_freq: 1000
   track: False
 
@@ -42,10 +42,10 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0003, 0.0002, 0.0001, 0.00009, 0.00008 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0008, 0.00075, 0.0007, 0.00065, 0.0006 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2, 3 ]
@@ -57,7 +57,7 @@ hyperparameters:
     choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000, 20000 ]
+    choices: [ 10000, 20000, 30000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 10000 ]
