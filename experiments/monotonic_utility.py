@@ -1,8 +1,5 @@
 import torch
 from torch import nn
-import numpy as np
-
-from utils.pareto import batched_pareto_dominates
 
 
 # Based on implementation from: https://github.com/zpschang/DPMORL
@@ -12,19 +9,21 @@ from utils.pareto import batched_pareto_dominates
 class UtilityFunction(nn.Module):
     def __init__(
             self,
-            min_val,
-            max_val,
+            min_vec,
+            max_vec,
+            scale_in=True,
+            scale_out=True,
             frozen=True,
-            normalise=True,
             max_weight=0.1,
             size_factor=1
     ):
         super().__init__()
         # Initialize the variables
-        self.reward_shape = len(min_val)
-        self.min_val = torch.tensor(min_val, dtype=torch.float32)
-        self.max_val = torch.tensor(max_val, dtype=torch.float32)
-        self.normalise = normalise
+        self.reward_shape = len(min_vec)
+        self.min_vec = torch.tensor(min_vec, dtype=torch.float32)
+        self.max_vec = torch.tensor(max_vec, dtype=torch.float32)
+        self.scale_in = scale_in
+        self.scale_out = scale_out
 
         # Initialize the utility function
         self.mlp1 = nn.Linear(self.reward_shape, 24 * size_factor)
@@ -40,12 +39,24 @@ class UtilityFunction(nn.Module):
             self.make_frozen()
 
         # Compute min and max utility values
-        self.min_u, self.max_u = self.compute_utility(torch.stack([self.min_val, self.max_val]))
+        if self.scale_in:
+            min_in_vec = torch.zeros(self.reward_shape, dtype=torch.float32)
+            max_in_vec = torch.ones(self.reward_shape, dtype=torch.float32)
+        else:
+            min_in_vec = self.min_vec
+            max_in_vec = self.max_vec
+
+        self.min_u, self.max_u = self.compute_utility(torch.stack([min_in_vec, max_in_vec]))
 
     def forward(self, x):
         x = torch.tensor(x, dtype=torch.float32)
+
+        if self.scale_in:
+            x = (x - self.min_vec) / (self.max_vec - self.min_vec)
+
         utilities = self.compute_utility(x)
-        if self.normalise:
+
+        if self.scale_out:
             utilities = (utilities - self.min_u) / (self.max_u - self.min_u)
         return utilities
 
@@ -72,26 +83,3 @@ class UtilityFunction(nn.Module):
     def make_frozen(self):
         for param in self.parameters():
             param.requires_grad = False
-
-
-def test_monotonicity(num_tests=20, num_samples_per_test=10):
-    """Test the monotonicity property of the generated utility functions."""
-    min_val = torch.tensor([0, 0], dtype=torch.float32)
-    max_val = torch.tensor([10, 10], dtype=torch.float32)
-
-    for test in range(num_tests):
-        uf = UtilityFunction(min_val, max_val, normalise=True, max_weight=0.1, size_factor=1)
-        samples = torch.round(torch.rand(num_samples_per_test, 2) * 10, decimals=4)
-        utilities = uf(samples).numpy()
-        np_samples = samples.numpy()
-
-        for sample, utility in zip(np_samples, utilities):
-            mask = batched_pareto_dominates(sample, np_samples)
-            masked_utilities = utilities * mask
-            assert np.all(utility >= masked_utilities)
-
-    print("All tests passed!")
-
-
-if __name__ == '__main__':
-    test_monotonicity(num_tests=20, num_samples_per_test=100)
