@@ -1,4 +1,5 @@
 import yaml
+import time
 import torch
 import random
 import argparse
@@ -56,7 +57,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir
     seed = config['seed']
     wandb_project_name = config['wandb_project_name']
     wandb_entity = config['wandb_entity']
-    run_name = f'{method}__{algorithm}__{env_id}__{seed}'
+    run_name = f'{method}__{algorithm}__{env_id}__{seed}__{int(time.time())}'
 
     # Seeding
     torch.manual_seed(seed)
