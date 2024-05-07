@@ -29,7 +29,7 @@ if __name__ == '__main__':
         ('Envelope', 'deep-sea-treasure-concave-v0'),
         ('Envelope', 'minecart-v0'),
         ('Envelope', 'mo-reacher-v4'),
-        ('GPILSContinuousAction', 'mo-walker2d-v4'),
-        ('CAPQL', 'mo-walker2d-v4'),
+        #('GPILSContinuousAction', 'mo-walker2d-v4'),
+        #('CAPQL', 'mo-walker2d-v4'),
     ]
     link_baseline(combos, args.num_seeds)
