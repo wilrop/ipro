@@ -4,7 +4,7 @@ import platform
 import numpy as np
 import pygmo as pg
 from utils.pareto import extreme_prune, batched_pareto_dominates
-from experiments.monotonic_utility import UtilityFunction
+from experiments.monotonic_utility import MonotonicUtility
 from experiments.utility_eval import generalised_expected_utility, generalised_maximum_utility_loss
 
 
@@ -107,7 +107,7 @@ class OuterLoop:
         }
 
     def init_utility_fns(self):
-        self.utility_fns = [UtilityFunction(self.ideal, self.nadir, frozen=True) for _ in range(self.num_utility_fns)]
+        self.utility_fns = [MonotonicUtility(self.ideal, self.nadir, frozen=True) for _ in range(self.num_utility_fns)]
 
     def setup(self, mode='offline'):
         """Setup wandb."""

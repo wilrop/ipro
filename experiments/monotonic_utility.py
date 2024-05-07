@@ -6,7 +6,7 @@ from torch import nn
 # Credits for the original code go to the author: Xin-Qiang Cai
 
 
-class UtilityFunction(nn.Module):
+class MonotonicUtility(nn.Module):
     def __init__(
             self,
             min_vec,
