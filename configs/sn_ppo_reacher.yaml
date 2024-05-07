@@ -36,6 +36,7 @@ oracle:
   e_coef: 0.01
   n_steps: 32
   num_envs: 4
+  max_grad_norm: 0.5
   update_epochs: 4
   clip_coef: 0.2
   clip_range_vf: 0.2
@@ -60,16 +61,13 @@ hyperparameters:
     choices: [ 128, 256 ]
   num_hidden_layers_actor:
     type: categorical
-    choices: [ 2, 3, 4 ]
+    choices: [ 3, 4 ]
   num_hidden_layers_critic:
     type: categorical
-    choices: [ 2, 3, 4 ]
-  max_grad_norm:
-    type: categorical
-    choices: [ 0.5, 5.0 ]
+    choices: [ 3, 4 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000, 20000 ]
+    choices: [ 15000, 25000 ]
   online_steps:
     type: categorical
     choices: [ 5000, 10000 ]
