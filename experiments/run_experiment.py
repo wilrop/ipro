@@ -34,7 +34,7 @@ def construct_hidden(algorithm, oracle_params):
     return oracle_params
 
 
-def run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None, extra_config=None):
+def run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir, callback=None, extra_config=None):
     """Run an single experiment.
 
     Args:
@@ -97,6 +97,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
                          num_objectives,
                          oracle,
                          linear_solver,
+                         u_dir=u_dir,
                          ref_point=ref_point,
                          exp_name=run_name,
                          wandb_project_name=wandb_project_name,
@@ -110,7 +111,18 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, callb
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run experiment.')
-    parser.add_argument('--config', type=str, default='./configs/sn_ppo_dst.yaml', help='Path to config file.')
+    parser.add_argument(
+        '--config',
+        type=str,
+        default='./configs/sn_ppo_dst.yaml',
+        help='Path to config file.'
+    )
+    parser.add_argument(
+        '--u_dir',
+        type=str,
+        default='./utility_function/utility_fns',
+        help='Path to directory containing utility functions.'
+    )
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:

@@ -6,11 +6,12 @@ import numpy as np
 from experiments.run_experiment import run_experiment
 
 
-def grid_search(config, exp_id, offset):
+def grid_search(config, u_dir, exp_id, offset):
     """Run a grid search.
 
     Args:
         config (dict): The parameters for the grid search.
+        u_dir (str): The directory containing the utility functions.
         exp_id (int): The experiment id. This starts at 1 and so needs to be decremented by 1.
         offset (int): The offset for the experiment id.
     """
@@ -42,18 +43,37 @@ def grid_search(config, exp_id, offset):
     all_params = {**outer_params, **filled_oracle_params}
     extra_config = {'group': json.dumps(all_params, sort_keys=True)}
 
-    return run_experiment(method, algorithm, config, outer_params, filled_oracle_params, extra_config=extra_config)
+    return run_experiment(method, algorithm, config, outer_params, filled_oracle_params, u_dir,
+                          extra_config=extra_config)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--config', type=str, default='grid_a2c_dst.yaml',
-                        help='path of a yaml file containing the configuration of this grid search')
-    parser.add_argument('--exp_id', type=int, default=1)
-    parser.add_argument('--offset', type=int, default=0)
+    parser.add_argument(
+        '--config',
+        type=str,
+        default='grid_a2c_dst.yaml',
+        help='path of a yaml file containing the configuration of this grid search'
+    )
+    parser.add_argument(
+        '--u_dir',
+        type=str,
+        default='./utility_function/utility_fns',
+        help='Path to directory containing utility functions.'
+    )
+    parser.add_argument(
+        '--exp_id',
+        type=int,
+        default=1
+    )
+    parser.add_argument(
+        '--offset',
+        type=int,
+        default=0
+    )
     args = parser.parse_args()
 
     with open(args.config, 'r') as file:
         config = yaml.safe_load(file)
 
-    grid_search(config, args.exp_id, args.offset)
+    grid_search(config, args.u_dir, args.exp_id, args.offset)

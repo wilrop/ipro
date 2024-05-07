@@ -1,5 +1,8 @@
+import os
 import json
 import argparse
+import torch
+import random
 import numpy as np
 
 import torch
@@ -7,6 +10,7 @@ import torch.nn as nn
 from environments import setup_env
 from experiments.reproduce_experiment import get_env_info
 from environments.bounding_boxes import get_bounding_box
+from utility_function.generate_utility_fns import load_utility_fns
 from morl_baselines.multi_policy.pcn.pcn import PCN
 from morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS
 from morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import GPILSContinuousAction
@@ -38,7 +42,7 @@ class DSTModel(nn.Module):
         return log_prob
 
 
-def get_kwargs(alg_id, env_id, min_vals, max_vals):
+def get_kwargs(alg_id, env_id, utility_fns):
     """Get the keyword arguments for the baseline."""
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
@@ -173,10 +177,7 @@ def get_kwargs(alg_id, env_id, min_vals, max_vals):
     else:
         raise NotImplementedError
 
-    min_val = np.min(min_vals, axis=0)
-    max_val = np.max(max_vals, axis=0)
-    setup_kwargs['min_val'] = min_val
-    setup_kwargs['max_val'] = max_val
+    setup_kwargs['utility_fns'] = utility_fns
 
     return total_timesteps, setup_kwargs, train_kwargs
 
@@ -213,13 +214,20 @@ def setup_agent(alg_id, env, gamma, seed, setup_kwargs):
     return agent
 
 
-def run_baseline(exp_id, exp_dir):
+def run_baseline(u_dir, exp_id, exp_dir):
     """Run a baseline on the environment."""
     id_exp_dict = json.load(open(f'{exp_dir}/baselines.json', 'r'))
     baseline, env_id, seed = id_exp_dict[str(exp_id)]
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
-    min_vals, max_vals, ref_point = get_bounding_box(env_id)
-    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id, min_vals, max_vals)
+    _, _, ref_point = get_bounding_box(env_id)
+    utility_fns = load_utility_fns(os.path.join(u_dir, env_id))
+
+    # Seeding
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id, utility_fns)
 
     if env_id == 'deep-sea-treasure-concave-v0':
         one_hot = True
@@ -234,8 +242,22 @@ def run_baseline(exp_id, exp_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run baseline.')
-    parser.add_argument('--exp_id', type=str, default=1)
-    parser.add_argument('--exp_dir', type=str, default='./evaluation')
+    parser.add_argument(
+        '--u_dir',
+        type=str,
+        default='./utility_function/utility_fns',
+        help='Path to directory containing utility functions.'
+    )
+    parser.add_argument(
+        '--exp_id',
+        type=str,
+        default=1
+    )
+    parser.add_argument(
+        '--exp_dir',
+        type=str,
+        default='./evaluation'
+    )
     args = parser.parse_args()
 
-    run_baseline(args.exp_id, args.exp_dir)
+    run_baseline(args.u_dir, args.exp_id, args.exp_dir)

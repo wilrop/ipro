@@ -21,7 +21,7 @@ class IPRO2D(OuterLoop):
                  tolerance=1e-6,
                  max_iterations=None,
                  known_pf=None,
-                 num_utility_fns=100,
+                 u_dir='./utility_fns',
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -39,7 +39,7 @@ class IPRO2D(OuterLoop):
                          tolerance=tolerance,
                          max_iterations=max_iterations,
                          known_pf=known_pf,
-                         num_utility_fns=num_utility_fns,
+                         u_dir=u_dir,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
@@ -120,7 +120,6 @@ class IPRO2D(OuterLoop):
         self.total_hv = self.bounding_box.volume
         self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
         self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
-        self.init_utility_fns()  # Initialise the utility functions for logging.
 
     def get_next_box(self):
         """Get the next box to search."""

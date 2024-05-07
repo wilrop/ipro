@@ -18,7 +18,7 @@ class IPRO(OuterLoop):
                  tolerance=1e-1,
                  max_iterations=None,
                  known_pf=None,
-                 num_utility_fns=100,
+                 u_dir='./utility_fns',
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -37,7 +37,7 @@ class IPRO(OuterLoop):
                          tolerance=tolerance,
                          max_iterations=max_iterations,
                          known_pf=known_pf,
-                         num_utility_fns=num_utility_fns,
+                         u_dir=u_dir,
                          track=track,
                          exp_name=exp_name,
                          wandb_project_name=wandb_project_name,
@@ -100,7 +100,6 @@ class IPRO(OuterLoop):
         self.error = max(ideal - nadir)
         self.compute_hvis()
         self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
-        self.init_utility_fns()  # Initialise the utility functions for logging.
         return False
 
     def compute_hvis(self, num=50):

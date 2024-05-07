@@ -1,11 +1,12 @@
+import os
 import time
 import wandb
 import platform
 import numpy as np
 import pygmo as pg
 from utils.pareto import extreme_prune, batched_pareto_dominates
-from experiments.monotonic_utility import MonotonicUtility
-from experiments.utility_eval import generalised_expected_utility, generalised_maximum_utility_loss
+from utility_function.generate_utility_fns import load_utility_fns
+from utility_function.utility_eval import generalised_expected_utility, generalised_maximum_utility_loss
 
 
 class OuterLoop:
@@ -20,7 +21,7 @@ class OuterLoop:
                  tolerance=1e-1,
                  max_iterations=None,
                  known_pf=None,
-                 num_utility_fns=100,
+                 u_dir='./utility_fns',
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -37,7 +38,6 @@ class OuterLoop:
         self.tolerance = tolerance
         self.max_iterations = max_iterations if max_iterations is not None else np.inf
         self.known_pf = known_pf
-        self.num_utility_fns = num_utility_fns
 
         self.bounding_box = None
         self.ideal = None
@@ -45,7 +45,7 @@ class OuterLoop:
         self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
-        self.utility_fns = None
+        self.utility_fns = load_utility_fns(os.path.join(u_dir, problem.env_id))
 
         self.hv = 0
         self.total_hv = 0
@@ -72,7 +72,6 @@ class OuterLoop:
         self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
-        self.utility_fns = None
 
         self.hv = 0
         self.total_hv = 0
@@ -105,9 +104,6 @@ class OuterLoop:
             "seed": self.seed,
             **extra_config
         }
-
-    def init_utility_fns(self):
-        self.utility_fns = [MonotonicUtility(self.ideal, self.nadir, frozen=True) for _ in range(self.num_utility_fns)]
 
     def setup(self, mode='offline'):
         """Setup wandb."""
