@@ -30,6 +30,7 @@ oracle:
   e_coef: 0.01
   num_referents: 4
   gae_lambda: 0.95
+  max_grad_norm: 0.5
   n_steps: 128
   eval_episodes: 100
   log_freq: 1000
@@ -56,12 +57,9 @@ hyperparameters:
   num_hidden_layers_critic:
     type: categorical
     choices: [ 2, 3, 4 ]
-  max_grad_norm:
-    type: categorical
-    choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
-    choices: [ 25000, 50000 ]
+    choices: [ 35000, 50000 ]
   online_steps:
     type: categorical
-    choices: [ 10000, 25000 ]
+    choices: [ 25000, 30000 ]
