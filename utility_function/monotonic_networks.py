@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class MNN(nn.Module):
     """
-    A regular monotonic neural network utility function.
+    A regular monotonic neural network.
     """
 
     def __init__(
@@ -54,7 +54,6 @@ class MNN(nn.Module):
             max_in_vec = self.max_vec
 
         self.min_u, self.max_u = self.compute_utility(torch.stack([min_in_vec, max_in_vec]))
-        print(self.min_u, self.max_u)
 
     def forward(self, x):
         x = torch.tensor(x, dtype=torch.float32)
@@ -86,9 +85,6 @@ class MNNCai(nn.Module):
     """
     Based on implementation from: https://github.com/zpschang/DPMORL. Credits for the original code go to the
     author Xin-Qiang Cai.
-
-    Note:
-        This utility function generates a poor spread in my opinion.
     """
 
     def __init__(
@@ -118,7 +114,7 @@ class MNNCai(nn.Module):
 
         # Initialize positive weight
         self.make_monotone_init()
-        # self.make_monotone()
+        self.make_monotone()
         if frozen:
             self.make_frozen()
 

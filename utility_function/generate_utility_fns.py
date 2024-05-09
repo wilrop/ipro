@@ -1,55 +1,114 @@
 import os
-import torch
+import pickle
 import numpy as np
 
 from environments.bounding_boxes import get_bounding_box
-from utility_function.monotonic_utility import MonotonicUtility
+from game_generators.functions.monotonic import increasing
+from game_generators.functions.concave import concave
 
 
-def generate_utility_fns(min_vec, max_vec, num_utility_fns):
-    utility_fns = [
-        MonotonicUtility(
-            torch.tensor(min_vec, dtype=torch.float32),
-            torch.tensor(max_vec, dtype=torch.float32),
-            frozen=True,
-            scale_in=True,
-            scale_out=True,
-            max_weight=0.1,
-            size_factor=1
+def generate_utility_fns(
+        min_vec,
+        max_vec,
+        num_utility_fns,
+        num_points=20,
+        max_grad=1,
+        fn_type='concave',
+        seed=None
+):
+    dim = len(min_vec)
+    if fn_type == 'concave':
+        utility_fns = concave(
+            dim,
+            min_vec=min_vec,
+            max_vec=max_vec,
+            min_y=0,
+            max_y=1,
+            batch_size=num_utility_fns,
+            batched=True,
+            num_points=num_points,
+            seed=seed
         )
-        for _ in range(num_utility_fns)
-    ]
+    elif fn_type == 'increasing_cumsum':
+        utility_fns = increasing(
+            dim,
+            max_grad=max_grad,
+            method="cumsum",
+            min_vec=min_vec,
+            max_vec=max_vec,
+            min_y=0,
+            max_y=1,
+            batch_size=num_utility_fns,
+            batched=True,
+            num_points=num_points,
+            seed=seed
+        )
+    elif fn_type == 'increasing_max_add':
+        utility_fns = increasing(
+            dim,
+            max_grad=max_grad,
+            method="max_add",
+            min_vec=min_vec,
+            max_vec=max_vec,
+            min_y=0,
+            max_y=1,
+            batch_size=num_utility_fns,
+            batched=True,
+            num_points=num_points,
+            seed=seed
+        )
+    else:
+        raise ValueError(f"Unknown function type: {fn_type}")
     return utility_fns
 
 
 def save_utility_fns(utility_fns, u_dir='./utility_fns'):
     os.makedirs(u_dir, exist_ok=True)
     for i, utility_fn in enumerate(utility_fns):
-        torch.save(utility_fn, f"{u_dir}/utility_fn_{i}.pt")
+        with open(f"{u_dir}/utility_fn_{i}.pkl", 'wb') as f:
+            pickle.dump(utility_fn, f)
 
 
 def load_utility_fns(u_dir='./utility_fns'):
     utility_fns = []
-    num_utility_fns = len(os.listdir(u_dir))
-    for i in range(num_utility_fns):
-        utility_fn = torch.load(f"{u_dir}/utility_fn_{i}.pt")
-        utility_fns.append(utility_fn)
+    file_names = os.listdir(u_dir)
+    for file_name in file_names:
+        if file_name.endswith('.pkl'):
+            with open(f"{u_dir}/{file_name}", 'rb') as f:
+                utility_fn = pickle.load(f)
+            utility_fns.append(utility_fn)
     return utility_fns
 
 
-def generate_utility_fns_per_environment(environments, num_utility_fns, top_u_dir='./utility_fns'):
+def save_utility_fns_per_environment(
+        environments,
+        num_utility_fns,
+        fn_type='concave',
+        top_u_dir='./utility_fns',
+        seed=None
+):
     for env_id in environments:
+        print(f'Generating utility functions for {env_id}.')
         minimals, maximals, ref_point = get_bounding_box(env_id)
         nadir = np.min(minimals, axis=0)
         ideal = np.max(maximals, axis=0)
-        u_fns = generate_utility_fns(nadir, ideal, num_utility_fns)
-        u_dir = f"{top_u_dir}/{env_id}"
+        u_fns = generate_utility_fns(nadir, ideal, num_utility_fns, fn_type=fn_type, seed=seed)
+        u_dir = f"{top_u_dir}/{env_id}/{fn_type}/"
         save_utility_fns(u_fns, u_dir)
-        print(f"Saved utility functions for {env_id}.")
+        print(f"Saved utility functions")
+        print('---------------------------------')
 
 
 if __name__ == '__main__':
     environments = ['deep-sea-treasure-concave-v0', 'mo-reacher-v4', 'minecart-v0']
     num_utility_fns = 100
     top_u_dir = './utility_fns'
-    generate_utility_fns_per_environment(environments, num_utility_fns, top_u_dir)
+    fn_type = 'concave'
+    seed = 0
+    save_utility_fns_per_environment(
+        environments,
+        num_utility_fns,
+        fn_type=fn_type,
+        top_u_dir=top_u_dir,
+        seed=seed
+    )
