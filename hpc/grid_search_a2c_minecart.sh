@@ -6,7 +6,7 @@
 #SBATCH --mem=4gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-10368
+#SBATCH --array=1-5184
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0 \
