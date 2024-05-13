@@ -10,7 +10,6 @@ import torch.nn as nn
 from environments import setup_env
 from experiments.reproduce_experiment import get_env_info
 from environments.bounding_boxes import get_bounding_box
-from utility_function.generate_utility_fns import load_utility_fns
 from morl_baselines.multi_policy.pcn.pcn import PCN
 from morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS
 from morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import GPILSContinuousAction
@@ -42,7 +41,7 @@ class DSTModel(nn.Module):
         return log_prob
 
 
-def get_kwargs(alg_id, env_id, utility_fns):
+def get_kwargs(alg_id, env_id):
     """Get the keyword arguments for the baseline."""
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
@@ -177,8 +176,6 @@ def get_kwargs(alg_id, env_id, utility_fns):
     else:
         raise NotImplementedError
 
-    setup_kwargs['utility_fns'] = utility_fns
-
     return total_timesteps, setup_kwargs, train_kwargs
 
 
@@ -220,14 +217,13 @@ def run_baseline(u_dir, exp_id, exp_dir):
     baseline, env_id, seed = id_exp_dict[str(exp_id)]
     gamma, max_episode_steps, one_hot_wrapper, _ = get_env_info(env_id)
     _, _, ref_point = get_bounding_box(env_id)
-    utility_fns = load_utility_fns(os.path.join(u_dir, env_id))
 
     # Seeding
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
-    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id, utility_fns)
+    total_timesteps, setup_kwargs, train_kwargs = get_kwargs(baseline, env_id)
 
     if env_id == 'deep-sea-treasure-concave-v0':
         one_hot = True
