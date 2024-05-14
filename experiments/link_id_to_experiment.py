@@ -83,7 +83,7 @@ if __name__ == '__main__':
     cutoff_date = "28/01/2024"
     num_seeds = 5
     #link_best_runs(combos, num_seeds, cutoff_date=cutoff_date)
-    run_paths = [
+    dst_run_paths = [
         'wilrop/IPRO_dst_neurips/26d3gy5z',
         'wilrop/IPRO_dst_neurips/uic1iqm2',
         'wilrop/IPRO_dst_neurips/oiehwksm',
@@ -100,4 +100,21 @@ if __name__ == '__main__':
         'wilrop/IPRO_dst_neurips/2da3ijti',
         'wilrop/IPRO_dst_neurips/1jooorls'
     ]
-    link_given_runs(run_paths, num_seeds)
+    reacher_run_paths = [
+        'wilrop/IPRO_reacher_neurips/qwh3wr2m',
+        'wilrop/IPRO_reacher_neurips/k11ax4rl',
+        'wilrop/IPRO_reacher_neurips/sbkvyc70',
+        'wilrop/IPRO_reacher_neurips/2bmmla2p',
+        'wilrop/IPRO_reacher_neurips/2lbktzx2',
+        'wilrop/IPRO_reacher_neurips/7r2t0jad',
+        'wilrop/IPRO_reacher_neurips/2ahh7koc',
+        'wilrop/IPRO_reacher_neurips/2bt57zdg',
+        'wilrop/IPRO_reacher_neurips/iqn55m49',
+        'wilrop/IPRO_reacher_neurips/1a0njt9h',
+        'wilrop/IPRO_reacher_neurips/zzwkgf9n',
+        'wilrop/IPRO_reacher_neurips/3blsun8r',
+        'wilrop/IPRO_reacher_neurips/1ed52tna',
+        'wilrop/IPRO_reacher_neurips/2e87yygi',
+        'wilrop/IPRO_reacher_neurips/1pnn1xme',
+    ]
+    link_given_runs(reacher_run_paths, num_seeds)

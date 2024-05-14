@@ -41,6 +41,9 @@ class DSTModel(nn.Module):
         return log_prob
 
 
+NUM_EVALS = 100
+
+
 def get_kwargs(alg_id, env_id):
     """Get the keyword arguments for the baseline."""
     if alg_id == 'PCN' and env_id == 'deep-sea-treasure-concave-v0':
@@ -56,6 +59,7 @@ def get_kwargs(alg_id, env_id):
             'max_buffer_size': 200,
             'num_model_updates': 10,
             'num_er_episodes': 50,
+            'eval_freq': total_timesteps // NUM_EVALS,
         }
     elif alg_id == 'PCN' and env_id == 'minecart-v0':
         total_timesteps = 2000000
@@ -64,7 +68,8 @@ def get_kwargs(alg_id, env_id):
         }
         train_kwargs = {
             'max_return': np.array([1.5, 1.5, 0.0]),
-            'max_buffer_size': 200
+            'max_buffer_size': 200,
+            'eval_freq': total_timesteps // NUM_EVALS,
         }
     elif alg_id == 'PCN' and env_id == 'mo-reacher-v4':
         total_timesteps = 200000
@@ -73,7 +78,8 @@ def get_kwargs(alg_id, env_id):
         }
         train_kwargs = {
             'max_return': np.array([50.0, 50.0, 50.0, 50.0]),
-            'max_buffer_size': 200
+            'max_buffer_size': 200,
+            'eval_freq': total_timesteps // NUM_EVALS,
         }
     elif alg_id == 'GPI-LS' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
@@ -85,7 +91,10 @@ def get_kwargs(alg_id, env_id):
             'target_net_update_freq': 200,
             'gradient_updates': 10
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_mo_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'GPI-LS' and env_id == 'minecart-v0':
         total_timesteps = 200000
         setup_kwargs = {
@@ -96,7 +105,10 @@ def get_kwargs(alg_id, env_id):
             'target_net_update_freq': 200,
             'gradient_updates': 10
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_mo_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'GPI-LS' and env_id == 'mo-reacher-v4':
         total_timesteps = 200000
         setup_kwargs = {
@@ -107,13 +119,18 @@ def get_kwargs(alg_id, env_id):
             'target_net_update_freq': 200,
             'gradient_updates': 10
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_mo_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'GPILSContinuousAction' and env_id == 'mo-walker2d-v4':
         total_timesteps = 200000
         setup_kwargs = {
             'per': False,
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'Envelope' and env_id == 'deep-sea-treasure-concave-v0':
         total_timesteps = 100000
         setup_kwargs = {
@@ -124,7 +141,9 @@ def get_kwargs(alg_id, env_id):
             'num_sample_w': 4,
             'batch_size': 64
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'Envelope' and env_id == 'minecart-v0':
         total_timesteps = 400000
         setup_kwargs = {
@@ -146,7 +165,9 @@ def get_kwargs(alg_id, env_id):
             'target_net_update_freq': 3022,
             'tau': 0.1294
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'Envelope' and env_id == 'mo-reacher-v4':
         total_timesteps = 200000
         setup_kwargs = {
@@ -157,7 +178,9 @@ def get_kwargs(alg_id, env_id):
             'num_sample_w': 4,
             'batch_size': 64
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS
+        }
     elif alg_id == 'CAPQL' and env_id == 'mo-walker2d-v4':
         # These parameters are taken from the original paper.
         total_timesteps = 2000000
@@ -172,7 +195,9 @@ def get_kwargs(alg_id, env_id):
             'learning_starts': 1000,
             'gradient_updates': 1,
         }
-        train_kwargs = {}
+        train_kwargs = {
+            'eval_freq': total_timesteps // NUM_EVALS
+        }
     else:
         raise NotImplementedError
 
