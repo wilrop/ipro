@@ -172,4 +172,5 @@ analysis/data
 analysis/fronts
 analysis/results
 analysis/plots
+analysis/artifacts
 *.csv
