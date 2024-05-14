@@ -11,8 +11,8 @@ def generate_utility_fns(
         min_vec,
         max_vec,
         num_utility_fns,
-        num_points=20,
-        max_grad=1,
+        num_points=6,
+        max_grad=5,
         fn_type='concave',
         seed=None
 ):
@@ -84,6 +84,8 @@ def save_utility_fns_per_environment(
         environments,
         num_utility_fns,
         fn_type='concave',
+        num_points=6,
+        max_grad=5,
         top_u_dir='./utility_fns',
         seed=None
 ):
@@ -92,7 +94,15 @@ def save_utility_fns_per_environment(
         minimals, maximals, ref_point = get_bounding_box(env_id)
         nadir = np.min(minimals, axis=0)
         ideal = np.max(maximals, axis=0)
-        u_fns = generate_utility_fns(nadir, ideal, num_utility_fns, fn_type=fn_type, seed=seed)
+        u_fns = generate_utility_fns(
+            nadir,
+            ideal,
+            num_utility_fns,
+            fn_type=fn_type,
+            num_points=num_points,
+            max_grad=max_grad,
+            seed=seed
+        )
         u_dir = f"{top_u_dir}/{env_id}/{fn_type}/"
         save_utility_fns(u_fns, u_dir)
         print(f"Saved utility functions")
@@ -103,7 +113,9 @@ if __name__ == '__main__':
     environments = ['deep-sea-treasure-concave-v0', 'mo-reacher-v4', 'minecart-v0']
     num_utility_fns = 100
     top_u_dir = './utility_fns'
-    fn_type = 'concave'
+    fn_type = 'increasing_cumsum'
+    num_points = 6
+    max_grad = 5
     seed = 0
     save_utility_fns_per_environment(
         environments,
