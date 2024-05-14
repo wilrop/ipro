@@ -47,22 +47,16 @@ oracle:
 
 # Hyperparameter options to be selected during the optimisation
 hyperparameters:
-  lr_actor:
+  lr:
     type: categorical
     choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
-  lr_critic:
-    type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
-  hidden_size_actor:
+  hidden_size:
     type: categorical
     choices: [ 128, 256 ]
   hidden_size_critic:
     type: categorical
     choices: [ 128, 256 ]
-  num_hidden_layers_actor:
-    type: categorical
-    choices: [ 2, 3, 4 ]
-  num_hidden_layers_critic:
+  num_hidden_layers:
     type: categorical
     choices: [ 2, 3, 4 ]
   pretraining_steps:
