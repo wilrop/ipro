@@ -53,9 +53,6 @@ hyperparameters:
   hidden_size:
     type: categorical
     choices: [ 128, 256 ]
-  hidden_size_critic:
-    type: categorical
-    choices: [ 128, 256 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2, 3, 4 ]
