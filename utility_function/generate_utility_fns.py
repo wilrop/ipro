@@ -103,7 +103,7 @@ def save_utility_fns_per_environment(
             max_grad=max_grad,
             seed=seed
         )
-        u_dir = f"{top_u_dir}/{env_id}/{fn_type}/"
+        u_dir = os.path.join(top_u_dir, fn_type, env_id)
         save_utility_fns(u_fns, u_dir)
         print(f"Saved utility functions")
         print('---------------------------------')
