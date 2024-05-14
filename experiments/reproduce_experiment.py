@@ -39,9 +39,10 @@ def remove_unused_params(parameters):
     del parameters['dimensions']  # Recomputed later.
     del parameters['vary_ideal']  # Defaults to false.
     del parameters['vary_nadir']  # Defaults to false.
-    parameters.pop('warm_start', None)  # Defaults to false.
+    parameters.pop('warm_start', None)
     del parameters['max_iterations']  # Defaults to None.
     del parameters['deterministic_eval']  # Defaults to true.
+    parameters.pop('group', None)
     return parameters
 
 
