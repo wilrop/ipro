@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import wandb
 import platform
 import numpy as np
@@ -160,16 +161,22 @@ class OuterLoop:
                 gmul = generalised_maximum_utility_loss(self.pf, self.known_pf, self.utility_fns)
             else:
                 gmul = 0
-            wandb.log({
-                'outer/hypervolume': self.hv,
-                'outer/dominated_hv': self.dominated_hv,
-                'outer/discarded_hv': self.discarded_hv,
-                'outer/coverage': self.coverage,
-                'outer/error': self.error,
-                'outer/geu': geu,
-                'outer/gmul': gmul,
-                'iteration': iteration
-            })
+            while True:
+                try:
+                    wandb.log({
+                        'outer/hypervolume': self.hv,
+                        'outer/dominated_hv': self.dominated_hv,
+                        'outer/discarded_hv': self.discarded_hv,
+                        'outer/coverage': self.coverage,
+                        'outer/error': self.error,
+                        'outer/geu': geu,
+                        'outer/gmul': gmul,
+                        'iteration': iteration
+                    })
+                    break
+                except wandb.Error as e:
+                    print(f"wandb got error {e}")
+                    time.sleep(random.randint(10, 100))
 
             if referent is not None:
                 wandb.run.summary[f"referent_{iteration}"] = referent
