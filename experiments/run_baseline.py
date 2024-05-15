@@ -92,7 +92,7 @@ def get_kwargs(alg_id, env_id):
             'gradient_updates': 10
         }
         train_kwargs = {
-            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_freq': total_timesteps + 2,  # Never do regular evaluation.
             'eval_mo_freq': total_timesteps // NUM_EVALS
         }
     elif alg_id == 'GPI-LS' and env_id == 'minecart-v0':
@@ -106,7 +106,7 @@ def get_kwargs(alg_id, env_id):
             'gradient_updates': 10
         }
         train_kwargs = {
-            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_freq': total_timesteps + 2,  # Never do regular evaluation.
             'eval_mo_freq': total_timesteps // NUM_EVALS
         }
     elif alg_id == 'GPI-LS' and env_id == 'mo-reacher-v4':
@@ -120,7 +120,7 @@ def get_kwargs(alg_id, env_id):
             'gradient_updates': 10
         }
         train_kwargs = {
-            'eval_freq': total_timesteps // NUM_EVALS,
+            'eval_freq': total_timesteps + 2,  # Never do regular evaluation.
             'eval_mo_freq': total_timesteps // NUM_EVALS
         }
     elif alg_id == 'GPILSContinuousAction' and env_id == 'mo-walker2d-v4':
