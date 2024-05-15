@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_baselines
-#SBATCH --time=120:00:00
+#SBATCH --time=72:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=5gb
 #SBATCH --mail-user=willem.ropke@vub.be
@@ -28,9 +28,7 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
 
 # Set wandb directory.
 export WANDB_DIR=$VSC_SCRATCH
-
-# Set wandb in offline mode.
-wandb offline
+wandb online
 
 # Sleep for a random number of seconds to avoid overloading the file system.
 sleep $((($RANDOM % 60) + 1))s
