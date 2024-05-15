@@ -1,0 +1,43 @@
+# Experiment params
+env_id: mo-reacher-v4
+max_episode_steps: 50
+one_hot_wrapper: False
+gamma: 0.99
+seed: 1
+wandb_project_name: IPRO_reacher_icml
+wandb_entity: null
+
+
+# Outer loop params
+outer_loop:
+  method: IPRO
+  tolerance: 1.e-15
+  max_iterations: 10000
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: SN-MO-A2C
+  aug: 0.01
+  scale: 100
+  grid_sample: True
+  pretrain_iters: 75
+  normalize_advantage: False
+  v_coef: 0.1
+  e_coef: 0.1
+  num_referents: 16
+  gae_lambda: 0.95
+  max_grad_norm: 1
+  n_steps: 16
+  eval_episodes: 100
+  log_freq: 1000
+  track: False
+  lr_actor: 0.001
+  lr_critic: 0.0007
+  hidden_size_actor: 64
+  hidden_size_critic: 64
+  num_hidden_layers_actor: 2
+  num_hidden_layers_critic: 2
+  pretraining_steps: 25000
+  online_steps: 5000

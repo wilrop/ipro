@@ -3,11 +3,9 @@ env_id: mo-reacher-v4
 max_episode_steps: 50
 one_hot_wrapper: False
 gamma: 0.99
-study_name: sn_dqn_reacher
 seed: 1
-wandb_project_name: IPRO_reacher_neurips
+wandb_project_name: IPRO_reacher_icml
 wandb_entity: null
-n_trials: 1
 
 
 # Outer loop params
@@ -22,14 +20,14 @@ outer_loop:
 oracle:
   algorithm: SN-MO-DQN
   aug: 0.01
-  scale: 100
+  scale: 10
   grid_sample: True
-  pretrain_iters: 30
+  pretrain_iters: 50
   pre_train_freq: 10
-  online_train_freq: 10
+  online_train_freq: 1
   target_update_freq: 1
   gradient_steps: 1
-  pre_learning_start: 100
+  pre_learning_start: 1000
   pre_epsilon_start: 1.0
   pre_epsilon_end: 0.05
   pre_exploration_frac: 0.5
@@ -39,27 +37,13 @@ oracle:
   online_exploration_frac: 0.3
   tau: 0.1
   buffer_size: 100000
-  batch_size: 128
-  num_referents: 4
+  batch_size: 16
+  num_referents: 16
   eval_episodes: 100
   log_freq: 500
   track: False
-
-
-# Hyperparameter options to be selected during the optimisation
-hyperparameters:
-  lr:
-    type: categorical
-    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
-  num_hidden_layers:
-    type: categorical
-    choices: [ 3, 4 ]
-  hidden_size:
-    type: categorical
-    choices: [ 128, 256 ]
-  pretraining_steps:
-    type: categorical
-    choices: [ 10000, 20000 ]
-  online_steps:
-    type: categorical
-    choices: [ 5000, 7500 ]
+  lr: 0.0007
+  num_hidden_layers: 4
+  hidden_size: 256
+  pretraining_steps: 7500
+  online_steps: 7500

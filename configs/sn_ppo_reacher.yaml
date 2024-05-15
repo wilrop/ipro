@@ -24,7 +24,7 @@ oracle:
   aug: 0.01
   scale: 100
   grid_sample: True
-  pretrain_iters: 25
+  pretrain_iters: 30
   eps: 1.e-5
   anneal_lr: False
   num_minibatches: 4
@@ -34,8 +34,8 @@ oracle:
   num_referents: 4
   v_coef: 0.5
   e_coef: 0.01
-  n_steps: 32
-  num_envs: 4
+  n_steps: 16
+  num_envs: 8
   max_grad_norm: 0.5
   update_epochs: 4
   clip_coef: 0.2
@@ -49,22 +49,16 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0007, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
-  hidden_size_actor:
-    type: categorical
-    choices: [ 128, 256 ]
-  hidden_size_critic:
-    type: categorical
-    choices: [ 128, 256 ]
-  num_hidden_layers_actor:
+    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+  num_hidden_layers:
     type: categorical
     choices: [ 3, 4 ]
-  num_hidden_layers_critic:
+  hidden_size:
     type: categorical
-    choices: [ 3, 4 ]
+    choices: [ 128, 256 ]
   pretraining_steps:
     type: categorical
     choices: [ 20000, 30000 ]

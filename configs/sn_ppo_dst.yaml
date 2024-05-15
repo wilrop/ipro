@@ -26,7 +26,7 @@ oracle:
   grid_sample: True
   actor_activation: relu
   critic_activation: relu
-  pretrain_iters: 25
+  pretrain_iters: 30
   v_coef: 0.5
   e_coef: 0.01
   eps: 1.e-5
@@ -36,10 +36,11 @@ oracle:
   gae_lambda: 0.95
   clip_coef: 0.2
   clip_range_vf: 0.2
-  num_envs: 4
-  n_steps: 16
+  num_envs: 8
+  n_steps: 8
   num_referents: 4
   update_epochs: 4
+  max_grad_norm: 0.5
   target_kl: None
   eval_episodes: 1
   log_freq: 1000
@@ -50,19 +51,16 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0005, 0.0004, 0.0003, 0.0002, 0.00025, 0.0001 ]
+    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0005, 0.0004, 0.0003, 0.0002, 0.00025, 0.0001 ]
+    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2, 3 ]
   hidden_size:
     type: categorical
     choices: [ 128, 256 ]
-  max_grad_norm:
-    type: categorical
-    choices: [ 0.5, 5.0 ]
   pretraining_steps:
     type: categorical
     choices: [ 10000, 20000, 30000 ]

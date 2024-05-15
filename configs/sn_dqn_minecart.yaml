@@ -25,7 +25,7 @@ oracle:
   scale: 100
   grid_sample: True
   activation: relu
-  pretrain_iters: 25
+  pretrain_iters: 30
   pre_train_freq: 10
   online_train_freq: 10
   target_update_freq: 1
@@ -39,7 +39,7 @@ oracle:
   online_epsilon_end: 0.05
   online_exploration_frac: 0.3
   tau: 0.1
-  buffer_size: 1000000
+  buffer_size: 500000
   batch_size: 128
   num_referents: 4
   eval_episodes: 100
@@ -51,16 +51,16 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003 ]
+    choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 2, 3, 4 ]
+    choices: [ 3, 4 ]
   hidden_size:
     type: categorical
     choices: [ 128, 256 ]
   pretraining_steps:
     type: categorical
-    choices: [ 25000, 50000 ]
+    choices: [ 25000, 50000, 75000 ]
   online_steps:
     type: categorical
     choices: [ 15000, 20000 ]

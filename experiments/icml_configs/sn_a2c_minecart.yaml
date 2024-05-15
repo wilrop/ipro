@@ -1,0 +1,43 @@
+# Experiment params
+env_id: minecart-v0
+max_episode_steps: 1000
+one_hot_wrapper: False
+gamma: 0.98
+seed: 1
+wandb_project_name: IPRO_minecart_icml
+wandb_entity: null
+
+
+# Outer loop params
+outer_loop:
+  method: IPRO
+  tolerance: 1.e-15
+  max_iterations: 200
+  track: True
+
+
+# Oracle params
+oracle:
+  algorithm: SN-MO-A2C
+  aug: 0.01
+  scale: 100
+  grid_sample: True
+  pretrain_iters: 75
+  normalize_advantage: False
+  v_coef: 0.5
+  e_coef: 0.1
+  num_referents: 16
+  gae_lambda: 0.95
+  max_grad_norm: 50
+  n_steps: 32
+  eval_episodes: 100
+  log_freq: 1000
+  track: False
+  lr_actor: 0.0001
+  lr_critic: 0.0001
+  hidden_size_actor: 128
+  hidden_size_critic: 128
+  num_hidden_layers_actor: 3
+  num_hidden_layers_critic: 3
+  pretraining_steps: 75000
+  online_steps: 25000
