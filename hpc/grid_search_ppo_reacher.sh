@@ -21,7 +21,8 @@ export OMP_NUM_THREADS=1
 # Define variables.
 OPTIMISATION_DIR="${VSC_HOME}/ipro/optimisation"
 CONFIG_DIR="${VSC_HOME}/ipro/configs"
-U_DIR="${VSC_HOME}/ipro/utility_function/utility_fns"
+FN_TYPE="increasing_cumsum"
+U_DIR="${VSC_HOME}/ipro/utility_function/utility_fns/${FN_TYPE}"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
