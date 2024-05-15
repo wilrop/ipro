@@ -87,7 +87,7 @@ def reproduce_icml(u_dir, exp_id):
                 if i == exp_id:
                     full_config = load_config_from_id(oracle, env_id, seed, run_id, u_dir)
                     method, oracle, config, outer_params, oracle_params, u_dir, extra_config = full_config
-                    del oracle_params['parent_run_id']
+                    oracle_params.pop('parent_run_id', None)
                     config['wandb_project_name'] = f'IPRO_{env_id}_icml'
                     run_experiment(method, oracle, config, outer_params, oracle_params, u_dir, extra_config)
                     return
