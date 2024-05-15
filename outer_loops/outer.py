@@ -106,7 +106,7 @@ class OuterLoop:
             **extra_config
         }
 
-    def setup(self, mode='offline'):
+    def setup(self, mode='online'):
         """Setup wandb."""
         config = self.config()
         config.update(self.oracle.config())
