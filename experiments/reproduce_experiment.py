@@ -102,7 +102,8 @@ def load_config_from_id(oracle, env_id, seed, run_id, u_dir):
 
 def reproduce_experiment(oracle, env_id, seed, run_id, u_dir):
     config = load_config_from_id(oracle, env_id, seed, run_id, u_dir)
-    return run_experiment(*config)
+    method, oracle, config, outer_params, oracle_params, u_dir, extra_config = config
+    return run_experiment(method, oracle, config, outer_params, oracle_params, u_dir, extra_config=extra_config)
 
 
 def reproduce_from_id(u_dir, exp_id, exp_dir, leftovers=False):

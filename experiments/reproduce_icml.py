@@ -2,7 +2,6 @@ import argparse
 from experiments.reproduce_experiment import load_config_from_id
 from experiments.run_experiment import run_experiment
 
-
 best_runs = {
     "deep-sea-treasure-concave-v0":
         {
@@ -89,7 +88,15 @@ def reproduce_icml(u_dir, exp_id):
                     method, oracle, config, outer_params, oracle_params, u_dir, extra_config = full_config
                     oracle_params.pop('parent_run_id', None)
                     config['wandb_project_name'] = f'IPRO_{env_id}_icml'
-                    run_experiment(method, oracle, config, outer_params, oracle_params, u_dir, extra_config)
+                    run_experiment(
+                        method,
+                        oracle,
+                        config,
+                        outer_params,
+                        oracle_params,
+                        u_dir,
+                        extra_config=extra_config
+                    )
                     return
                 i += 1
 
