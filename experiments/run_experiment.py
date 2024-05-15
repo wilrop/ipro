@@ -87,7 +87,7 @@ def run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir
     if 'hidden_layers' not in oracle_params and 'actor_hidden' not in oracle_params:
         oracle_params = construct_hidden(algorithm, oracle_params)
 
-    if 'lr' in oracle_params and algorithm != 'MO-DQN':
+    if 'lr' in oracle_params and algorithm not in ['MO-DQN', 'SN-MO-DQN']:
         lr = oracle_params.pop('lr')
         oracle_params['lr_actor'] = lr
         oracle_params['lr_critic'] = lr
