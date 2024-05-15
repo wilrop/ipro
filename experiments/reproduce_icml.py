@@ -78,6 +78,7 @@ best_runs = {
 
 def reproduce_icml(u_dir, exp_id):
     """Reproduce an experiment given its ID."""
+    exp_id = int(exp_id)  # Make sure the experiment id is an integer.
     i = 1
     for env_id in best_runs:
         for oracle in best_runs[env_id]:
