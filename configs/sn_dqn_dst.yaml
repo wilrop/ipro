@@ -60,7 +60,7 @@ hyperparameters:
     choices: [ 128, 256 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000, 20000 ]
+    choices: [ 15000, 25000 ]
   online_steps:
     type: categorical
-    choices: [ 2500, 5000 ]
+    choices: [ 10000, 15000 ]
