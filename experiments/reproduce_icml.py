@@ -1,5 +1,6 @@
 import argparse
-from experiments.reproduce_experiment import reproduce_experiment
+from experiments.reproduce_experiment import load_config_from_id
+from experiments.run_experiment import run_experiment
 
 
 best_runs = {
@@ -84,7 +85,11 @@ def reproduce_icml(u_dir, exp_id):
         for oracle in best_runs[env_id]:
             for seed, run_id in enumerate(best_runs[env_id][oracle]):
                 if i == exp_id:
-                    reproduce_experiment(oracle, env_id, seed, run_id, u_dir)
+                    full_config = load_config_from_id(oracle, env_id, seed, run_id, u_dir)
+                    method, oracle, config, outer_params, oracle_params, u_dir, extra_config = full_config
+                    del oracle_params['parent_run_id']
+                    config['wandb_project_name'] = f'IPRO_{env_id}_icml'
+                    run_experiment(method, oracle, config, outer_params, oracle_params, u_dir, extra_config)
                     return
                 i += 1
 

@@ -79,7 +79,7 @@ def setup_oracle_params(parameters):
     return oracle_params
 
 
-def reproduce_experiment(oracle, env_id, seed, run_id, u_dir):
+def load_config_from_id(oracle, env_id, seed, run_id, u_dir):
     """Reproduce an experiment."""
     api = wandb.Api(timeout=120)
     run = api.run(f'{run_id}')
@@ -97,7 +97,12 @@ def reproduce_experiment(oracle, env_id, seed, run_id, u_dir):
     oracle_params = setup_oracle_params(parameters)
 
     # Run experiment and mark as reproduced.
-    run_experiment(method, oracle, config, outer_params, oracle_params, u_dir, extra_config=extra_config)
+    return method, oracle, config, outer_params, oracle_params, u_dir, extra_config
+
+
+def reproduce_experiment(oracle, env_id, seed, run_id, u_dir):
+    config = load_config_from_id(oracle, env_id, seed, run_id, u_dir)
+    return run_experiment(*config)
 
 
 def reproduce_from_id(u_dir, exp_id, exp_dir, leftovers=False):
