@@ -20,7 +20,6 @@ export OMP_NUM_THREADS=1
 
 # Define variables.
 EXPERIMENT_DIR="${VSC_HOME}/ipro/experiments"
-ICML_DIR="icml_configs"
 FN_TYPE="increasing_cumsum"
 U_DIR="${VSC_HOME}/ipro/utility_function/utility_fns/${FN_TYPE}"
 
@@ -38,4 +37,3 @@ sleep $((($RANDOM % 60) + 1))s
 python3 ${EXPERIMENT_DIR}/reproduce_icml.py \
   --u_dir ${U_DIR} \
   --exp_id ${SLURM_ARRAY_TASK_ID} \
-  --exp_dir ${EXPERIMENT_DIR}/${ICML_DIR}
