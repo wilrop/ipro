@@ -200,7 +200,7 @@ def get_kwargs(alg_id, env_id):
         }
     else:
         raise NotImplementedError
-
+    setup_kwargs['project_name'] = 'MORLB'
     return total_timesteps, setup_kwargs, train_kwargs
 
 
