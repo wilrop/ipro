@@ -26,8 +26,8 @@ oracle:
   grid_sample: True
   pretrain_iters: 30
   activation: tanh
-  online_train_freq: 10
-  pre_train_freq: 10
+  online_train_freq: 4
+  pre_train_freq: 4
   target_update_freq: 1
   gradient_steps: 1
   pre_learning_start: 100
@@ -41,7 +41,6 @@ oracle:
   buffer_size: 500000
   batch_size: 128
   tau: 0.1
-  num_referents: 4
   eval_episodes: 1
   log_freq: 500
   track: False
@@ -52,15 +51,18 @@ hyperparameters:
   lr:
     type: categorical
     choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
+  num_referents:
+    type: categorical
+    choices: [ 8, 16 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 1, 2 ]
+    choices: [ 2 ]
   hidden_size:
     type: categorical
-    choices: [ 128, 256 ]
+    choices: [ 256 ]
   pretraining_steps:
     type: categorical
-    choices: [ 15000, 25000 ]
+    choices: [ 15000 ]
   online_steps:
     type: categorical
-    choices: [ 5000, 10000 ]
+    choices: [ 5000 ]
