@@ -25,7 +25,7 @@ oracle:
   scale: 100
   grid_sample: True
   actor_activation: relu
-  critic_activation: relu
+  critic_activation: tanh
   pretrain_iters: 30
   v_coef: 0.5
   e_coef: 0.01
