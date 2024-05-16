@@ -5,7 +5,7 @@ one_hot_wrapper: True
 gamma: 1.0
 study_name: sn_a2c_dst
 seeds: [0, 1, 2, 3, 4]
-wandb_project_name: IPRO_dst_neurips
+wandb_project_name: IPRO_dst_neurips_ai
 wandb_entity: null
 n_trials: 1
 
@@ -24,7 +24,6 @@ oracle:
   aug: 0.01
   scale: 100
   grid_sample: True
-  actor_activation: relu
   critic_activation: tanh
   pretrain_iters: 30
   num_referents: 4
@@ -49,13 +48,16 @@ hyperparameters:
     choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 2 ]
+    choices: [ 1, 2 ]
   hidden_size:
     type: categorical
     choices: [ 128, 256 ]
+  actor_activation:
+    type: categorical
+    choices: [ tanh, relu ]
   pretraining_steps:
     type: categorical
-    choices: [ 30000 ]
+    choices: [ 15000 ]
   online_steps:
     type: categorical
-    choices: [ 10000 ]
+    choices: [ 5000 ]
