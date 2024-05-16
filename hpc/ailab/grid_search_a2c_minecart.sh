@@ -7,7 +7,7 @@
 #SBATCH --nodelist=node103
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --output=gs_a2c_minecart_%A_%a.out
+#SBATCH --output=logs/gs_a2c_minecart_%A_%a.out
 #SBATCH --array=1-5184
 
 # Load the necessary modules.

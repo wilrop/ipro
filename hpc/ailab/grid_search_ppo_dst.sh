@@ -7,7 +7,7 @@
 #SBATCH --nodelist=node103
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --output=gs_ppo_dst_%A_%a.out
+#SBATCH --output=logs/gs_ppo_dst_%A_%a.out
 #SBATCH --array=1-160
 
 # Load the necessary modules.
