@@ -4,7 +4,7 @@
 #SBATCH --time=72:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=4gb
-#SBATCH --nodelist=node103
+#SBATCH --nodelist=node[102,103]
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_ppo_minecart_%A_%a.out
