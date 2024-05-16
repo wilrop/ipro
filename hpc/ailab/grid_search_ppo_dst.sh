@@ -8,7 +8,7 @@
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_ppo_dst_%A_%a.out
-#SBATCH --array=1-160
+#SBATCH --array=1-640
 
 # Load the necessary modules.
 module load Python/3.11.5-GCCcore-13.2.0
