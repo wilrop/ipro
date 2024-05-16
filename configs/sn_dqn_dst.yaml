@@ -5,7 +5,7 @@ one_hot_wrapper: True
 gamma: 1.0
 study_name: sn_dqn_dst
 seeds: [0, 1, 2, 3, 4]
-wandb_project_name: IPRO_dst_neurips_ai
+wandb_project_name: IPRO_dst_neurips
 wandb_entity: null
 n_trials: 1
 
@@ -38,8 +38,8 @@ oracle:
   online_epsilon_start: 1.0
   online_epsilon_end: 0.05
   online_exploration_frac: 0.3
-  buffer_size: 500000
   batch_size: 128
+  num_referents: 8
   tau: 0.1
   eval_episodes: 1
   log_freq: 500
@@ -51,15 +51,15 @@ hyperparameters:
   lr:
     type: categorical
     choices: [ 0.0007, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002, 0.0001 ]
-  num_referents:
-    type: categorical
-    choices: [ 8, 16 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2 ]
   hidden_size:
     type: categorical
-    choices: [ 256 ]
+    choices: [ 128, 256 ]
+  buffer_size:
+    type: categorical
+    choices: [ 50000, 100000 ]
   pretraining_steps:
     type: categorical
     choices: [ 15000 ]
