@@ -114,8 +114,16 @@ class OuterLoop:
         print(f'Running with config: {config}')
 
         if self.track:
-            cluster = not platform.platform().startswith('macOS')  # Hack to check if running on my device or cluster.
-            if cluster:
+            location = platform.platform()
+
+            if location.startswith('Linux-6.6.22-frehi12'):  # Hack to check where the code is running.
+                location = 'ailab'
+            elif location.startswith('macOS'):
+                location = 'mac'
+            else:
+                location = 'vub'
+
+            if location == 'vub':
                 wandb.init(
                     settings=wandb.Settings(log_internal=str('/scratch/brussel/103/vsc10340/wandb/null'), ),
                     project=self.wandb_project_name,
