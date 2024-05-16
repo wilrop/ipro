@@ -4,7 +4,6 @@
 #SBATCH --time=5:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=2gb
-#SBATCH --nodelist=node[101-103]
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_ppo_dst_%A_%a.out
