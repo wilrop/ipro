@@ -138,5 +138,5 @@ if __name__ == '__main__':
     oracle_params = config.pop('oracle')
     method = outer_params.pop('method')
     algorithm = oracle_params.pop('algorithm')
-    hv = run_experiment(method, algorithm, config, outer_params, oracle_params, callback=None)
+    hv = run_experiment(method, algorithm, config, outer_params, oracle_params, args.u_dir, callback=None)
     print(f'Hypervolume: {hv}')
