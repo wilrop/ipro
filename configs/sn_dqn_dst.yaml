@@ -50,7 +50,7 @@ oracle:
 hyperparameters:
   lr:
     type: categorical
-    choices: [ 0.0003, 0.00025, 0.0002, 0.00015, 0.0001 ]
+    choices: [ 0.00025, 0.0002, 0.00015 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2 ]
@@ -59,7 +59,7 @@ hyperparameters:
     choices: [ 256 ]
   buffer_size:
     type: categorical
-    choices: [ 15000, 20000, 25000, 30000 ]
+    choices: [ 22000, 23000, 24000, 26000 ]
   pretraining_steps:
     type: categorical
     choices: [ 20000 ]
