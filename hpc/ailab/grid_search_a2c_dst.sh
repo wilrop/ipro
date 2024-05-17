@@ -27,8 +27,8 @@ export PYTHONPATH="${PYTHONPATH}:$HOME/ipro"
 
 source "${VENV_DIR}/bin/activate"
 
-# Sleep for a random number of seconds to avoid overloading the file system.
-sleep $((($RANDOM % 240) + 1))s
+# This forces the jobs to start sequentially. The startup time is estimated at 2 seconds.
+sleep $(((${SLURM_ARRAY_TASK_ID} - 1) *2))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
