@@ -65,7 +65,7 @@ hyperparameters:
     choices: [ tanh, relu ]
   pretraining_steps:
     type: categorical
-    choices: [ 15000 ]
+    choices: [ 25000 ]
   online_steps:
     type: categorical
-    choices: [ 5000 ]
+    choices: [ 10000 ]
