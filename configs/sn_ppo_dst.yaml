@@ -25,6 +25,7 @@ oracle:
   scale: 100
   grid_sample: True
   critic_activation: tanh
+  actor_activation: tanh
   pretrain_iters: 30
   v_coef: 0.5
   e_coef: 0.01
@@ -36,7 +37,6 @@ oracle:
   clip_coef: 0.2
   clip_range_vf: 0.2
   num_envs: 8
-  n_steps: 8
   num_referents: 8
   update_epochs: 4
   max_grad_norm: 0.5
@@ -50,19 +50,19 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
+    choices: [ 0.0005, 0.0004, 0.0003 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0006, 0.0005, 0.0004, 0.0003 ]
+    choices: [ 0.0005, 0.0004, 0.0003 ]
   num_hidden_layers:
     type: categorical
     choices: [ 2 ]
   hidden_size:
     type: categorical
     choices: [ 256 ]
-  actor_activation:
+  n_steps:
     type: categorical
-    choices: [ tanh, relu ]
+    choices: [ 8, 16 ]
   pretraining_steps:
     type: categorical
     choices: [ 25000 ]

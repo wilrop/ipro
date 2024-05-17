@@ -4,7 +4,7 @@ max_episode_steps: 50
 one_hot_wrapper: True
 gamma: 1.0
 study_name: sn_a2c_dst
-seeds: [0, 1, 2, 3, 4]
+seeds: [ 0, 1, 2, 3, 4 ]
 wandb_project_name: IPRO_dst_neurips
 wandb_entity: null
 n_trials: 1
@@ -25,6 +25,7 @@ oracle:
   scale: 100
   grid_sample: True
   critic_activation: tanh
+  actor_activation: tanh
   pretrain_iters: 30
   num_referents: 8
   v_coef: 0.5
@@ -33,7 +34,6 @@ oracle:
   gae_lambda: 0.95
   max_grad_norm: 0.5
   eval_episodes: 1
-  n_steps: 8
   log_freq: 1000
   track: False
 
@@ -52,9 +52,9 @@ hyperparameters:
   hidden_size:
     type: categorical
     choices: [ 256 ]
-  actor_activation:
+  n_steps:
     type: categorical
-    choices: [ tanh, relu ]
+    choices: [ 8, 16 ]
   pretraining_steps:
     type: categorical
     choices: [ 25000 ]
