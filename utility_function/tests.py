@@ -53,8 +53,8 @@ def test_mul(fn_type, seed=0):
     ch_geu = generalised_maximum_utility_loss(PF_DST[[0, -1]], PF_DST, utility_fns)
     pf_geu = generalised_maximum_utility_loss(PF_DST, PF_DST, utility_fns)
 
-    print(f'GEU of CH: {ch_geu}')
-    print(f'GEU of PF: {pf_geu}')
+    print(f'MUL of CH: {ch_geu}')
+    print(f'MUL of PF: {pf_geu}')
 
 
 def test_spread(fn_type, seed=0):
