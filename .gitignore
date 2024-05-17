@@ -172,6 +172,8 @@ analysis/data
 analysis/fronts
 analysis/results
 analysis/plots
+analysis/metrics
 analysis/artifacts
+analysis/old
 utility_function/utility_fns
 *.csv

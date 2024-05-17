@@ -46,7 +46,7 @@ def read_data(env_id, metric, algs, compress=True):
     """Read the data for each individual algorithm."""
     datasets = []
     for alg in algs:
-        data = pd.read_csv(f'./data/{alg}_{env_id}_{metric}.csv')
+        data = pd.read_csv(f'old/data/{alg}_{env_id}_{metric}.csv')
         if compress:
             data = compress_dataset(data)
         datasets.append(data)
@@ -165,37 +165,52 @@ def plot_hv_cov(env_id,
             suffix=suffix)
 
 
+def plot_mul(
+        env_id,
+        algs,
+        alg_colors,
+):
+    fig = plt.figure(figsize=(10, 5))
+    for alg_id, alg_label in algs:
+        data = 0
+        ax = sns.lineplot(
+            x='Step',
+            y=alg_id,
+            linewidth=2.0,
+            data=data,
+            errorbar='pi',
+            label=alg_label,
+            color=alg_colors[alg_label]
+        )
+
+    #sns.move_legend(ax, "lower right")
+    plt.setp(ax.get_legend().get_texts(), fontsize='15')
+    plt.xlabel("Step")
+    plt.ylabel('MUL')
+    plt.savefig(f"plots/{env_id}_mul.pdf", dpi=fig.dpi)
+    plt.clf()
+
+
 if __name__ == '__main__':
-    algs = [('SN-MO-PPO', 'PPO'), ('SN-MO-DQN', 'DQN'), ('SN-MO-A2C', 'A2C')]
+    algs = [
+        ('SN-MO-PPO', 'PPO (IPRO)'),
+        ('SN-MO-DQN', 'DQN (IPRO)'),
+        ('SN-MO-A2C', 'A2C (IPRO)'),
+        ('GPI-LS', 'GPI-LS'),
+        ('Envelope', 'Envelope'),
+        ('PCN', 'PCN')
+    ]
     alg_colors = {
-        'PPO': '#1f77b4',
-        'DQN': '#ff7f0e',
-        'A2C': '#2ca02c',
-    }
-    baselines_best = ['GPI-LS', 'PCN']
-    baselines_complete = ['GPI-LS', 'Envelope', 'PCN']
-    baseline_colors = {
+        'SN-MO-PPO': '#1f77b4',
+        'SN-MO-DQN': '#ff7f0e',
+        'SN-MO-A2C': '#2ca02c',
         'GPI-LS': '#d62728',
         'PCN': '#9467bd',
         'Envelope': '#8c564b',
-        'True PF': '#e377c2'
     }
     env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
-    suffixes = ['', '_complete']
 
     for env_id in env_ids:
         print(f'Plotting {env_id}')
-        for suffix, baselines in zip(suffixes, [baselines_best, baselines_complete]):
-            include_baselines = True
-            cov_log_scale = True
-            hv_log_scale = True
-            plot_hv_cov(env_id,
-                        algs,
-                        alg_colors,
-                        baselines,
-                        baseline_colors,
-                        include_baselines=include_baselines,
-                        cov_log_scale=cov_log_scale,
-                        hv_log_scale=hv_log_scale,
-                        suffix=suffix)
+        plot_mul(env_id, algs, alg_colors)
     print('Done')
