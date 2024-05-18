@@ -169,21 +169,25 @@ def plot_mul(
         env_id,
         algs,
         alg_colors,
+        log_scale=True,
 ):
     fig = plt.figure(figsize=(10, 5))
     for alg_id, alg_label in algs:
-        data = 0
+        data = pd.read_csv(f'metrics/{env_id}/{alg_id}_mul.csv')
         ax = sns.lineplot(
             x='Step',
-            y=alg_id,
+            y='MUL',
             linewidth=2.0,
             data=data,
             errorbar='pi',
             label=alg_label,
-            color=alg_colors[alg_label]
+            color=alg_colors[alg_id]
         )
 
-    #sns.move_legend(ax, "lower right")
+    if log_scale:  # Set the y-axis in log scale
+        ax.set_xscale('log')
+
+    sns.move_legend(ax, "upper right")
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
     plt.ylabel('MUL')
