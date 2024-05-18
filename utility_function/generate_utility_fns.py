@@ -14,6 +14,8 @@ def generate_utility_fns(
         num_points=6,
         max_grad=5,
         fn_type='concave',
+        bounds_error=False,
+        fill_value=0.,
         seed=None
 ):
     dim = len(min_vec)
@@ -27,6 +29,8 @@ def generate_utility_fns(
             batch_size=num_utility_fns,
             batched=True,
             num_points=num_points,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
             seed=seed
         )
     elif fn_type == 'increasing_cumsum':
@@ -41,6 +45,8 @@ def generate_utility_fns(
             batch_size=num_utility_fns,
             batched=True,
             num_points=num_points,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
             seed=seed
         )
     elif fn_type == 'increasing_max_add':
@@ -55,6 +61,8 @@ def generate_utility_fns(
             batch_size=num_utility_fns,
             batched=True,
             num_points=num_points,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
             seed=seed
         )
     else:
