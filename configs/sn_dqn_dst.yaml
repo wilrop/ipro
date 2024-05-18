@@ -58,7 +58,7 @@ hyperparameters:
     choices: [ 256 ]
   buffer_size:
     type: categorical
-    choices: [ 5000, 10000 ]
+    choices: [ 2500, 7500 ]
   batch_size:
     type: categorical
     choices: [ 32, 64 ]
