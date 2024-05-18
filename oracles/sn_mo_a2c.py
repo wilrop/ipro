@@ -249,8 +249,9 @@ class SNMOA2C(SNDRLOracle):
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
-        nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
+        if self.max_grad_norm is not None and self.max_grad_norm > 0:
+            nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+            nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
         self.critic_optimizer.step()
         self.actor_optimizer.step()
 
