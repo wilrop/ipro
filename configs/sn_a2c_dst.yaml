@@ -48,7 +48,7 @@ hyperparameters:
     choices: [ 0.0005, 0.0004, 0.0003, 0.0002 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 2 ]
+    choices: [ 1 ]
   hidden_size:
     type: categorical
     choices: [ 256 ]
@@ -57,7 +57,7 @@ hyperparameters:
     choices: [ 8, 16 ]
   pretraining_steps:
     type: categorical
-    choices: [ 25000 ]
+    choices: [ 10000 ]
   online_steps:
     type: categorical
-    choices: [ 25000 ]
+    choices: [ 10000 ]
