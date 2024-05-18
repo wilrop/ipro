@@ -32,7 +32,8 @@ oracle:
   e_coef: 0.01
   normalize_advantage: True
   gae_lambda: 0.95
-  max_grad_norm: 0.5
+  n_steps: 16
+  max_grad_norm: -1
   eval_episodes: 1
   log_freq: 1000
   track: False
@@ -48,16 +49,13 @@ hyperparameters:
     choices: [ 0.0005, 0.0004, 0.0003, 0.0002 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 1 ]
+    choices: [ 2 ]
   hidden_size:
     type: categorical
     choices: [ 256 ]
-  n_steps:
-    type: categorical
-    choices: [ 8, 16 ]
   pretraining_steps:
     type: categorical
-    choices: [ 10000 ]
+    choices: [ 10000, 15000 ]
   online_steps:
     type: categorical
     choices: [ 10000 ]
