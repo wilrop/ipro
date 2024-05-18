@@ -28,7 +28,7 @@ oracle:
   actor_activation: tanh
   pretrain_iters: 30
   num_referents: 16
-  normalize_advantage: True
+  normalize_advantage: False
   gae_lambda: 0.95
   n_steps: 16
   max_grad_norm: -1
