@@ -9,6 +9,33 @@ from environments.one_hot_wrapper import OneHotObservations
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
+def get_env_info(env_id):
+    """Get environment information."""
+    if env_id == 'deep-sea-treasure-concave-v0':
+        gamma = 1.0
+        max_episode_steps = 50
+        one_hot_wrapper = True
+        tolerance = 0.0
+    elif env_id == 'mo-reacher-v4':
+        gamma = 0.99
+        max_episode_steps = 50
+        one_hot_wrapper = False
+        tolerance = 1.e-15
+    elif env_id == 'minecart-v0':
+        gamma = 0.98
+        max_episode_steps = 1000
+        one_hot_wrapper = False
+        tolerance = 1.e-15
+    elif env_id == 'mo-walker2d-v4':
+        gamma = 0.99
+        max_episode_steps = 100
+        one_hot_wrapper = False
+        tolerance = 1.e-15
+    else:
+        raise NotImplementedError
+    return gamma, max_episode_steps, one_hot_wrapper, tolerance
+
+
 def default_timesteps(env_id):
     if env_id == 'deep-sea-treasure-concave-v0':
         max_episode_steps = 50

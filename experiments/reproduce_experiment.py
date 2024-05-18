@@ -4,33 +4,6 @@ import argparse
 from experiments.run_experiment import run_experiment
 
 
-def get_env_info(env_id):
-    """Get environment information."""
-    if env_id == 'deep-sea-treasure-concave-v0':
-        gamma = 1.0
-        max_episode_steps = 50
-        one_hot_wrapper = True
-        tolerance = 0.0
-    elif env_id == 'mo-reacher-v4':
-        gamma = 0.99
-        max_episode_steps = 50
-        one_hot_wrapper = False
-        tolerance = 1.e-15
-    elif env_id == 'minecart-v0':
-        gamma = 0.98
-        max_episode_steps = 1000
-        one_hot_wrapper = False
-        tolerance = 1.e-15
-    elif env_id == 'mo-walker2d-v4':
-        gamma = 0.99
-        max_episode_steps = 100
-        one_hot_wrapper = False
-        tolerance = 1.e-15
-    else:
-        raise NotImplementedError
-    return gamma, max_episode_steps, one_hot_wrapper, tolerance
-
-
 def remove_unused_params(parameters):
     """Remove unused parameters."""
     del parameters['alg_name']  # Use the provided algorithm.
