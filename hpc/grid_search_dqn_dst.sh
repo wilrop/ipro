@@ -6,7 +6,7 @@
 #SBATCH --mem=2gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-60
+#SBATCH --array=1-100
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0 \
@@ -30,8 +30,8 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
 # Set wandb directory.
 export WANDB_DIR=$VSC_SCRATCH
 
-# Sleep for a random number of seconds to avoid overloading the file system.
-sleep $((($RANDOM % 240) + 1))s
+# This forces the jobs to start sequentially. The startup time is estimated at 2 seconds.
+sleep $(((${SLURM_ARRAY_TASK_ID} - 1) *2))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/grid_search.py \
