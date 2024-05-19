@@ -51,22 +51,19 @@ oracle:
 hyperparameters:
   lr_actor:
     type: categorical
-    choices: [ 0.0005, 0.0003, 0.0002 ]
+    choices: [ 0.0007, 0.0005, 0.0003, 0.0001 ]
   lr_critic:
     type: categorical
-    choices: [ 0.0005, 0.0003, 0.0002 ]
+    choices: [ 0.0007, 0.0005, 0.0003, 0.0001 ]
   num_hidden_layers:
     type: categorical
-    choices: [ 2 ]
+    choices: [ 1 ]
   hidden_size:
     type: categorical
     choices: [ 256 ]
-  v_coef:
+  max_grad_norm:
     type: categorical
-    choices: [ 0.3, 0.5 ]
-  e_coef:
-    type: categorical
-    choices: [ 0.01, 0.1 ]
+    choices: [ -1, 0.5 ]
   pretraining_steps:
     type: categorical
     choices: [ 10000 ]
