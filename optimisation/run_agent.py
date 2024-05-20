@@ -15,6 +15,8 @@ def run_hp_search(u_dir) -> Any:
     method = outer_params.pop('method')
     oracle_params = config.pop('oracle')
     algorithm = oracle_params.pop('algorithm')
+    environment = config.pop('environment')
+    config.update(environment)
     extra_config = {'group': json.dumps(oracle_params, sort_keys=True)}
     return run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir, extra_config=extra_config)
 
