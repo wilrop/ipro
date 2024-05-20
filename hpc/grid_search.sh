@@ -38,6 +38,6 @@ sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 2))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/run_agent.py \
-  --project IPRO_dqn_dst_grid \
+  --project IPRO_dst_grid \
   --sweep_id ${SWEEP_ID} \
   --u_dir ${U_DIR}
