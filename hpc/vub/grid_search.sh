@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=gs_a2c_dst
+#SBATCH --job-name=grid_search
 #SBATCH --time=120:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=4gb
