@@ -16,10 +16,8 @@ DST_PF = np.array([
 ])
 
 ADD_TABLE = """
-\\begin{{table}}[t]
 \caption{{The minimum $\\varepsilon$ shift necessary to obtain any undiscovered Pareto optimal solution. The best mean is in bold.}}
 \label{{tab:approx-quality}}
-\\vskip 0.15in
 \\begin{{center}}
 \\begin{{small}}
 \\begin{{sc}}
@@ -52,8 +50,6 @@ MO-Reacher & IPRO (DQN)    & ${}$ \\\\
 \end{{sc}}
 \end{{small}}
 \end{{center}}
-\\vskip -0.1in
-\end{{table}}
 """
 
 
@@ -68,7 +64,7 @@ def load_exp_data(env_id, alg, num_seeds=5):
     """Read the data for each individual algorithm."""
     datasets = []
     for seed in range(num_seeds):
-        front_path = os.path.join('artifacts', env_id, alg, str(seed))
+        front_path = os.path.join('fronts', env_id, alg, str(seed), 'final_front.npy')
         data = load_data(front_path)
         datasets.append(data)
     return datasets
@@ -78,7 +74,7 @@ def load_joint_data(env_id):
     if env_id == 'deep-sea-treasure-concave-v0':
         complete_set = DST_PF
     else:
-        complete_path = os.path.join('artifacts', env_id, 'joint_front.npy')
+        complete_path = os.path.join('fronts', env_id, 'joint_front.npy')
         complete_set = load_data(complete_path)
     print(f'Complete set size: {len(complete_set)}')
     return complete_set
