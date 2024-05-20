@@ -24,11 +24,11 @@ parameters:
     e_coef:
         values: [ 0.001, 0.01 ]
     normalize_advantage:
-        values: [ True, False ]
+        values: [ False ]
     critic_activation:
-        values: [ relu, tanh ]
+        values: [ tanh ]
     actor_activation:
-        values: [ relu, tanh ]
+        values: [ tanh ]
     pretraining_steps:
       values: [ 5000, 10000, 15000 ]
     online_steps:

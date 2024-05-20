@@ -14,7 +14,7 @@ parameters:
     hidden_size:
       values: [ 256 ]
     activation:
-      values: [ relu, tanh ]
+      values: [ tanh ]
     pre_train_freq:
       values: [ 1, 4, 8 ]
     num_referents:
