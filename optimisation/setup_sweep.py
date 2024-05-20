@@ -33,20 +33,19 @@ def add_params_layers(config: dict) -> dict:
 def merge_configs(config: DictConfig, sweep_config: DictConfig) -> dict:
     """Merge the base config with the sweep config."""
     merged_config = OmegaConf.merge(config, sweep_config.parameters)
-    merged_config = OmegaConf.to_container(merged_config, resolve=True)
+    merged_config = OmegaConf.to_container(merged_config, resolve=False)
     sweep_config.parameters = add_params_layers(merged_config)["parameters"]
-    return OmegaConf.to_container(sweep_config, resolve=True)
+    return OmegaConf.to_container(sweep_config, resolve=False)
 
 
 def create_sweep(config: DictConfig, sweep_config: DictConfig, project: str):
     """Create a sweep and return its ID."""
-    num_experiments = calc_num_experiments(sweep_config)
     sweep_wandb_config = merge_configs(config, sweep_config)
     sweep_id = wandb.sweep(
         sweep=sweep_wandb_config,
         project=project
     )
-    return sweep_id, num_experiments
+    return sweep_id
 
 
 if __name__ == "__main__":
@@ -54,5 +53,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = load_config(args)
     sweep_config = config.pop('hyperparams')
-    sweep_id, num_experiments = create_sweep(config, sweep_config, args.project)
+    num_experiments = calc_num_experiments(sweep_config)
+    sweep_id = create_sweep(config, sweep_config, args.project)
     print(f"Sweep ID: {sweep_id} - Needs {num_experiments} runs.")

@@ -4,8 +4,8 @@ scale: 100
 grid_sample: True
 pretrain_iters: 30
 activation: tanh
-online_train_freq: 4
 pre_train_freq: 4
+online_train_freq: ${pre_train_freq}
 target_update_freq: 1
 gradient_steps: 1
 pre_learning_start: 100
