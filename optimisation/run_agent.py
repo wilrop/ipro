@@ -7,10 +7,12 @@ from experiments.parser import get_agent_runner_parser
 from experiments.run_experiment import run_experiment
 
 
-def run_hp_search(u_dir) -> Any:
+def run_hp_search(project, entity, u_dir) -> Any:
     """Simple function to extract the config and run the experiment."""
     run = wandb.init()
     config = dict(run.config)
+    config['wandb_project_name'] = project
+    config['wandb_entity'] = entity
     outer_params = config.pop('outer_loop')
     method = outer_params.pop('method')
     oracle_params = config.pop('oracle')
@@ -23,7 +25,7 @@ def run_hp_search(u_dir) -> Any:
 
 def run_agents(project: str, sweep_id: str, entity: str, u_dir: str):
     """Run an agent for a sweep."""
-    agent_fun = partial(run_hp_search, u_dir)
+    agent_fun = partial(run_hp_search, project, entity, u_dir)
     while True:
         wandb.agent(
             sweep_id,
