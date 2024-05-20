@@ -1,0 +1,4 @@
+env_id: deep-sea-treasure-concave-v0
+max_episode_steps: 50
+one_hot_wrapper: True
+gamma: 1.0

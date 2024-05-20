@@ -1,0 +1,4 @@
+env_id: mo-reacher-v4
+max_episode_steps: 50
+one_hot_wrapper: False
+gamma: 0.99

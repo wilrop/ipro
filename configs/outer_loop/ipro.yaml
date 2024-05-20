@@ -1,0 +1,4 @@
+method: IPRO
+tolerance: 1.e-15
+max_iterations: null
+track: True

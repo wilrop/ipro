@@ -1,0 +1,4 @@
+env_id: minecart-v0
+max_episode_steps: 1000
+one_hot_wrapper: False
+gamma: 0.98
