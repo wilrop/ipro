@@ -23,7 +23,7 @@ IPRO_DIR="${VSC_HOME}/ipro"
 OPTIMISATION_DIR="${IPRO_DIR}/optimisation"
 NUM_LINES=$(wc -l <${IPRO_DIR}/hpc/sweep_ids.txt)
 LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
-SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/yaml_files.txt | tail -1)
+SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/sweep_ids.txt | tail -1)
 FN_TYPE="increasing_cumsum"
 U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
 
