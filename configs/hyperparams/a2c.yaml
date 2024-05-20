@@ -4,7 +4,7 @@ metric:
   name: outer/hypervolume
   goal: maximize
 parameters:
-  seeds:
+  seed:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr_actor:

@@ -8,8 +8,11 @@ from experiments.load_config import load_config
 def calc_num_experiments(config: DictConfig) -> int:
     num_experiments = 1
     for top_key, sub_dict in config.parameters.items():
-        for key, value in sub_dict.items():
-            num_experiments *= len(value['values'])
+        if 'values' in sub_dict:
+            num_experiments *= len(sub_dict['values'])
+        else:
+            for key, value in sub_dict.items():
+                num_experiments *= len(value['values'])
     return num_experiments
 
 
