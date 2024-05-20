@@ -19,8 +19,8 @@ def run_hp_search(project, entity, u_dir) -> Any:
     algorithm = oracle_params.pop('algorithm')
     environment = config.pop('environment')
     config.update(environment)
-    extra_config = {'group': json.dumps(oracle_params, sort_keys=True)}
-    return run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir, extra_config=extra_config)
+    run.config['group'] = json.dumps(oracle_params, sort_keys=True)
+    return run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir)
 
 
 def run_agents(project: str, sweep_id: str, entity: str, u_dir: str):
