@@ -3,6 +3,7 @@ import json
 
 from typing import Any
 from functools import partial
+from omegaconf import OmegaConf
 from experiments.parser import get_agent_runner_parser
 from experiments.run_experiment import run_experiment
 
@@ -10,7 +11,7 @@ from experiments.run_experiment import run_experiment
 def run_hp_search(project, entity, u_dir) -> Any:
     """Simple function to extract the config and run the experiment."""
     run = wandb.init()
-    config = dict(run.config)
+    config = OmegaConf.to_container(OmegaConf.create(dict(run.config)), resolve=True)
     config['wandb_project_name'] = project
     config['wandb_entity'] = entity
     outer_params = config.pop('outer_loop')
