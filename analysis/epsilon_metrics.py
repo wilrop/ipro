@@ -18,7 +18,7 @@ DST_PF = np.array([
 ADD_TABLE = """
 \caption{{The minimum $\\varepsilon$ shift necessary to obtain any undiscovered Pareto optimal solution. The best mean is in bold.}}
 \label{{tab:approx-quality}}
-\\begin{{center}}
+\\centering
 \\begin{{small}}
 \\begin{{sc}}
 \\begin{{tabular}}{{llc}}
@@ -49,7 +49,6 @@ MO-Reacher & IPRO (DQN)    & ${}$ \\\\
 \end{{tabular}}
 \end{{sc}}
 \end{{small}}
-\end{{center}}
 """
 
 
@@ -157,12 +156,15 @@ def compose_add_table(env_ids, algs):
             print_str += f' | Additive {mean_eps} ({std_eps})'
             print(print_str)
 
+        env_means = np.round(env_means, 2)
+        env_stds = np.round(env_stds, 2)
         best_eps = np.min(env_means)
 
         for mean, std in zip(env_means, env_stds):
-            add_res_str = f'{mean:.2f} \\pm {std:.2f}'
+            mean_str = f'{mean}'
             if mean == best_eps:
-                add_res_str = f'\\bm{{{add_res_str}}}'
+                mean_str = f'\\bm{{{mean_str}}}'
+            add_res_str = f'{mean_str} \\pm {std}'
             add_str_results.append(add_res_str)
 
     table = ADD_TABLE.format(*add_str_results)
