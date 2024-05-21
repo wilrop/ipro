@@ -6,6 +6,7 @@
 #SBATCH --mem=4gb
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
+#SBATCH --output=logs/gs_%A_%a.out
 #SBATCH --array=1-120
 
 # Load the necessary modules.
