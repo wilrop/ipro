@@ -7,7 +7,7 @@
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_%A_%a.out
-#SBATCH --array=1-120
+#SBATCH --array=1-60
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0 \
