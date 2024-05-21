@@ -23,7 +23,7 @@ def save_u_metrics(eu_df, mul_df, env_id, algorithm):
     # Save the pandas dataframes.
     metrics_dir = os.path.join('metrics', env_id)
     os.makedirs(metrics_dir, exist_ok=True)
-    if algorithm == 'PCN':
+    if algorithm in ['PCN', 'SN-MO-DQN', 'SN-MO-A2C', 'SN-MO-PPO']:
         name = f'{algorithm}_unprocessed'
     else:
         name = algorithm
