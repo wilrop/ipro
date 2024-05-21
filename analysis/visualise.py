@@ -169,9 +169,11 @@ def plot_mul(
         env_id,
         algs,
         alg_colors,
-        log_scale=True,
+        y_log=True,
+        x_log=True,
 ):
     fig = plt.figure(figsize=(10, 5))
+    last_step_vals = []
     for alg_id, alg_label in algs:
         data = pd.read_csv(f'metrics/{env_id}/{alg_id}_mul.csv')
         ax = sns.lineplot(
@@ -183,15 +185,32 @@ def plot_mul(
             label=alg_label,
             color=alg_colors[alg_id]
         )
+        last_step = data['Step'].max()
+        last_val = ax.lines[-1].get_ydata()[-1]
+        last_step_vals.append((last_step, last_val))
+        ax.scatter(last_step, last_val, marker='*', s=200, color=alg_colors[alg_id])
 
-    if log_scale:  # Set the y-axis in log scale
+    max_step = max([step for step, _ in last_step_vals])
+    if env_id == 'deep-sea-treasure-concave-v0':
+        max_step += 100000
+
+    for (step, val), (alg_id, alg_label) in zip(last_step_vals, algs):
+        x_data = np.linspace(step, max_step)
+        y_data = np.full(len(x_data), val)
+        ax = sns.lineplot(x=x_data, y=y_data, linewidth=2.0, linestyle='--', color=alg_colors[alg_id])
+
+    plot_name = f"plots/{env_id}_mul.pdf"
+    if y_log:
+        ax.set_yscale('log')
+        plot_name = f"plots/{env_id}_mul_log.pdf"
+    if x_log:
         ax.set_xscale('log')
 
     sns.move_legend(ax, "upper right")
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step")
     plt.ylabel('MUL')
-    plt.savefig(f"plots/{env_id}_mul.pdf", dpi=fig.dpi)
+    plt.savefig(plot_name, dpi=fig.dpi)
     plt.clf()
 
 
@@ -212,9 +231,9 @@ if __name__ == '__main__':
         'PCN': '#9467bd',
         'Envelope': '#8c564b',
     }
-    env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4']
+    env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4', 'mo-reacher-concave-v0']
 
     for env_id in env_ids:
         print(f'Plotting {env_id}')
-        plot_mul(env_id, algs, alg_colors)
+        plot_mul(env_id, algs, alg_colors, y_log=True, x_log=True)
     print('Done')
