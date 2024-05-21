@@ -10,7 +10,7 @@ parameters:
     lr:
       values: [ 0.0007, 0.0005, 0.0004, 0.0003 ]
     num_hidden_layers:
-      values: [ 2, 3 ]
+      values: [ 3 ]
     hidden_size:
       values: [ 256 ]
     activation:
