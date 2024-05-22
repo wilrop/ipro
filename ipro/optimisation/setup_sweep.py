@@ -3,17 +3,7 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 from ipro.experiments.parser import get_sweep_parser
 from ipro.experiments.load_config import load_config
-
-
-def calc_num_experiments(config: DictConfig) -> int:
-    num_experiments = 1
-    for top_key, sub_dict in config.parameters.items():
-        if 'values' in sub_dict:
-            num_experiments *= len(sub_dict['values'])
-        else:
-            for key, value in sub_dict.items():
-                num_experiments *= len(value['values'])
-    return num_experiments
+from ipro.utils.grid_utils import calc_num_experiments
 
 
 def add_params_layers(config: dict) -> dict:
@@ -53,6 +43,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = load_config(args)
     sweep_config = config.pop('hyperparams')
-    num_experiments = calc_num_experiments(sweep_config)
+    num_experiments = calc_num_experiments(sweep_config.parameters)
     sweep_id = create_sweep(config, sweep_config, args.project)
     print(f"Sweep ID: {sweep_id} - Needs {num_experiments} runs.")

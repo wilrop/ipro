@@ -16,21 +16,21 @@ module load Python/3.10.4-GCCcore-11.3.0
 export OMP_NUM_THREADS=1
 
 # Define paths.
-IPRO_DIR="${VSC_SCRATCH}/ipro/ipro"
+PROJ_DIR="${VSC_SCRATCH}/ipro"
+IPRO_DIR="${PROJ_DIR}/ipro"
 OPTIMISATION_DIR="${IPRO_DIR}/optimisation"
 FN_TYPE="increasing_cumsum"
 U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
+
+# load virtual environments and set some variables.
+source ${PROJ_DIR}/venv/bin/activate
+export PYTHONPATH="${PYTHONPATH}:$VSC_SCRATCH/ipro"
+export WANDB_DIR=$VSC_SCRATCH
 
 # Define the sweep id.
 NUM_LINES=$(wc -l <${IPRO_DIR}/hpc/sweep_ids.txt)
 LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
 SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/sweep_ids.txt | tail -1)
-
-# Set pythonpath
-export PYTHONPATH="${PYTHONPATH}:$VSC_SCRATCH/ipro"
-
-# Set wandb directory.
-export WANDB_DIR=$VSC_SCRATCH
 
 # This forces the jobs to start sequentially. The startup time is estimated at 2 seconds.
 sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 2))s

@@ -2,24 +2,26 @@ import argparse
 import yaml
 import numpy as np
 
+from omegaconf import OmegaConf
 
-def num_experiments(config):
-    # Extract and sort the grid which is useful for logging.
-    seeds = config.pop('seeds', [0])
-    grid = list(config.pop('hyperparameters').items())
-    grid = [(key, v['choices']) for key, v in grid]
-    grid = sorted(grid, key=lambda x: x[0])
-    grid_shape = tuple([len(v) for k, v in grid] + [len(seeds)])
-    print(f'Grid needs {np.prod(grid_shape)} experiments.')
+
+def calc_num_experiments(config):
+    num_experiments = 1
+    for key, subdict in config.items():
+        if 'values' not in subdict:
+            num_experiments *= calc_num_experiments(subdict)
+        else:
+            num_experiments *= len(subdict['values'])
+    return num_experiments
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run a hyperparameter search study')
-    parser.add_argument('--config', type=str, default='../configs/sn_ppo_dst.yaml',
+    parser = argparse.ArgumentParser(description='Calculate the number of experiments in a sweep.')
+    parser.add_argument('--sweep_config', type=str, default='../configs/hyperparams/a2c.yaml',
                         help='path of a yaml file containing the configuration of this grid search')
     args = parser.parse_args()
 
-    with open(args.config, 'r') as file:
-        config = yaml.safe_load(file)
-
-    num_experiments(config)
+    config = OmegaConf.load(args.sweep_config)
+    config = config.parameters
+    num_experiments = calc_num_experiments(config)
+    print(f'Number of experiments: {num_experiments}')
