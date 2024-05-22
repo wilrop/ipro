@@ -163,17 +163,17 @@ runs/
 wandb/
 opt/
 studies/
-utils/results
-utils/results_old
+ipro/utils/results
+ipro/utils/results_old
 
 weights/
 utils/*.json
-analysis/data
-analysis/fronts
-analysis/results
-analysis/plots
-analysis/metrics
-analysis/artifacts
-analysis/old
-utility_function/utility_fns
+ipro/analysis/data
+ipro/analysis/fronts
+ipro/analysis/results
+ipro/analysis/plots
+ipro/analysis/metrics
+ipro/analysis/artifacts
+ipro/analysis/old
+ipro/utility_function/utility_fns
 *.csv

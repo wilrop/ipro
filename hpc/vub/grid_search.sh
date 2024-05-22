@@ -4,6 +4,7 @@
 #SBATCH --time=120:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=4gb
+#SBATCH --partition=skylake,skylake_mpi
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_%A_%a.out
@@ -19,14 +20,16 @@ module load Python/3.10.4-GCCcore-11.3.0 \
 
 export OMP_NUM_THREADS=1
 
-# Define variables.
+# Define paths.
 IPRO_DIR="${VSC_HOME}/ipro"
 OPTIMISATION_DIR="${IPRO_DIR}/optimisation"
+FN_TYPE="increasing_cumsum"
+U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
+
+# Define the sweep id.
 NUM_LINES=$(wc -l <${IPRO_DIR}/hpc/sweep_ids.txt)
 LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
 SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/sweep_ids.txt | tail -1)
-FN_TYPE="increasing_cumsum"
-U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
 
 # Set pythonpath
 export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
