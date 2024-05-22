@@ -37,12 +37,13 @@ def save_u_metrics(metric, df, env_id, algorithm):
 def compute_and_save_all(metrics, environments, algorithms, seeds):
     number_of_metrics = len(metrics) * len(environments) * len(algorithms)
     i = 1
-    for metric in metrics:
-        for env_id in environments:
-            u_path = os.path.join('metrics', 'utility_fns', 'increasing_cumsum', env_id)
-            utility_fns = load_utility_fns(u_path)
-            for algorithm in algorithms:
-                print(f'PROCESSING {i}/{number_of_metrics}: {metric} - {env_id} - {algorithm}')
+
+    for env_id in environments:
+        u_path = os.path.join('metrics', 'utility_fns', 'increasing_cumsum', env_id)
+        utility_fns = load_utility_fns(u_path)
+        for algorithm in algorithms:
+            for metric in metrics:
+                print(f'PROCESSING {i}/{number_of_metrics}: {env_id} - {algorithm} - {metric}')
                 df = compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds)
                 save_u_metrics(metric, df, env_id, algorithm)
                 print('--------')
