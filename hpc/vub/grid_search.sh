@@ -28,9 +28,9 @@ export PYTHONPATH="${PYTHONPATH}:$VSC_SCRATCH/ipro"
 export WANDB_DIR=$VSC_SCRATCH
 
 # Define the sweep id.
-NUM_LINES=$(wc -l <${IPRO_DIR}/hpc/sweep_ids.txt)
+NUM_LINES=$(wc -l <${PROJ_DIR}/hpc/sweep_ids.txt)
 LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
-SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/sweep_ids.txt | tail -1)
+SWEEP_ID=$(head -${LINE} ${PROJ_DIR}/hpc/sweep_ids.txt | tail -1)
 
 # This forces the jobs to start sequentially. The startup time is estimated at 2 seconds.
 sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 2))s
