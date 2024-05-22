@@ -119,7 +119,7 @@ def save_utility_fns_per_environment(
 
 if __name__ == '__main__':
     environments = ['deep-sea-treasure-concave-v0', 'mo-reacher-v4', 'minecart-v0']
-    num_utility_fns = 1000
+    num_utility_fns = 100
     top_u_dir = './utility_fns'
     fn_type = 'increasing_cumsum'
     num_points = 6

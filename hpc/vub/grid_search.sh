@@ -11,17 +11,12 @@
 #SBATCH --array=1-60
 
 # Load the necessary modules.
-module load Python/3.10.4-GCCcore-11.3.0 \
-  SciPy-bundle/2022.05-foss-2022a \
-  PyTorch/1.12.0-foss-2022a \
-  pygmo/2.18.0-foss-2022a \
-  wandb/0.13.4-GCCcore-11.3.0 \
-  MuJoCo/2.2.2-GCCcore-11.3.0
+module load Python/3.10.4-GCCcore-11.3.0
 
 export OMP_NUM_THREADS=1
 
 # Define paths.
-IPRO_DIR="${VSC_HOME}/ipro"
+IPRO_DIR="${VSC_SCRATCH}/ipro/ipro"
 OPTIMISATION_DIR="${IPRO_DIR}/optimisation"
 FN_TYPE="increasing_cumsum"
 U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
@@ -32,7 +27,7 @@ LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
 SWEEP_ID=$(head -${LINE} ${IPRO_DIR}/hpc/sweep_ids.txt | tail -1)
 
 # Set pythonpath
-export PYTHONPATH="${PYTHONPATH}:$VSC_HOME/ipro"
+export PYTHONPATH="${PYTHONPATH}:$VSC_SCRATCH/ipro"
 
 # Set wandb directory.
 export WANDB_DIR=$VSC_SCRATCH
