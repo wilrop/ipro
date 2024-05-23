@@ -107,7 +107,7 @@ def compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds):
 
 if __name__ == "__main__":
     metrics = ['EU', 'MUL', 'EUL']
-    environments = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4', 'mo-reacher-concave-v4']
+    environments = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4', 'mo-reacher-concave-v0']
     algorithms = ['Envelope', 'GPI-LS', 'PCN', 'SN-MO-DQN', 'SN-MO-A2C', 'SN-MO-PPO']
     seeds = list(range(5))
     compute_and_save_all(metrics, environments, algorithms, seeds)
