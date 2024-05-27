@@ -37,6 +37,8 @@ sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 2))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/run_agent.py \
-  --wandb_project_name IPRO_dst_grid \
+  --config_dir ${IPRO_DIR}/configs \
+  --experiment base \
   --sweep_id ${SWEEP_ID} \
-  --u_dir ${U_DIR}
+  --u_dir ${U_DIR} \
+  --override_config experiment.wandb_project_name=IPRO_dst_grid
