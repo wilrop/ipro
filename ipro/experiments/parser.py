@@ -84,7 +84,7 @@ def get_agent_runner_parser() -> argparse.ArgumentParser:
         help="The ID of the sweep.",
     )
     parser.add_argument(
-        '--wandb_project',
+        '--wandb_project_name',
         type=str,
         help='The name of the wandb project.'
     )
