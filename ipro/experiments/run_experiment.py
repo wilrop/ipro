@@ -101,7 +101,7 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
         seed=seed,
         extra_config=extra_config,
         track=config.experiment.track_outer,
-        **OmegaConf.to_container(config.outer, resolve=True),
+        **OmegaConf.to_container(config.outer_loop, resolve=True),
     )
     ol.solve(callback=callback)
     return ol.hv
