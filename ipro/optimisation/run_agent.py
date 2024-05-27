@@ -15,6 +15,7 @@ def run_hp_search(exp_config, u_dir) -> Any:
     run = wandb.init()
     config = OmegaConf.create(dict(run.config))
     config['experiment'] = exp_config
+    config.experiment.seed = config.pop('seed')  # Relocate seed.
     run.config['group'] = json.dumps(OmegaConf.to_container(config.oracle, resolve=True), sort_keys=True)
     return run_experiment(config, u_dir)
 
