@@ -84,6 +84,7 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
         config.environment.gamma,
         seed=seed,
         track=config.experiment.track_oracle,
+        log_freq=config.experiment.oracle_log_freq
         **OmegaConf.to_container(config.oracle, resolve=True),
     )
     ol = init_outer_loop(
