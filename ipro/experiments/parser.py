@@ -55,26 +55,10 @@ def add_experiment_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPar
     return parser
 
 
-def add_wandb_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    """Add the arguments for wandb."""
-    parser.add_argument(
-        '--wandb_project',
-        type=str,
-        help='The name of the wandb project.'
-    )
-    parser.add_argument(
-        '--wandb_entity',
-        type=str,
-        help='The entity to log to.'
-    )
-    return parser
-
-
 def get_experiment_runner_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Setup a hyperparameter sweep.")
     parser = add_experiment_args(parser)
     parser = add_u_dir_arg(parser)
-    parser = add_wandb_args(parser)
     parser = add_override_arg(parser)
     return parser
 
@@ -83,7 +67,6 @@ def get_sweep_parser() -> argparse.ArgumentParser:
     """Get the parser for the hyperparameter sweep."""
     parser = argparse.ArgumentParser(description="Setup a hyperparameter sweep.")
     parser = add_experiment_args(parser)
-    parser = add_wandb_args(parser)
     parser = add_override_arg(parser)
     return parser
 
@@ -95,7 +78,16 @@ def get_agent_runner_parser() -> argparse.ArgumentParser:
         type=str,
         help="The ID of the sweep.",
     )
-    parser = add_wandb_args(parser)
+    parser.add_argument(
+        '--wandb_project',
+        type=str,
+        help='The name of the wandb project.'
+    )
+    parser.add_argument(
+        '--wandb_entity',
+        type=str,
+        help='The entity to log to.'
+    )
     parser = add_u_dir_arg(parser)
     parser = add_override_arg(parser)
     return parser
