@@ -14,12 +14,6 @@ from ipro.oracles import init_oracle
 from ipro.outer_loops import init_outer_loop
 
 
-def init_run_name(config):
-    run_name = (f'{config.outer_loop.method}__{config.oracle.algorithm}__{config.environment.env_id}__'
-                f'{config.experiment.seed}__{int(time.time())}')
-    return run_name
-
-
 def construct_hidden(algorithm, oracle_params):
     if 'hidden_size' in oracle_params:
         hl_actor = (oracle_params['hidden_size'],) * oracle_params['num_hidden_layers']
@@ -48,7 +42,7 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
     algorithm = config.oracle.pop('algorithm')
     env_id = config.environment.pop('env_id')
     seed = config.experiment.pop('seed')
-    run_name = init_run_name(config)
+    run_name = f'{method}__{algorithm}__{env_id}__{seed}__{int(time.time())}'
 
     # Seeding
     torch.manual_seed(seed)
