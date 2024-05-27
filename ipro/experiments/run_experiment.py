@@ -16,23 +16,23 @@ from ipro.outer_loops import init_outer_loop
 
 def construct_hidden(algorithm, oracle_params):
     if 'hidden_size' in oracle_params:
-        hl_actor = (oracle_params['hidden_size'],) * oracle_params['num_hidden_layers']
-        hl_critic = (oracle_params['hidden_size'],) * oracle_params['num_hidden_layers']
-        oracle_params.pop('hidden_size')
-        oracle_params.pop('num_hidden_layers')
+        hidden_size = oracle_params.pop('hidden_size')
+        num_hidden_layers = oracle_params.pop('num_hidden_layers')
+        hl_actor = (hidden_size,) * num_hidden_layers
+        hl_critic = (hidden_size,) * num_hidden_layers
     else:
-        hl_actor = (oracle_params['hidden_size_actor'],) * oracle_params['num_hidden_layers_actor']
-        hl_critic = (oracle_params['hidden_size_critic'],) * oracle_params['num_hidden_layers_critic']
-        oracle_params.pop('hidden_size_actor')
-        oracle_params.pop('hidden_size_critic')
-        oracle_params.pop('num_hidden_layers_actor')
-        oracle_params.pop('num_hidden_layers_critic')
+        hidden_size_actor = oracle_params.pop('hidden_size_actor')
+        hidden_size_critic = oracle_params.pop('hidden_size_critic')
+        num_hidden_layers_actor = oracle_params.pop('num_hidden_layers_actor')
+        num_hidden_layers_critic = oracle_params.pop('num_hidden_layers_critic')
+        hl_actor = (hidden_size_actor,) * num_hidden_layers_actor
+        hl_critic = (hidden_size_critic,) * num_hidden_layers_critic
 
     if algorithm in ['MO-DQN', 'SN-MO-DQN']:
-        oracle_params['hidden_layers'] = hl_critic
+        oracle_params.hidden_layers = hl_critic
     else:
-        oracle_params['actor_hidden'] = hl_actor
-        oracle_params['critic_hidden'] = hl_critic
+        oracle_params.actor_hidden = hl_actor
+        oracle_params.critic_hidden = hl_critic
     return oracle_params
 
 
@@ -70,8 +70,8 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
             run_name=run_name
         )
 
-    if 'hidden_layers' not in config.oracle and 'actor_hidden' not in config.oracle:
-        oracle_params = construct_hidden(algorithm, config.oracle)
+    if 'hidden_size' in config.oracle or 'hidden_size_actor' in config.oracle:
+        config.oracle = construct_hidden(algorithm, config.oracle)
 
     linear_solver = init_linear_solver(
         'known_box',
