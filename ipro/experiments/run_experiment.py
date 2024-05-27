@@ -56,7 +56,7 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
             seed,
             gamma=config.environment.gamma,
             max_episode_steps=config.environment.max_episode_steps,
-            one_hot=config.environment.one_hot,
+            one_hot=config.environment.one_hot_wrapper,
             capture_video=config.experiment.capture_video,
             run_name=run_name
         )
@@ -65,7 +65,7 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
             env_id,
             gamma=config.environment.gamma,
             max_episode_steps=config.environment.max_episode_steps,
-            one_hot=config.environment.one_hot,
+            one_hot=config.environment.one_hot_wrapper,
             capture_video=config.experiment.capture_video,
             run_name=run_name
         )
