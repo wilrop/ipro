@@ -2,3 +2,7 @@ env_id: mo-reacher-v4
 max_episode_steps: 50
 one_hot_wrapper: False
 gamma: 0.99
+minimals: [ [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ], [ -50, -50, -50, -50 ] ]
+maximals: [ [ 40, -50, -50, -50 ], [ -50, 40, -50, -50 ], [ -50, -50, 40, -50 ], [ -50, -50, -50, 40 ] ]
+ref_point: [ -50, -50, -50, -50 ]
+eval_episodes: 100

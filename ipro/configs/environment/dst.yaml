@@ -2,3 +2,7 @@ env_id: deep-sea-treasure-concave-v0
 max_episode_steps: 50
 one_hot_wrapper: True
 gamma: 1.0
+minimals: [ [ 0, -50 ], [ 0, -50 ] ]
+maximals: [ [ 124, -50 ], [ 1, -1 ] ]
+ref_point: [ 0, -50 ]
+eval_episodes: 1

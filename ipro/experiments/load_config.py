@@ -28,6 +28,7 @@ def load_parts(config_parts: list[str], args: argparse.Namespace) -> DictConfig:
 def load_config(args: argparse.Namespace) -> DictConfig:
     """Load the configuration file from the arguments."""
     config_parts = [
+        'experiment',
         'environment',
         'oracle',
         'outer_loop',

@@ -1,16 +1,20 @@
 algorithm: SN-MO-A2C
 aug: 0.01
 scale: 100
-grid_sample: True
-pretrain_iters: 30
-num_referents: 16
-critic_activation: tanh
+lr_actor: 3e-4
+lr_critic: 3e-4
+actor_hidden: [ 64, 64 ]
+critic_hidden: [ 64, 64 ]
 actor_activation: tanh
+critic_activation: tanh
 v_coef: 0.5
 e_coef: 0.01
+max_grad_norm: 0.5
 normalize_advantage: False
-gae_lambda: 0.95
 n_steps: 16
-eval_episodes: 100
-log_freq: 1000
-track: False
+gae_lambda: 0.95
+pretrain_iters: 50
+grid_sample: True
+num_referents: 16
+pretrain_steps: 1e5
+online_steps: 1e5

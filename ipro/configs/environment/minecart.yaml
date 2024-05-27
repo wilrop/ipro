@@ -2,3 +2,7 @@ env_id: minecart-v0
 max_episode_steps: 1000
 one_hot_wrapper: False
 gamma: 0.98
+minimals: [ [ -1, -1, -200 ], [ -1, -1, -200 ], [ -1, -1, -200 ] ]
+maximals: [ [ 1.5, -1, -200 ], [ -1, 1.5, -200 ], [ -1, -1, 0 ] ]
+ref_point: [ -1, -1, -200 ]
+eval_episodes: 100

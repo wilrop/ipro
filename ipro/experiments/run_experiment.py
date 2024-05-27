@@ -1,16 +1,23 @@
-import yaml
 import time
 import torch
 import random
-import argparse
 
 import numpy as np
 
+from omegaconf import OmegaConf
+
+from ipro.experiments.parser import get_experiment_runner_parser
+from ipro.experiments.load_config import load_config
 from ipro.environments import setup_env, setup_vector_env
-from ipro.environments.bounding_boxes import get_bounding_box
 from ipro.linear_solvers import init_linear_solver
 from ipro.oracles import init_oracle
 from ipro.outer_loops import init_outer_loop
+
+
+def init_run_name(config):
+    run_name = (f'{config.outer_loop.method}__{config.oracle.algorithm}__{config.environment.env_id}__'
+                f'{config.experiment.seed}__{int(time.time())}')
+    return run_name
 
 
 def construct_hidden(algorithm, oracle_params):
@@ -35,108 +42,78 @@ def construct_hidden(algorithm, oracle_params):
     return oracle_params
 
 
-def run_experiment(method, algorithm, config, outer_params, oracle_params, u_dir, callback=None, extra_config=None):
-    """Run an single experiment.
-
-    Args:
-        method (str): The name of the outer loop method.
-        algorithm (str): The name of the oracle algorithm.
-        config (dict): The configuration dictionary.
-        outer_params (dict): The parameters for the outer loop.
-        oracle_params (dict): The parameters for the oracle.
-        callback (function | None): The callback function.
-        extra_config (dict | None): Extra configuration parameters.
-
-    Returns:
-        float: The hypervolume of the final Pareto front.
-    """
-    env_id = config['env_id']
-    max_episode_steps = config['max_episode_steps']
-    one_hot = config['one_hot_wrapper']
-    gamma = config['gamma']
-    seed = config['seed']
-    wandb_project_name = config['wandb_project_name']
-    wandb_entity = config['wandb_entity']
-    run_name = f'{method}__{algorithm}__{env_id}__{seed}__{int(time.time())}'
+def run_experiment(config, u_dir, callback=None, extra_config=None):
+    """Run an experiment."""
+    method = config.outer_loop.pop('method')
+    algorithm = config.oracle.pop('algorithm')
+    env_id = config.environment.pop('env_id')
+    seed = config.experiment.pop('seed')
+    run_name = init_run_name(config)
 
     # Seeding
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
-    # Setup environment.
-    minimals, maximals, ref_point = get_bounding_box(env_id)
-
     if algorithm in ['MO-PPO', 'SN-MO-PPO']:
-        env, num_objectives = setup_vector_env(env_id,
-                                               oracle_params['num_envs'],
-                                               seed,
-                                               gamma=gamma,
-                                               max_episode_steps=max_episode_steps,
-                                               one_hot=one_hot,
-                                               capture_video=False,
-                                               run_name=run_name)
+        env, num_objectives = setup_vector_env(
+            env_id,
+            config.oracle.num_envs,
+            seed,
+            gamma=config.environment.gamma,
+            max_episode_steps=config.environment.max_episode_steps,
+            one_hot=config.environment.one_hot,
+            capture_video=config.experiment.capture_video,
+            run_name=run_name
+        )
     else:
-        env, num_objectives = setup_env(env_id,
-                                        gamma=gamma,
-                                        max_episode_steps=max_episode_steps,
-                                        one_hot=one_hot,
-                                        capture_video=False,
-                                        run_name=run_name)
+        env, num_objectives = setup_env(
+            env_id,
+            gamma=config.environment.gamma,
+            max_episode_steps=config.environment.max_episode_steps,
+            one_hot=config.environment.one_hot,
+            capture_video=config.experiment.capture_video,
+            run_name=run_name
+        )
 
-    if 'hidden_layers' not in oracle_params and 'actor_hidden' not in oracle_params:
-        oracle_params = construct_hidden(algorithm, oracle_params)
+    if 'hidden_layers' not in config.oracle and 'actor_hidden' not in config.oracle:
+        oracle_params = construct_hidden(algorithm, config.oracle)
 
-    if 'lr' in oracle_params and algorithm not in ['MO-DQN', 'SN-MO-DQN']:
-        lr = oracle_params.pop('lr')
-        oracle_params['lr_actor'] = lr
-        oracle_params['lr_critic'] = lr
-
-    linear_solver = init_linear_solver('known_box', minimals=minimals, maximals=maximals)
-    oracle = init_oracle(algorithm,
-                         env,
-                         gamma,
-                         seed=seed,
-                         **oracle_params)
-    ol = init_outer_loop(method,
-                         env,
-                         num_objectives,
-                         oracle,
-                         linear_solver,
-                         u_dir=u_dir,
-                         ref_point=ref_point,
-                         exp_name=run_name,
-                         wandb_project_name=wandb_project_name,
-                         wandb_entity=wandb_entity,
-                         seed=seed,
-                         extra_config=extra_config,
-                         **outer_params)
+    linear_solver = init_linear_solver(
+        'known_box',
+        minimals=config.environment.minimals,
+        maximals=config.environment.maximals
+    )
+    oracle = init_oracle(
+        algorithm,
+        env,
+        config.environment.gamma,
+        seed=seed,
+        track=config.experiment.track_oracle,
+        **OmegaConf.to_container(config.oracle, resolve=True),
+    )
+    ol = init_outer_loop(
+        method,
+        env,
+        num_objectives,
+        oracle,
+        linear_solver,
+        u_dir=u_dir,
+        ref_point=config.environment.ref_point,
+        exp_name=run_name,
+        wandb_project_name=config.experiment.wandb_project_name,
+        wandb_entity=config.experiment.wandb_entity,
+        seed=seed,
+        extra_config=extra_config,
+        track=config.experiment.track_outer,
+        **OmegaConf.to_container(config.outer, resolve=True),
+    )
     ol.solve(callback=callback)
     return ol.hv
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run experiment.')
-    parser.add_argument(
-        '--config',
-        type=str,
-        default='./configs/sn_ppo_dst.yaml',
-        help='Path to config file.'
-    )
-    parser.add_argument(
-        '--u_dir',
-        type=str,
-        default='./utility_function/utility_fns',
-        help='Path to directory containing utility functions.'
-    )
+    parser = get_experiment_runner_parser()
     args = parser.parse_args()
-
-    with open(args.config, 'r') as f:
-        config = yaml.safe_load(f)
-
-    outer_params = config.pop('outer_loop')
-    oracle_params = config.pop('oracle')
-    method = outer_params.pop('method')
-    algorithm = oracle_params.pop('algorithm')
-    hv = run_experiment(method, algorithm, config, outer_params, oracle_params, args.u_dir, callback=None)
-    print(f'Hypervolume: {hv}')
+    config = load_config(args)
+    run_experiment(config, args.u_dir)

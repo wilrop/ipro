@@ -5,8 +5,8 @@ class KnownBox:
     """A linear solver for settings with known minimal and maximal points"""
 
     def __init__(self, minimals, maximals):
-        self.minimals = minimals
-        self.maximals = maximals
+        self.minimals = np.array(minimals)
+        self.maximals = np.array(maximals)
 
     def solve(self, weight):
         """Find the utility maximising point.
