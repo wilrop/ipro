@@ -101,9 +101,9 @@ class SNMOA2C(SNDRLOracle):
         self.v_coef = v_coef
         self.max_grad_norm = max_grad_norm
         self.normalize_advantage = normalize_advantage
-        self.n_steps = n_steps
+        self.n_steps = int(n_steps)
         self.gae_lambda = gae_lambda
-        self.log_freq = log_freq
+        self.log_freq = int(log_freq)
 
         self.input_dim = self.aug_obs_dim + self.num_objectives  # Obs + accrued reward + referent.
         self.output_dim_actor = int(self.num_actions)

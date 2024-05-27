@@ -43,11 +43,11 @@ class SNDRLOracle(DRLOracle):
         self.pretrained_model = None  # The pretrained model.
         self.phase = 'pretrain'  # The phase of the algorithm. Either 'pre' or 'online_{iteration}'.
 
-        self.pretrain_iters = pretrain_iters  # The number of iterations to pretrain for.
+        self.pretrain_iters = int(pretrain_iters)  # The number of iterations to pretrain for.
         self.grid_sample = grid_sample  # Whether to sample a grid of referents or uniformly sample.
-        self.num_referents = num_referents  # The number of referents to train on.
-        self.pretraining_steps = pretraining_steps  # The number of training steps.
-        self.online_steps = online_steps
+        self.num_referents = int(num_referents)  # The number of referents to train on.
+        self.pretraining_steps = int(pretraining_steps)  # The number of training steps.
+        self.online_steps = int(online_steps)
 
         self.episodic_utility = deque(maxlen=eval_episodes)  # Episodic utility of the agent rather than the returns.
 

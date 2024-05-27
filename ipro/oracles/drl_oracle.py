@@ -41,7 +41,7 @@ class DRLOracle:
         self.aug_obs_dim = self.flat_obs_dim + self.num_objectives
 
         self.gamma = gamma
-        self.eval_episodes = eval_episodes
+        self.eval_episodes = int(eval_episodes)
         self.deterministic_eval = deterministic_eval
         self.u_func = None
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.

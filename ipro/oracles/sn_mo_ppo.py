@@ -118,8 +118,8 @@ class SNMOPPO(SNDRLOracle):
         self.clip_range_vf = clip_range_vf
         self.gae_lambda = gae_lambda
 
-        self.n_steps = n_steps
-        self.log_freq = log_freq
+        self.n_steps = int(n_steps)
+        self.log_freq = int(log_freq)
 
         self.batch_size = int(self.num_envs * self.n_steps)
         self.minibatch_size = int(self.batch_size // self.num_minibatches)

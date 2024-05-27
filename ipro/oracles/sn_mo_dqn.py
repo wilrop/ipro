@@ -108,7 +108,7 @@ class SNMODQN(SNDRLOracle):
         self.pre_epsilon_end = pre_epsilon_end  # The final epsilon value.
         self.pre_exploration_frac = pre_exploration_frac  # The fraction of the training steps to explore.
 
-        self.log_freq = log_freq
+        self.log_freq = int(log_freq)
 
         self.input_dim = self.aug_obs_dim + self.num_objectives  # Obs + accrued reward + referent.
         self.output_dim = int(self.num_actions * self.num_objectives)
@@ -119,8 +119,8 @@ class SNMODQN(SNDRLOracle):
         self.target_network = None
         self.optimizer = None
 
-        self.batch_size = batch_size
-        self.buffer_size = buffer_size
+        self.batch_size = int(batch_size)
+        self.buffer_size = int(buffer_size)
         self.clear_buffer = clear_buffer
         self.replay_buffer = AccruedRewardReplayBuffer(obs_shape=(self.aug_obs_dim,),
                                                        action_shape=self.env.action_space.shape,
