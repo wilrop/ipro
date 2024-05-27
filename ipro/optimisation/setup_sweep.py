@@ -28,12 +28,15 @@ def merge_configs(config: DictConfig, sweep_config: DictConfig) -> dict:
     return OmegaConf.to_container(sweep_config, resolve=False)
 
 
-def create_sweep(config: DictConfig, sweep_config: DictConfig, project: str):
+def create_sweep(config: DictConfig):
     """Create a sweep and return its ID."""
+    experiment_config = config.pop('experiment')
+    sweep_config = config.pop('hyperparams')
     sweep_wandb_config = merge_configs(config, sweep_config)
     sweep_id = wandb.sweep(
         sweep=sweep_wandb_config,
-        project=project
+        project=experiment_config.wandb_project_name,
+        entity=experiment_config.wandb_entity,
     )
     return sweep_id
 
@@ -42,7 +45,6 @@ if __name__ == "__main__":
     parser = get_sweep_parser()
     args = parser.parse_args()
     config = load_config(args)
-    sweep_config = config.pop('hyperparams')
-    num_experiments = calc_num_experiments(sweep_config.parameters)
-    sweep_id = create_sweep(config, sweep_config, args.project)
+    num_experiments = calc_num_experiments(config.hyperparams.parameters)
+    sweep_id = create_sweep(config)
     print(f"Sweep ID: {sweep_id} - Needs {num_experiments} runs.")

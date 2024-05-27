@@ -1,4 +1,4 @@
-name: dqn
+name: dqn_large
 method: grid
 metric:
   name: outer/hypervolume

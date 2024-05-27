@@ -1,4 +1,4 @@
-name: a2c
+name: a2c_large
 method: grid
 metric:
   name: outer/hypervolume

@@ -66,6 +66,11 @@ def get_experiment_runner_parser() -> argparse.ArgumentParser:
 def get_sweep_parser() -> argparse.ArgumentParser:
     """Get the parser for the hyperparameter sweep."""
     parser = argparse.ArgumentParser(description="Setup a hyperparameter sweep.")
+    parser.add_argument(
+        '--hyperparams',
+        type=str,
+        help='The directory of the hyperparams config file.'
+    )
     parser = add_experiment_args(parser)
     parser = add_override_arg(parser)
     return parser
