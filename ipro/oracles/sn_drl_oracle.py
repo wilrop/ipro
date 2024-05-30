@@ -133,8 +133,8 @@ class SNDRLOracle(DRLOracle):
 
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""
-        self.nadir = torch.tensor(nadir, dtype=torch.float, requires_grad=False)
-        self.ideal = torch.tensor(ideal, dtype=torch.float, requires_grad=False)
+        self.nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
+        self.ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
         self.pretrain()
 
     def setup_chart_metrics(self):

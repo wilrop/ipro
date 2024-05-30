@@ -7,33 +7,29 @@ parameters:
   seed:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
-    aug:
-      values: [ 0.01, 0.1 ]
-    scale:
-      values: [ 50, 100 ]
     lr_actor:
-      values: [ 0.0007, 0.0005, 0.0003, 0.0001 ]
+      values: [ 0.0009, 0.0007, 0.0005, 0.0003, 0.0001 ]
     lr_critic:
-      values: [ 0.0007, 0.0005, 0.0003, 0.0001 ]
+      values: [ 0.0009, 0.0007, 0.0005, 0.0003, 0.0001 ]
     num_hidden_layers:
-      values: [ 2 ]
+      values: [ 1, 2 ]
     hidden_size:
-      values: [ 256 ]
+      values: [ 128, 256 ]
     num_referents:
-        values: [ 16 ]
+      values: [ 16 ]
     max_grad_norm:
       values: [ -1, 0.5 ]
     v_coef:
-        values: [ 0.5 ]
+      values: [ 0.5 ]
     e_coef:
-        values: [ 0.01 ]
+      values: [ 0.01 ]
     normalize_advantage:
-        values: [ False ]
+      values: [ False ]
     critic_activation:
-        values: [ tanh ]
+      values: [ tanh ]
     actor_activation:
-        values: [ tanh, relu ]
+      values: [ tanh ]
     pretraining_steps:
-      values: [ 5000, 10000, 15000 ]
+      values: [ 5000 ]
     online_steps:
-      values: [ 5000, 10000, 15000 ]
+      values: [ 5000 ]

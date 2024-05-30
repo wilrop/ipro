@@ -36,7 +36,7 @@ def construct_hidden(algorithm, oracle_params):
     return oracle_params
 
 
-def run_experiment(config, u_dir, callback=None, extra_config=None):
+def run_experiment(config, callback=None, extra_config=None):
     """Run an experiment."""
     method = config.outer_loop.pop('method')
     algorithm = config.oracle.pop('algorithm')
@@ -93,7 +93,6 @@ def run_experiment(config, u_dir, callback=None, extra_config=None):
         num_objectives,
         oracle,
         linear_solver,
-        u_dir=u_dir,
         ref_point=config.environment.ref_point,
         exp_name=run_name,
         wandb_project_name=config.experiment.wandb_project_name,
@@ -111,4 +110,4 @@ if __name__ == '__main__':
     parser = get_experiment_runner_parser()
     args = parser.parse_args()
     config = load_config(args)
-    run_experiment(config, args.u_dir)
+    run_experiment(config)

@@ -8,7 +8,7 @@
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/gs_%A_%a.out
-#SBATCH --array=1-60
+#SBATCH --array=1-40
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -19,8 +19,6 @@ export OMP_NUM_THREADS=1
 PROJ_DIR="${VSC_SCRATCH}/ipro"
 IPRO_DIR="${PROJ_DIR}/ipro"
 OPTIMISATION_DIR="${IPRO_DIR}/optimisation"
-FN_TYPE="increasing_cumsum"
-U_DIR="${IPRO_DIR}/utility_function/utility_fns/${FN_TYPE}"
 
 # load virtual environments and set some variables.
 source ${PROJ_DIR}/venv/bin/activate
@@ -40,5 +38,4 @@ python3 ${OPTIMISATION_DIR}/run_agent.py \
   --config_dir ${IPRO_DIR}/configs \
   --experiment base \
   --sweep_id ${SWEEP_ID} \
-  --u_dir ${U_DIR} \
   --override_config experiment.wandb_project_name=IPRO_dst_grid

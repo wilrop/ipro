@@ -35,17 +35,6 @@ def add_part_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
     return parser
 
 
-def add_u_dir_arg(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    """Add the option to override the config."""
-    parser.add_argument(
-        '--u_dir',
-        type=str,
-        default=None,
-        help='Path to the directory of the utility functions.'
-    )
-    return parser
-
-
 def add_override_arg(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Add the option to override the config."""
     parser.add_argument(
@@ -63,7 +52,6 @@ def get_experiment_runner_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Setup a hyperparameter sweep.")
     parser = add_experiment_args(parser)
     parser = add_part_config_args(parser)
-    parser = add_u_dir_arg(parser)
     parser = add_override_arg(parser)
     return parser
 
@@ -90,6 +78,5 @@ def get_agent_runner_parser() -> argparse.ArgumentParser:
         help="The ID of the sweep.",
     )
     parser = add_experiment_args(parser)
-    parser = add_u_dir_arg(parser)
     parser = add_override_arg(parser)
     return parser

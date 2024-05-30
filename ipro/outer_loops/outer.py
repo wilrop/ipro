@@ -4,10 +4,13 @@ import random
 import wandb
 import platform
 import numpy as np
-import pygmo as pg
+
+from pymoo.indicators.hv import Hypervolume
+from pymoo.config import Config
+
 from ipro.utils.pareto import extreme_prune, batched_pareto_dominates
-from ipro.utility_function.generate_utility_fns import load_utility_fns
-from ipro.utility_function.utility_eval import generalised_expected_utility, generalised_maximum_utility_loss
+
+Config.warnings['not_compiled'] = False
 
 
 class OuterLoop:
@@ -22,7 +25,6 @@ class OuterLoop:
                  tolerance=1e-1,
                  max_iterations=None,
                  known_pf=None,
-                 u_dir='./utility_fns',
                  track=False,
                  exp_name=None,
                  wandb_project_name=None,
@@ -46,7 +48,6 @@ class OuterLoop:
         self.pf = np.empty((0, self.dim))
         self.robust_points = np.empty((0, self.dim))
         self.completed = np.empty((0, self.dim))
-        self.utility_fns = load_utility_fns(os.path.join(u_dir, problem.env_id))
 
         self.hv = 0
         self.total_hv = 0
@@ -164,11 +165,6 @@ class OuterLoop:
     def log_iteration(self, iteration, referent=None, ideal=None, pareto_point=None):
         """Log the iteration."""
         if self.track:
-            geu = generalised_expected_utility(self.pf, self.utility_fns)
-            if self.known_pf is not None:
-                gmul = generalised_maximum_utility_loss(self.pf, self.known_pf, self.utility_fns)
-            else:
-                gmul = 0
             while True:
                 try:
                     wandb.log({
@@ -177,8 +173,6 @@ class OuterLoop:
                         'outer/discarded_hv': self.discarded_hv,
                         'outer/coverage': self.coverage,
                         'outer/error': self.error,
-                        'outer/geu': geu,
-                        'outer/gmul': gmul,
                         'iteration': iteration
                     })
                     break
@@ -212,4 +206,5 @@ class OuterLoop:
         points = points[batched_pareto_dominates(ref, points)]
         if points.size == 0:
             return 0
-        return pg.hypervolume(points).compute(ref)
+        ind = Hypervolume(ref_point=ref)
+        return ind(points)
