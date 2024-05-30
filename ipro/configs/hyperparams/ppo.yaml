@@ -1,4 +1,4 @@
-name: ppo_large
+name: ppo_1
 method: grid
 metric:
   name: outer/hypervolume
