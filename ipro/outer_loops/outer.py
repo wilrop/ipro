@@ -148,8 +148,6 @@ class OuterLoop:
             wandb.define_metric('outer/discarded_hv', step_metric='iteration')
             wandb.define_metric('outer/coverage', step_metric='iteration')
             wandb.define_metric('outer/error', step_metric='iteration')
-            wandb.define_metric('outer/geu', step_metric='iteration')
-            wandb.define_metric('outer/gmul', step_metric='iteration')
             self.run_id = wandb.run.id
 
         return time.time()
@@ -186,7 +184,6 @@ class OuterLoop:
                 wandb.run.summary[f"pareto_point_{iteration}"] = pareto_point
 
             wandb.run.summary['hypervolume'] = self.hv
-            wandb.run.summary['geu'] = geu
             wandb.run.summary['PF_size'] = len(self.pf)
             wandb.run.summary['replay_triggered'] = self.replay_triggered
 
