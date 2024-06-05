@@ -1,4 +1,4 @@
-name: a2c_1
+name: a2c_2
 method: grid
 metric:
   name: outer/hypervolume
@@ -30,6 +30,6 @@ parameters:
     actor_activation:
       values: [ tanh ]
     pretraining_steps:
-      values: [ 5000 ]
+      values: [ 10000 ]
     online_steps:
-      values: [ 5000 ]
+      values: [ 10000 ]

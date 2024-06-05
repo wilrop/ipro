@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=grid_search
+#SBATCH --job-name=ipro_gs
 #SBATCH --time=120:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=4gb
 #SBATCH --partition=skylake,skylake_mpi
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
-#SBATCH --output=logs/gs_%A_%a.out
+#SBATCH --output=logs/ipro_gs_%A_%a.out
 #SBATCH --array=1-40
 
 # Load the necessary modules.

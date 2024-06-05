@@ -1,4 +1,4 @@
-name: dqn_1
+name: dqn_2
 method: grid
 metric:
   name: outer/hypervolume
@@ -8,7 +8,7 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr:
-      values: [ 0.001, 0.0009, 0.0008, 0.0007, 0.0006, 0.0005, 0.0003 ]
+      values: [ 0.0006, 0.00055, 0.0005, 0.00045, 0.0004 ]
     num_hidden_layers:
       values: [ 1, 2 ]
     hidden_size:
@@ -18,11 +18,11 @@ parameters:
     pre_train_freq:
       values: [ 4 ]
     num_referents:
-      values: [ 16, 32 ]
+      values: [ 32 ]
     batch_size:
       values: [ 32, 64, 128 ]
     buffer_size:
-      values: [ 2500, 5000, 10000 ]
+      values: [ 2500, 3000, 5000 ]
     pretraining_steps:
       values: [ 5000 ]
     online_steps:
