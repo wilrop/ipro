@@ -167,11 +167,14 @@ def plot_hv_cov(env_id,
 
 def plot_metric(
         env_id,
+        env_title,
         algs,
         alg_colors,
         metric='MUL',
         y_log=True,
         x_log=True,
+        show_title=False,
+        filetype='pdf'
 ):
     fig = plt.figure(figsize=(10, 5))
     last_step_vals = []
@@ -200,13 +203,16 @@ def plot_metric(
         y_data = np.full(len(x_data), val)
         ax = sns.lineplot(x=x_data, y=y_data, linewidth=2.0, linestyle='--', color=alg_colors[alg_id])
 
-    plot_name = f"plots/{env_id}_{metric}.pdf"
+    plot_name = f"plots/{env_id}_{metric}.{filetype}"
 
     if y_log:
         ax.set_yscale('log')
-        plot_name = f"plots/{env_id}_{metric}_log.pdf"
+        plot_name = f"plots/{env_id}_{metric}_log.{filetype}"
     if x_log:
         ax.set_xscale('log')
+
+    if show_title:
+        plt.title(env_title, fontsize='15')
 
     plt.setp(ax.get_legend().get_texts(), fontsize='15')
     plt.xlabel("Step", fontsize='15')
@@ -232,9 +238,27 @@ if __name__ == '__main__':
         'PCN': '#9467bd',
         'Envelope': '#8c564b',
     }
-    env_ids = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4', 'mo-reacher-concave-v0']
 
-    for env_id in env_ids:
+    envs = {
+        'deep-sea-treasure-concave-v0': 'DST $d=2$',
+        'minecart-v0': 'Minecart $d=3$',
+        'mo-reacher-v4': 'MO-Reacher $d=4$',
+        'mo-reacher-concave-v0': 'MO-Reacher-concave $d=4$',
+    }
+
+    filetype = 'pdf'
+    show_title = False
+    for env_id, env_title in envs.items():
         print(f'Plotting {env_id}')
-        plot_metric(env_id, algs, alg_colors, metric='MUL', y_log=True, x_log=True)
+        plot_metric(
+            env_id,
+            env_title,
+            algs,
+            alg_colors,
+            metric='MUL',
+            y_log=True,
+            x_log=True,
+            show_title=show_title,
+            filetype=filetype
+        )
     print('Done')
