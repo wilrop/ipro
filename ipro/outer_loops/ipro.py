@@ -9,7 +9,7 @@ class IPRO(OuterLoop):
     """IPRO algorithm for solving multi-objective problems."""
 
     def __init__(self,
-                 problem,
+                 problem_id,
                  dimensions,
                  oracle,
                  linear_solver,
@@ -26,7 +26,7 @@ class IPRO(OuterLoop):
                  seed=None,
                  extra_config=None,
                  ):
-        super().__init__(problem,
+        super().__init__(problem_id,
                          dimensions,
                          oracle,
                          linear_solver,

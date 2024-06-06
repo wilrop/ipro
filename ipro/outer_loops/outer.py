@@ -15,7 +15,7 @@ Config.warnings['not_compiled'] = False
 
 class OuterLoop:
     def __init__(self,
-                 problem,
+                 problem_id,
                  dimensions,
                  oracle,
                  linear_solver,
@@ -31,7 +31,7 @@ class OuterLoop:
                  wandb_entity=None,
                  seed=None,
                  extra_config=None):
-        self.problem = problem
+        self.problem_id = problem_id
         self.dim = dimensions
         self.oracle = oracle
         self.linear_solver = linear_solver
@@ -99,7 +99,7 @@ class OuterLoop:
         extra_config = self.extra_config if self.extra_config is not None else {}
         return {
             "method": self.method,
-            "env_id": self.problem.env_id,
+            "problem_id": self.problem_id,
             "dimensions": self.dim,
             "tolerance": self.tolerance,
             "max_iterations": self.max_iterations,

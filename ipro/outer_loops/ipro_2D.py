@@ -13,7 +13,7 @@ class IPRO2D(OuterLoop):
     """IPRO algorithm for solving bi-objective multi-objective problems."""
 
     def __init__(self,
-                 problem,
+                 problem_id,
                  oracle,
                  linear_solver,
                  ref_point=None,
@@ -28,7 +28,7 @@ class IPRO2D(OuterLoop):
                  seed=None,
                  extra_config=None,
                  ):
-        super().__init__(problem,
+        super().__init__(problem_id,
                          2,
                          oracle,
                          linear_solver,

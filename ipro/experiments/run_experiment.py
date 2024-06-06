@@ -64,7 +64,7 @@ def run_experiment(config, callback=None, extra_config=None):
     )
     ol = init_outer_loop(
         method,
-        env,
+        env_id,
         num_objectives,
         oracle,
         linear_solver,
