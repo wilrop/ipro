@@ -10,11 +10,11 @@ critic_activation: tanh
 v_coef: 0.5
 e_coef: 0.01
 max_grad_norm: 0.5
-normalize_advantage: False
+normalize_advantage: false
 n_steps: 16
 gae_lambda: 0.95
 pretrain_iters: 50
-grid_sample: True
+grid_sample: true
 num_referents: 16
-pretraining_steps: 1e5
-online_steps: 1e5
+pretraining_steps: 1e2
+online_steps: 5e4

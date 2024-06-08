@@ -1,28 +1,28 @@
 algorithm: SN-MO-PPO
 aug: 0.01
 scale: 100
-lr_actor: 2.5e-4
-lr_critic: 2.5e-4
+lr_actor: 3e-4
+lr_critic: 3e-4
 eps: 1.e-5
 actor_hidden: [ 64, 64 ]
 critic_hidden: [ 64, 64 ]
 actor_activation: tanh
 critic_activation: tanh
-anneal_lr: False
+anneal_lr: false
 v_coef: 0.5
 e_coef: 0.01
 num_envs: 8
 num_minibatches: 4
-update_epochs: 4
+update_epochs: 2
 max_grad_norm: 0.5
 target_kl: None
-normalize_advantage: False
+normalize_advantage: false
 clip_coef: 0.2
 clip_range_vf: 0.2
 gae_lambda: 0.95
 n_steps: 16
 pretrain_iters: 50
-grid_sample: True
+grid_sample: true
 num_referents: 16
-pretraining_steps: 1e5
+pretraining_steps: 1e2
 online_steps: 1e5
