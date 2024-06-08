@@ -90,7 +90,9 @@ class OuterLoop:
         self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
         self.log_iteration(iteration + 1)
 
-        print(f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | HV {self.hv:.2f} | ')
+        end_str = f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | '
+        end_str += f'HV {self.hv:.2f} | PF size {len(self.pf)} |'
+        print(end_str)
 
         self.close_wandb()
 
