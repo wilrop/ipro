@@ -191,8 +191,8 @@ class SNMOA2C(SNDRLOracle):
             advantages[t] = td_errors[t] + self.gamma * self.gae_lambda * advantages[t + 1] * (1 - dones[t])
         return advantages
 
-    def perform_update(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, b_log_probs):
-        """Perform an update step."""
+    def calc_losses(self, referent, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, b_log_probs):
+        """Calculate the losses."""
         with torch.no_grad():
             v_s0 = self.critic(self.s0, referent)
         v_s0.requires_grad = True
@@ -224,8 +224,7 @@ class SNMOA2C(SNDRLOracle):
         entropy_loss = -torch.mean(entropy)  # Compute entropy bonus.
         value_loss = F.mse_loss(returns, values)
 
-        loss = policy_loss + self.v_coef * value_loss + self.e_coef * entropy_loss
-        return loss
+        return policy_loss, value_loss, entropy_loss
 
     def update_policy(self, referent, nadir, ideal, num_referents=1):
         """Update the policy using the rollout buffer."""
@@ -239,12 +238,28 @@ class SNMOA2C(SNDRLOracle):
             actor_out = self.actor(aug_obs, referent)
             log_probs, _ = self.policy.evaluate_actions(actor_out, actions)
 
-        loss = torch.tensor(0, dtype=torch.float)
+        policy_loss = torch.tensor(0, dtype=torch.float)
+        value_loss = torch.tensor(0, dtype=torch.float)
+        entropy_loss = torch.tensor(0, dtype=torch.float)
 
         for ref in referents:
-            loss += self.perform_update(ref, nadir, ideal, aug_obs, actions, rewards, aug_next_obs, dones, log_probs)
+            ref_pg_l, ref_v_l, ref_e_l = self.calc_losses(ref,
+                                                          nadir,
+                                                          ideal,
+                                                          aug_obs,
+                                                          actions,
+                                                          rewards,
+                                                          aug_next_obs,
+                                                          dones,
+                                                          log_probs)
+            policy_loss += ref_pg_l
+            value_loss += ref_v_l
+            entropy_loss += ref_e_l
 
-        loss /= num_referents
+        policy_loss /= num_referents
+        value_loss /= num_referents
+        entropy_loss /= num_referents
+        loss = policy_loss + self.v_coef * value_loss + self.e_coef * entropy_loss
 
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
@@ -255,7 +270,7 @@ class SNMOA2C(SNDRLOracle):
         self.critic_optimizer.step()
         self.actor_optimizer.step()
 
-        return loss.item()
+        return loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item()
 
     def reset_env(self):
         """Reset the environment.
@@ -310,7 +325,7 @@ class SNMOA2C(SNDRLOracle):
         self.setup_ac_metrics()
         referents = self.sample_referents(self.pretrain_iters, self.nadir, self.ideal)
         for idx, referent in enumerate(referents):
-            print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
+            print(f"Pretrain iter {idx + 1}/{self.pretrain_iters}: referent {referent}")
             self.train(referent,
                        self.nadir,
                        self.ideal,
@@ -350,7 +365,7 @@ class SNMOA2C(SNDRLOracle):
             self.rollout_buffer.add(aug_obs, action, reward, aug_next_obs, terminated)
 
             if (step + 1) % self.n_steps == 0:
-                loss = self.update_policy(referent, nadir, ideal, num_referents=num_referents)
+                loss, pg_l, v_l, e_l = self.update_policy(referent, nadir, ideal, num_referents=num_referents)
                 self.rollout_buffer.reset()
 
             if (step + 1) % self.log_freq == 0:
