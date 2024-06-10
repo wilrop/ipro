@@ -1,4 +1,4 @@
-name: ppo_3
+name: ppo_4
 method: grid
 metric:
   name: outer/hypervolume
@@ -8,11 +8,11 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr_actor:
-      values: [ 0.0009, 0.0007, 0.0005, 0.0003, 0.0001 ]
+      values: [ 0.0001, 0.0003, 0.0005, 0.0007 ]
     lr_critic:
-      values: [ 0.0009, 0.0007, 0.0005, 0.0003, 0.0001 ]
+      values: [ 0.0001, 0.0003, 0.0005, 0.0007 ]
     num_hidden_layers:
-      values: [ 1 ]
+      values: [ 2 ]
     hidden_size:
       values: [ 64 ]
     num_referents:
