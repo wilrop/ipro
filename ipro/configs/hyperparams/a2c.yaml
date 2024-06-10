@@ -8,9 +8,9 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr_actor:
-      values: [ 0.0001, 0.0003, 0.0005, 0.0007 ]
+      values: [ 0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0007 ]
     lr_critic:
-      values: [ 0.0001, 0.0003, 0.0005, 0.0007 ]
+      values: [ 0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0007 ]
     num_hidden_layers:
       values: [ 2 ]
     hidden_size:
@@ -29,7 +29,5 @@ parameters:
       values: [ tanh ]
     actor_activation:
       values: [ tanh ]
-    pretraining_steps:
-      values: [ 50000, 75000, 100000 ]
     online_steps:
       values: [ 50000, 75000, 100000 ]
