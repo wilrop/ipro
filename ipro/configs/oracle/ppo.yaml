@@ -25,4 +25,4 @@ pretrain_iters: 50
 grid_sample: true
 num_referents: 16
 pretraining_steps: 1e2
-online_steps: 1e5
+online_steps: 7.5e5
