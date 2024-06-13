@@ -8,21 +8,21 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr_actor:
-      values: [ 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007 ]
+      values: [ 0.0002, 0.00025, 0.0003, 0.00035, 0.0004 ]
     lr_critic:
-      values: [ 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007 ]
+      values: [ 0.0005, 0.00055, 0.0006, 0.00065, 0.0007 ]
     num_hidden_layers:
-      values: [ 2 ]
+      values: [ 3 ]
     hidden_size:
       values: [ 64 ]
     num_referents:
       values: [ 16 ]
     max_grad_norm:
-      values: [ 0.5, 1 ]
+      values: [ 0.5, 1, 2 ]
     v_coef:
-      values: [ 0.3, 0.5 ]
+      values: [ 0.5 ]
     e_coef:
-      values: [ 0.001, 0.01, 0.1 ]
+      values: [ 0.01 ]
     normalize_advantage:
       values: [ false ]
     critic_activation:
