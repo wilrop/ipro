@@ -96,7 +96,6 @@ class SNMODQN(SNDRLOracle):
         self.online_epsilon_start = online_epsilon_start  # The starting epsilon for online learning.
         self.online_epsilon_end = online_epsilon_end  # The ending epsilon for online learning.
         self.online_exploration_frac = online_exploration_frac  # The fraction of online learning steps to explore.
-        self.online_steps = online_steps  # The number of steps to learn online.
 
         self.pre_train_freq = pre_train_freq
         self.online_train_freq = online_train_freq
