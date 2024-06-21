@@ -38,4 +38,3 @@ python3 ${OPTIMISATION_DIR}/run_agent.py \
   --config_dir ${IPRO_DIR}/configs \
   --experiment base \
   --sweep_id ${SWEEP_ID} \
-  --override_config experiment.wandb_project_name=IPRO_dst_grid
