@@ -22,7 +22,7 @@ parameters:
     max_grad_norm:
       values: [ 1, 2, 5 ]
     n_steps:
-      values: [ 8, 16 ]
+      values: [ 16 ]
     normalize_advantage:
       values: [ false ]
     pretraining_steps:
