@@ -8,7 +8,7 @@
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/ipro_gs_%A_%a.out
-#SBATCH --array=1-40
+#SBATCH --array=1-26
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
