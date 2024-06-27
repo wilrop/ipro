@@ -1,4 +1,4 @@
-name: dqn_no_pretrain_1
+name: dqn_no_pretrain_2
 method: grid
 metric:
   name: outer/hypervolume
@@ -8,11 +8,11 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr:
-      values: [ 0.0006, 0.00055, 0.0005, 0.00045, 0.0004 ]
+      values: [ 0.00055, 0.0005, 0.00045 ]
     num_hidden_layers:
       values: [ 2 ]
     hidden_size:
-      values: [ 64, 128 ]
+      values: [ 128 ]
     activation:
       values: [ tanh ]
     pre_train_freq:
@@ -20,10 +20,16 @@ parameters:
     num_referents:
       values: [ 16 ]
     batch_size:
-      values: [ 16, 32, 64 ]
+      values: [ 32 ]
     buffer_size:
-      values: [ 2000, 2500, 3000 ]
+      values: [ 2500 ]
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 1.5e4, 2e4, 2.5e4 ]
+      values: [ 2.5e4 ]
+    online_epsilon_start:
+      values: [ 1.0 ]
+    online_epsilon_end:
+      values: [ 0.05, 0.1 ]
+    online_exploration_frac:
+      values: [ 0.3, 0.5, 0.7 ]
