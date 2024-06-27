@@ -8,9 +8,9 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     lr_actor:
-      values: [ 0.001, 0.00095, 0.0009, 0.00085, 0.0008 ]
+      values: [ 0.0009, 0.00085, 0.0008, 0.00075, 0.0007 ]
     lr_critic:
-      values: [ 0.001, 0.00095, 0.0009, 0.00085, 0.0008 ]
+      values: [ 0.0009, 0.00085, 0.0008, 0.00075, 0.0007 ]
     hidden_size_actor:
       values: [ 64 ]
     hidden_size_critic:
@@ -20,11 +20,11 @@ parameters:
     num_hidden_layers_critic:
       values: [ 2 ]
     max_grad_norm:
-      values: [ 5, 10 ]
+      values: [ 5 ]
     v_coef:
-      values: [ 0.2, 0.3 ]
+      values: [ 0.2, 0.3, 0.4 ]
     e_coef:
-      values: [ 0.001, 0.005 ]
+      values: [ 0.0001, 0.0005, 0.001 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
@@ -32,4 +32,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2e4, 2.5e4 ]
+      values: [ 2e4 ]
