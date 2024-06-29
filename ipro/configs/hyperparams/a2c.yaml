@@ -1,4 +1,4 @@
-name: a2c_no_pretrain_3
+name: a2c_no_pretrain_4
 method: grid
 metric:
   name: outer/hypervolume
@@ -7,10 +7,12 @@ parameters:
   seed:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
+    aug:
+      values: [ 0.01, 0.05, 0.1 ]
     lr_actor:
-      values: [ 0.001, 0.00095, 0.0009, 0.00085, 0.0008 ]
+      values: [ 0.0008 ]
     lr_critic:
-      values: [ 0.00085, 0.0008, 0.00075, 0.0007, 0.00065 ]
+      values: [ 0.0007 ]
     hidden_size_actor:
       values: [ 64 ]
     hidden_size_critic:
@@ -24,7 +26,7 @@ parameters:
     v_coef:
       values: [ 0.3 ]
     e_coef:
-      values: [ 0.0005, 0.001 ]
+      values: [ 0.001 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
@@ -32,4 +34,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2e4, 2.5e4 ]
+      values: [ 2e4, 2.5e4, 3e4 ]
