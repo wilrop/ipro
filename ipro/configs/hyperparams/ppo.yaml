@@ -1,4 +1,4 @@
-name: ppo_no_pretrain_5
+name: ppo_no_pretrain_6
 method: grid
 metric:
   name: outer/hypervolume
@@ -8,13 +8,13 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     aug:
-      values: [ 0.001, 0.005, 0.01, 0.02, 0.05 ]
+      values: [ 0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2 ]
     scale:
       values: [ 1, 10, 50, 100 ]
     lr_actor:
-      values: [ 0.00085, 0.0008 ]
+      values: [ 0.0009, 0.00085, 0.0008 ]
     lr_critic:
-      values: [ 0.00085, 0.0008 ]
+      values: [ 0.0009, 0.00085, 0.0008 ]
     hidden_size_actor:
       values: [ 64 ]
     hidden_size_critic:
@@ -24,11 +24,11 @@ parameters:
     num_hidden_layers_critic:
       values: [ 2 ]
     max_grad_norm:
-      values: [ 5 ]
+      values: [ 5, 10 ]
     v_coef:
       values: [ 0.3 ]
     e_coef:
-      values: [ 0.001, 0.005, 0.01 ]
+      values: [ 0.001 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
@@ -36,4 +36,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2e4 ]
+      values: [ 2.5e4 ]
