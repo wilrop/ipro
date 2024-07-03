@@ -1,4 +1,4 @@
-name: a2c_no_pretrain_6
+name: a2c_no_pretrain_7
 method: grid
 metric:
   name: outer/hypervolume
@@ -36,4 +36,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2.5e4 ]
+      values: [ 3e4 ]

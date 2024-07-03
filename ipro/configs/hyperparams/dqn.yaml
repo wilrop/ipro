@@ -1,4 +1,4 @@
-name: dqn_no_pretrain_6
+name: dqn_no_pretrain_7
 method: grid
 metric:
   name: outer/hypervolume
@@ -8,11 +8,11 @@ parameters:
     values: [ 0, 1, 2, 3, 4 ]
   oracle:
     aug:
-      values: [ 0.01, 0.02 ]
+      values: [ 0.01 ]
     scale:
-      values: [ 75, 100 ]
+      values: [ 50, 60, 70, 80, 90, 100 ]
     lr:
-      values: [ 0.0005 ]
+      values: [ 0.00055, 0.0005, 000045 ]
     num_hidden_layers:
       values: [ 2 ]
     hidden_size:
@@ -28,9 +28,9 @@ parameters:
     batch_size:
       values: [ 32, 64 ]
     buffer_size:
-      values: [ 2500 ]
+      values: [ 2000, 2500, 3000 ]
     online_exploration_frac:
-      values: [ 0.5, 0.6, 0.75 ]
+      values: [ 0.5 ]
     tau:
       values: [ 0.1 ]
     pretraining_steps:
