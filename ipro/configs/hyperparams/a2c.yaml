@@ -1,7 +1,7 @@
 name: a2c_no_pretrain_7
 method: bayes
 metric:
-  name: outer/hypervolume
+  name: mean_hv
   goal: maximize
 parameters:
   num_seeds:

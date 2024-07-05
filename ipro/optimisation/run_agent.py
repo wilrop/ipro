@@ -50,7 +50,10 @@ def run_multi_seed(config, max_hv=4255, hv_buffer=5):
         if hv < (max_hv - hv_buffer):  # Early stopping
             break
     mean_hv = np.mean(results)
-    wandb.log({'outer/hypervolume': mean_hv})
+    wandb.log({
+        'mean_hv': mean_hv,
+        'n_runs': len(results),
+    })
     return mean_hv
 
 
