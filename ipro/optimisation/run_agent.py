@@ -3,6 +3,7 @@ import json
 import numpy as np
 
 from typing import Any
+from copy import deepcopy
 from functools import partial
 from omegaconf import OmegaConf, DictConfig
 
@@ -44,11 +45,11 @@ def run_multi_seed(config, max_hv=4255, hv_buffer=5):
     config.experiment.track_oracle = False
     for seed in range(config.pop('num_seeds')):
         config.experiment.seed = seed
-        hv = run_experiment(config)
+        hv = run_experiment(deepcopy(config))
         results.append(hv)
         wandb.log({
             'mean_hv': np.mean(results),
-            'n_runs': seed,
+            'n_runs': seed + 1,
         })
         if hv < (max_hv - hv_buffer):  # Early stopping
             break
