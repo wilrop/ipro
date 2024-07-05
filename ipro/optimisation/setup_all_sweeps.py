@@ -13,7 +13,10 @@ def setup_all_sweeps(default_params: dict, agent_combos: list[dict]) -> list:
         args.update(agent_combo)
         args = namedtuple("Args", args.keys())(*args.values())
         config = load_config(args)
-        num_experiments = calc_num_experiments(config.hyperparams.parameters)
+        if config.hyperparams.method == 'grid':
+            num_experiments = calc_num_experiments(config.hyperparams.parameters)
+        else:
+            num_experiments = 'infinite'
         sweep_config = config.pop('hyperparams')
         experiment_config = config.pop('experiment')
         sweep_id = create_sweep(config, sweep_config, experiment_config)

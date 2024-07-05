@@ -1,5 +1,6 @@
 import wandb
 import json
+import numpy as np
 
 from typing import Any
 from functools import partial
@@ -32,6 +33,27 @@ def construct_hidden(algorithm, oracle_params):
     return oracle_params
 
 
+def run_single_seed(config):
+    config.experiment.seed = config.pop('seed')  # Relocate seed.
+    return run_experiment(config)
+
+
+def run_multi_seed(config, max_hv=4255, hv_buffer=5):
+    results = []
+    config.experiment.track_outer = False  # Necessary because we repeat the same config multiple times.
+    config.experiment.track_oracle = False
+    for seed in range(config.pop('num_seeds')):
+        config.oracle.online_steps = 100
+        config.experiment.seed = seed
+        hv = run_experiment(config)
+        results.append(hv)
+        if hv < (max_hv - hv_buffer):  # Early stopping
+            break
+    mean_hv = np.mean(results)
+    wandb.log({'outer/hypervolume': mean_hv})
+    return mean_hv
+
+
 def run_hp_search(exp_config) -> Any:
     """Simple function to extract the config and run the experiment."""
     run = wandb.init()
@@ -39,9 +61,11 @@ def run_hp_search(exp_config) -> Any:
     if 'hidden_size' in config.oracle or 'hidden_size_actor' in config.oracle:
         config.oracle = construct_hidden(config.oracle.algorithm, config.oracle)
     config.experiment = exp_config
-    config.experiment.seed = config.pop('seed')  # Relocate seed.
     run.config['group'] = json.dumps(OmegaConf.to_container(config.oracle, resolve=True), sort_keys=True)
-    return run_experiment(config)
+    if 'num_seeds' in config:
+        return run_multi_seed(config)
+    else:
+        return run_single_seed(config)
 
 
 def run_agents(exp_config: DictConfig, sweep_id: str):

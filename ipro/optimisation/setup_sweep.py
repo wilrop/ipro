@@ -13,6 +13,9 @@ def add_params_layers(config: dict) -> dict:
         if type(value) == dict:
             if len(value.keys()) == 1 and "values" in value:
                 new_config[key] = value
+            elif "distribution" in value:
+                assert set(value.keys()).issubset({"distribution", "min", "max", "q", "mu", "sigma"})
+                new_config[key] = value
             else:
                 new_config[key] = add_params_layers(value)
         else:
@@ -43,7 +46,10 @@ if __name__ == "__main__":
     parser = get_sweep_parser()
     args = parser.parse_args()
     config = load_config(args)
-    num_experiments = calc_num_experiments(config.hyperparams.parameters)
+    if config.hyperparams.method == 'grid':
+        num_experiments = calc_num_experiments(config.hyperparams.parameters)
+    else:
+        num_experiments = 'infinite'
     experiment_config = config.pop('experiment')
     sweep_config = config.pop('hyperparams')
     sweep_id = create_sweep(config, sweep_config, experiment_config)
