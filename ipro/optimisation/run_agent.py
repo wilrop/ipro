@@ -43,18 +43,16 @@ def run_multi_seed(config, max_hv=4255, hv_buffer=5):
     config.experiment.track_outer = False  # Necessary because we repeat the same config multiple times.
     config.experiment.track_oracle = False
     for seed in range(config.pop('num_seeds')):
-        config.oracle.online_steps = 100
         config.experiment.seed = seed
         hv = run_experiment(config)
         results.append(hv)
+        wandb.log({
+            'mean_hv': np.mean(results),
+            'n_runs': seed,
+        })
         if hv < (max_hv - hv_buffer):  # Early stopping
             break
-    mean_hv = np.mean(results)
-    wandb.log({
-        'mean_hv': mean_hv,
-        'n_runs': len(results),
-    })
-    return mean_hv
+    return np.mean(results)
 
 
 def run_hp_search(exp_config) -> Any:
