@@ -1,5 +1,7 @@
 import wandb
 import json
+import time
+import random
 import numpy as np
 
 from typing import Any
@@ -39,7 +41,7 @@ def run_single_seed(config):
     return run_experiment(config)
 
 
-def run_multi_seed(config, max_hv=4255, hv_buffer=5):
+def run_multi_seed(config, max_hv=4255, hv_buffer=1000):
     results = []
     config.experiment.track_outer = False  # Necessary because we repeat the same config multiple times.
     config.experiment.track_oracle = False
@@ -47,10 +49,18 @@ def run_multi_seed(config, max_hv=4255, hv_buffer=5):
         config.experiment.seed = seed
         hv = run_experiment(deepcopy(config))
         results.append(hv)
-        wandb.log({
-            'mean_hv': np.mean(results),
-            'n_runs': seed + 1,
-        })
+
+        while True:
+            try:
+                wandb.log({
+                    'mean_hv': np.mean(results),
+                    'n_runs': seed + 1,
+                })
+                break
+            except wandb.Error as e:
+                print(f"wandb got error {e}")
+                time.sleep(random.randint(10, 50))
+
         if hv < (max_hv - hv_buffer):  # Early stopping
             break
     return np.mean(results)

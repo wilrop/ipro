@@ -8,7 +8,7 @@
 #SBATCH --mail-user=willem.ropke@vub.be
 #SBATCH --mail-type=ALL
 #SBATCH --output=logs/ipro_gs_%A_%a.out
-#SBATCH --array=1-40
+#SBATCH --array=1-100
 
 # Load the necessary modules.
 module load Python/3.10.4-GCCcore-11.3.0
@@ -31,7 +31,7 @@ LINE=$((${SLURM_ARRAY_TASK_ID} % ${NUM_LINES} + 1))
 SWEEP_ID=$(head -${LINE} ${PROJ_DIR}/hpc/sweep_ids.txt | tail -1)
 
 # This forces the jobs to start sequentially. The startup time is estimated at 2 seconds.
-sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 2))s
+sleep $(((${SLURM_ARRAY_TASK_ID} - 1) * 3))s
 
 # Run the experiments.
 python3 ${OPTIMISATION_DIR}/run_agent.py \
