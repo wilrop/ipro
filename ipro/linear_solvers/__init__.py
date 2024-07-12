@@ -1,5 +1,4 @@
 from ipro.linear_solvers.finite import Finite
-from ipro.linear_solvers.known_box import KnownBox
 
 
 def init_linear_solver(alg, *args, **kwargs):
@@ -15,7 +14,5 @@ def init_linear_solver(alg, *args, **kwargs):
     """
     if alg == 'finite':
         return Finite(*args, **kwargs)
-    elif alg == 'known_box':
-        return KnownBox(*args, **kwargs)
     else:
         raise ValueError(f'Unknown linear solver algorithm: {alg}')
