@@ -136,52 +136,56 @@ class IPRO2D(OuterLoop):
         """Check if the algorithm is done."""
         return not self.box_queue or super().is_done(step)
 
+    def replay_correct(self):
+        self.box_queue.pop(-1)  # Remove the first box.
+
     def replay(self, vec, iter_pairs):
         replay_triggered = self.replay_triggered
         self.reset()
         self.replay_triggered = replay_triggered + 1
         self.init_phase()
         idx = 0
-        new_box_point_pairs = []
+        new_iter_pairs = []
 
         for subproblem, point in iter_pairs:  # Replay the points that were added correctly
-            box = subproblem.box
-            self.box_queue.pop(-1)  # Remove the box.
             idx += 1
-            if strict_pareto_dominates(point, box.nadir):
+            self.replay_correct()
+            if strict_pareto_dominates(point, subproblem.referent):
                 if strict_pareto_dominates(vec, point):
-                    self.update_found(box, vec)
-                    new_box_point_pairs.append((box, vec))
+                    self.update_found(subproblem, vec)
+                    new_iter_pairs.append((subproblem, vec))
                     break
                 else:
-                    self.update_found(box, point)
-                    new_box_point_pairs.append((box, point))
+                    self.update_found(subproblem, point)
+                    new_iter_pairs.append((subproblem, point))
             else:
-                if strict_pareto_dominates(vec, box.nadir):
-                    self.update_found(box, vec)
-                    new_box_point_pairs.append((box, vec))
+                if strict_pareto_dominates(vec, subproblem.referent):
+                    self.update_found(subproblem, vec)
+                    new_iter_pairs.append((subproblem, vec))
                     break
                 else:
-                    self.update_not_found(box, point)
-                    new_box_point_pairs.append((box, point))
+                    self.update_not_found(subproblem, point)
+                    new_iter_pairs.append((subproblem, point))
 
-        for box, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
+        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
             box_queue = deepcopy(self.box_queue)  # Avoid messing with the box_queue during processing.
-            if strict_pareto_dominates(point, box.nadir):
+            if strict_pareto_dominates(point, subproblem.referent):
                 for box_id, open_box in reversed(list(enumerate(box_queue))):
                     if strict_pareto_dominates(point, open_box.nadir):
                         self.box_queue.pop(box_id)  # This is okay because we are working backwards.
-                        self.update_found(open_box, point)
-                        new_box_point_pairs.append((open_box, point))
+                        new_subproblem = Subproblem2D(box=open_box, referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+                        self.update_found(new_subproblem, point)
+                        new_iter_pairs.append((new_subproblem, point))
                         break
             else:
                 for box_id, open_box in reversed(list(enumerate(box_queue))):
-                    if pareto_dominates(open_box.nadir, box.nadir):
+                    if pareto_dominates(open_box.nadir, subproblem.referent):
                         self.box_queue.pop(box_id)
-                        self.update_not_found(open_box, point)
-                        new_box_point_pairs.append((open_box, point))
+                        new_subproblem = Subproblem2D(box=open_box, referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+                        self.update_not_found(new_subproblem, point)
+                        new_iter_pairs.append((new_subproblem, point))
 
-        return new_box_point_pairs
+        return new_iter_pairs
 
     def update_found(self, subproblem, vec):
         """The update to perform when the Pareto oracle found a new Pareto dominant vector."""

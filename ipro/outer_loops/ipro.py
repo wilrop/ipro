@@ -194,7 +194,10 @@ class IPRO(OuterLoop):
         else:
             raise ValueError(f'Unknown method {method}')
 
-    def replay(self, vec, ref_point_pairs):
+    def replay_correct(self):
+        pass
+
+    def replay(self, vec, iter_pairs):
         """Replay the algorithm while accounting for the non-optimal Pareto oracle.
 
         Note:
@@ -213,41 +216,45 @@ class IPRO(OuterLoop):
         self.replay_triggered = replay_triggered + 1
         self.init_phase()
         idx = 0
-        new_ref_point_pairs = []
+        new_iter_pairs = []
 
-        for subproblem, point in ref_point_pairs:  # Replay the points that were added correctly
+        for subproblem, point in iter_pairs:  # Replay the points that were added correctly
             idx += 1
-            if strict_pareto_dominates(point, subproblem.ref):
+            self.replay_correct()
+            if strict_pareto_dominates(point, subproblem.referent):
                 if strict_pareto_dominates(vec, point):
                     self.update_found(subproblem, vec)
-                    new_ref_point_pairs.append((subproblem, vec))
+                    new_iter_pairs.append((subproblem, vec))
                     break
                 else:
                     self.update_found(subproblem, point)
-                    new_ref_point_pairs.append((subproblem, point))
+                    new_iter_pairs.append((subproblem, point))
             else:
-                if strict_pareto_dominates(vec, subproblem.ref):
+                if strict_pareto_dominates(vec, subproblem.referent):
                     self.update_found(subproblem, vec)
-                    new_ref_point_pairs.append((subproblem, vec))
+                    new_iter_pairs.append((subproblem, vec))
                     break
                 else:
                     self.update_not_found(subproblem, point)
-                    new_ref_point_pairs.append((subproblem, point))
+                    new_iter_pairs.append((subproblem, point))
 
-        for subproblem, point in ref_point_pairs[idx:]:  # Process the remaining points to see if we can still add them.
+        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
             lower_points = np.copy(self.lower_points)  # Avoids messing with lower points while iterating over them.
-            if strict_pareto_dominates(point, subproblem.ref):
+            if strict_pareto_dominates(point, subproblem.referent):
                 for lower in lower_points:
                     if strict_pareto_dominates(point, lower):
-                        self.update_found(subproblem, point)
-                        new_ref_point_pairs.append((lower, point))
+                        new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
+                        self.update_found(new_subproblem, point)
+                        new_iter_pairs.append((new_subproblem, point))
                         break
             else:
                 for lower in lower_points:
-                    if pareto_dominates(lower, subproblem.ref):
-                        self.update_not_found(lower, point)
-                        new_ref_point_pairs.append((lower, point))
-        return new_ref_point_pairs
+                    if pareto_dominates(lower, subproblem.referent):
+                        new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
+                        self.update_not_found(new_subproblem, point)
+                        new_iter_pairs.append((new_subproblem, point))
+
+        return new_iter_pairs
 
     def update_found(self, subproblem, vec):
         """The update to perform when the Pareto oracle found a new Pareto dominant vector."""
