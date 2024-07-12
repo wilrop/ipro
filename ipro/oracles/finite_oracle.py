@@ -1,38 +1,47 @@
+from typing import Any, Optional
+
 import numpy as np
-from ipro.utils.pareto import extreme_prune
+
+from ipro.oracles.asf_oracle import ASFOracle
 from ipro.oracles.vector_u import create_batched_aasf
 
 
-class FiniteOracle:
+class FiniteOracle(ASFOracle):
     """A simple oracle for the known problem setting."""
 
-    def __init__(self, problem, aug=0.01):
-        self.problem = problem
-        self.aug = aug
+    def __init__(
+            self,
+            problem: np.ndarray,
+            direction: str = 'maximize',
+            aug: float = 0.1,
+            scale: float = 1,
+            vary_nadir: bool = False,
+            vary_ideal: bool = False,
+            **kwargs: Any
+    ):
+        super().__init__(problem, aug=aug, scale=scale, vary_nadir=vary_nadir, vary_ideal=vary_ideal, **kwargs)
 
-    def get_nadir(self):
-        """Get the true nadir point.
+        self.direction = direction
+        self.sign = 1 if direction == 'maximize' else -1
 
-        Note:
-            This is purely used for testing purposes.
+    def config(self) -> dict:
+        """Return the configuration of the oracle."""
+        conf = super().config()
+        return {
+            **conf,
+            'direction': self.direction
+        }
 
-        Returns:
-            np.ndarray: The true nadir point.
-        """
-        correct_pf = extreme_prune(np.copy(self.problem))
-        return np.min(correct_pf, axis=0)
-
-    def solve(self, referent, ideal):
-        """The inner loop solver for the basic setting.
-
-        Args:
-            referent (np.ndarray): The reference vector.
-            ideal (np.ndarray): The ideal vector.
-
-        Returns:
-            np.ndarray: The Pareto optimal vector.
-        """
-        u_f = create_batched_aasf(referent, referent, ideal, aug=self.aug)
-        utilities = u_f(self.problem)
+    def solve(
+            self,
+            referent: np.ndarray,
+            nadir: Optional[np.ndarray] = None,
+            ideal: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        """The inner loop solver for the basic setting."""
+        params = self.get_asf_params(referent, nadir, ideal)
+        referent, nadir, ideal = [self.sign * param for param in params]
+        u_f = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale)
+        utilities = u_f(self.sign * self.problem)
         best_point = np.argmax(utilities)
         return self.problem[best_point]
