@@ -323,14 +323,18 @@ class SNMOA2C(SNDRLOracle):
         """Pretrain the algorithm."""
         self.reset()
         self.setup_ac_metrics()
-        referents = self.sample_referents(self.pretrain_iters, self.nadir, self.ideal)
+        nadir = torch.tensor(self.nadir, dtype=torch.float32, requires_grad=False)
+        ideal = torch.tensor(self.ideal, dtype=torch.float32, requires_grad=False)
+        referents = self.sample_referents(self.pretrain_iters, nadir, ideal)
         for idx, referent in enumerate(referents):
             print(f"Pretrain iter {idx + 1}/{self.pretrain_iters}: referent {referent}")
-            self.train(referent,
-                       self.nadir,
-                       self.ideal,
-                       steps=self.pretraining_steps,
-                       num_referents=self.num_referents)
+            self.train(
+                referent,
+                nadir,
+                ideal,
+                steps=self.pretraining_steps,
+                num_referents=self.num_referents
+            )
 
         self.save_model()
 

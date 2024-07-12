@@ -4,33 +4,40 @@ import numpy as np
 import torch.nn as nn
 
 from collections import deque
+from ipro.oracles.asf_oracle import ASFOracle
 from ipro.oracles.vector_u import create_batched_aasf
 
 
-class DRLOracle:
+class DRLOracle(ASFOracle):
     """The base class for deep reinforcement learning oracles that execute independent learning."""
 
-    def __init__(self,
-                 env,
-                 gamma=0.99,
-                 aug=0.1,
-                 scale=100,
-                 warm_start=False,
-                 vary_nadir=False,
-                 vary_ideal=False,
-                 eval_episodes=100,
-                 deterministic_eval=True,
-                 track=False,
-                 seed=0,
-                 alg_name=None):
+    def __init__(
+            self,
+            env,
+            gamma=0.99,
+            aug=0.1,
+            scale=100,
+            warm_start=False,
+            vary_nadir=False,
+            vary_ideal=False,
+            eval_episodes=100,
+            deterministic_eval=True,
+            track=False,
+            seed=0,
+            alg_name=None
+    ):
+        super().__init__(
+            problem=env,
+            aug=aug,
+            scale=scale,
+            vary_nadir=vary_nadir,
+            vary_ideal=vary_ideal,
+        )
+        self.env = env
         self.seed = seed
         self.np_rng = np.random.default_rng(seed=seed)
         self.torch_rng = torch.Generator()
         self.torch_rng.manual_seed(seed)
-
-        self.env = env
-        self.aug = aug
-        self.scale = scale
 
         try:
             self.num_actions = env.action_space.n
@@ -46,13 +53,7 @@ class DRLOracle:
         self.u_func = None
         self.trained_models = {}  # Collection of trained models that can be used for warm-starting.
 
-        self.nadir = None
-        self.ideal = None
-        self.vary_nadir = vary_nadir
-        self.vary_ideal = vary_ideal
-
         self.iteration = 0
-
         self.warm_start = warm_start
 
         self.episodic_returns = deque(maxlen=eval_episodes)
@@ -63,14 +64,12 @@ class DRLOracle:
 
     def config(self):
         """Get the config of the algorithm."""
+        conf = super().config()
         return {
+            **conf,
             "alg_name": self.alg_name,
             "env_id": self.env.env_id,
-            "aug": self.aug,
-            "scale": self.scale,
             "gamma": self.gamma,
-            "vary_nadir": self.vary_nadir,
-            "vary_ideal": self.vary_ideal,
             "eval_episodes": self.eval_episodes,
             "deterministic_eval": self.deterministic_eval,
             "seed": self.seed,
@@ -90,11 +89,6 @@ class DRLOracle:
         if isinstance(m, nn.Linear):
             torch.nn.init.xavier_uniform_(m.weight, gain=std)
             torch.nn.init.constant_(m.bias, bias_const)
-
-    def init_oracle(self, nadir=None, ideal=None):
-        """Initialise the oracle."""
-        self.nadir = nadir
-        self.ideal = ideal
 
     def reset(self):
         """Reset the environment and the agent."""
@@ -278,23 +272,11 @@ class DRLOracle:
             critic = critic.state_dict()
         self.trained_models[tuple(referent)] = (actor, critic)
 
-    def u_params(self, referent, nadir=None, ideal=None):
-        """Get the parameters for the utility function."""
-        # Determine boundaries of the utility function.
-        nadir = nadir if nadir is not None and self.vary_nadir else self.nadir
-        ideal = ideal if ideal is not None and self.vary_ideal else self.ideal
-
-        # Make arrays tensors.
-        referent = torch.tensor(referent, dtype=torch.float32)
-        nadir = torch.tensor(nadir, dtype=torch.float32)
-        ideal = torch.tensor(ideal, dtype=torch.float32)
-        return referent, nadir, ideal
-
     def solve(self, referent, nadir=None, ideal=None):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
 
-        referent, nadir, ideal = self.u_params(referent, nadir, ideal)
+        referent, nadir, ideal = self.get_asf_params(referent, nadir, ideal, backend='torch')
         self.u_func = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()
         pareto_point = self.evaluate(eval_episodes=self.eval_episodes, deterministic=self.deterministic_eval)

@@ -49,9 +49,9 @@ class ASFOracle(Oracle):
         ideal = ideal if ideal is not None and self.vary_ideal else self.ideal
 
         if backend == 'torch':
-            referent = torch.tensor(referent, dtype=torch.float32)
-            nadir = torch.tensor(nadir, dtype=torch.float32)
-            ideal = torch.tensor(ideal, dtype=torch.float32)
+            referent = torch.tensor(referent, dtype=torch.float32, requires_grad=False)
+            nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
+            ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
         return referent, nadir, ideal
 
     def solve(
