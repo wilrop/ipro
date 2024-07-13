@@ -8,17 +8,20 @@ parameters:
     values: [ 5 ]
   oracle:
     aug:
-      values: [ 0.05, 0.1 ]
+      distribution: q_uniform
+      min: 0.01
+      max: 0.5
+      q: 0.01
     scale:
       values: [ 50, 100, 150 ]
     lr_actor:
       distribution: q_uniform
       min: 0.0001
-      max: 0.0005
+      max: 0.001
       q: 0.0001
     lr_critic:
       distribution: q_uniform
-      min: 0.0005
+      min: 0.0001
       max: 0.001
       q: 0.0001
     hidden_size_actor:
@@ -26,11 +29,11 @@ parameters:
     hidden_size_critic:
       values: [ 64, 128, 256 ]
     num_hidden_layers_actor:
-      values: [ 2, 3 ]
+      values: [ 1, 2, 3 ]
     num_hidden_layers_critic:
-      values: [ 2, 3 ]
+      values: [ 1, 2, 3 ]
     max_grad_norm:
-      values: [ 5, 10, 50 ]
+      values: [ 0.5, 1, 5, 10 ]
     v_coef:
       distribution: q_uniform
       min: 0.1
@@ -38,13 +41,11 @@ parameters:
       q: 0.1
     e_coef:
       distribution: q_uniform
-      min: 0.001
-      max: 0.05
-      q: 0.001
+      min: 0.0001
+      max: 0.1
+      q: 0.0001
     n_steps:
-      values: [ 10, 16, 20 ]
-    num_envs:
-      values: [ 4, 8, 16, 32 ]
+      values: [ 10, 16 ]
     normalize_advantage:
       values: [ false ]
     num_minibatches:
@@ -54,4 +55,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2.5e4 ]
+      values: [ 3e4, 3.5e4 ]
