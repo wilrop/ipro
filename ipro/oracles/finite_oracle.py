@@ -13,13 +13,9 @@ class FiniteOracle(ASFOracle):
             self,
             problem: np.ndarray,
             direction: str = 'maximize',
-            aug: float = 0.1,
-            scale: float = 1,
-            vary_nadir: bool = False,
-            vary_ideal: bool = False,
             **kwargs: Any
     ):
-        super().__init__(problem, aug=aug, scale=scale, vary_nadir=vary_nadir, vary_ideal=vary_ideal, **kwargs)
+        super().__init__(problem, **kwargs)
 
         self.direction = direction
         self.sign = 1 if direction == 'maximize' else -1

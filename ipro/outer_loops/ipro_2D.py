@@ -3,7 +3,7 @@ import numpy as np
 from sortedcontainers import SortedKeyList
 from copy import deepcopy
 
-from ipro.outer_loops.typing import Subproblem2D
+from ipro.outer_loops.typing import Subproblem
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
 from ipro.utils.pareto import strict_pareto_dominates, extreme_prune, pareto_dominates
@@ -125,83 +125,58 @@ class IPRO2D(OuterLoop):
         self.oracle.init_oracle(nadir=self.sign * self.nadir, ideal=self.sign * self.ideal)  # Initialise the oracle.
         return len(self.pf) == 1
 
-    def get_next_box(self):
-        """Get the next box to search."""
-        if self.box_queue:
-            return self.box_queue.pop(-1)
-        else:
-            raise Exception('No more boxes to split.')
-
     def is_done(self, step):
         """Check if the algorithm is done."""
         return not self.box_queue or super().is_done(step)
 
-    def replay_correct(self):
-        self.box_queue.pop(-1)  # Remove the first box.
+    def get_iterable_for_replay(self):
+        box_queue = deepcopy(self.box_queue)
+        return reversed(list(enumerate(box_queue)))
 
-    def replay(self, vec, iter_pairs):
-        replay_triggered = self.replay_triggered
-        self.reset()
-        self.replay_triggered = replay_triggered + 1
-        self.init_phase()
-        idx = 0
-        new_iter_pairs = []
+    def maybe_add_solution(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: tuple[Box, int],
+    ) -> Subproblem | bool:
+        open_box, open_box_idx = item
+        if strict_pareto_dominates(point, open_box.nadir):
+            new_subproblem = Subproblem(referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+            self.update_found(new_subproblem, point, box_idx=open_box_idx)
+            return new_subproblem
+        else:
+            return False
 
-        for subproblem, point in iter_pairs:  # Replay the points that were added correctly
-            idx += 1
-            self.replay_correct()
-            if strict_pareto_dominates(point, subproblem.referent):
-                if strict_pareto_dominates(vec, point):
-                    self.update_found(subproblem, vec)
-                    new_iter_pairs.append((subproblem, vec))
-                    break
-                else:
-                    self.update_found(subproblem, point)
-                    new_iter_pairs.append((subproblem, point))
-            else:
-                if strict_pareto_dominates(vec, subproblem.referent):
-                    self.update_found(subproblem, vec)
-                    new_iter_pairs.append((subproblem, vec))
-                    break
-                else:
-                    self.update_not_found(subproblem, point)
-                    new_iter_pairs.append((subproblem, point))
+    def maybe_add_completed(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: tuple[Box, int],
+    ) -> Subproblem | bool:
+        open_box, open_box_idx = item
+        if pareto_dominates(open_box.nadir, subproblem.referent):
+            new_subproblem = Subproblem(referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+            self.update_not_found(new_subproblem, point, box_idx=open_box_idx)
+            return new_subproblem
+        else:
+            return False
 
-        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
-            box_queue = deepcopy(self.box_queue)  # Avoid messing with the box_queue during processing.
-            if strict_pareto_dominates(point, subproblem.referent):
-                for box_id, open_box in reversed(list(enumerate(box_queue))):
-                    if strict_pareto_dominates(point, open_box.nadir):
-                        self.box_queue.pop(box_id)  # This is okay because we are working backwards.
-                        new_subproblem = Subproblem2D(box=open_box, referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
-                        self.update_found(new_subproblem, point)
-                        new_iter_pairs.append((new_subproblem, point))
-                        break
-            else:
-                for box_id, open_box in reversed(list(enumerate(box_queue))):
-                    if pareto_dominates(open_box.nadir, subproblem.referent):
-                        self.box_queue.pop(box_id)
-                        new_subproblem = Subproblem2D(box=open_box, referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
-                        self.update_not_found(new_subproblem, point)
-                        new_iter_pairs.append((new_subproblem, point))
-
-        return new_iter_pairs
-
-    def update_found(self, subproblem, vec):
+    def update_found(self, subproblem, vec, box_idx=-1):
         """The update to perform when the Pareto oracle found a new Pareto dominant vector."""
-        self.update_box_queue(subproblem.box, vec)
+        self.update_box_queue(self.box_queue.pop(box_idx), vec)
         self.pf = np.vstack((self.pf, vec))
 
-    def update_not_found(self, subproblem, vec):
+    def update_not_found(self, subproblem, vec, box_idx=-1):
         """The update to perform when the Pareto oracle did not find a new Pareto dominant vector."""
-        self.discarded_hv += subproblem.box.volume
-        self.completed = np.vstack((self.completed, np.copy(subproblem.box.nadir)))
+        box = self.box_queue.pop(box_idx)
+        self.discarded_hv += box.volume
+        self.completed = np.vstack((self.completed, np.copy(subproblem.referent)))
         if strict_pareto_dominates(vec, self.nadir):
             self.robust_points = np.vstack((self.robust_points, vec))
 
     def decompose_problem(self, iteration, method='first'):
-        box = self.get_next_box()
-        subproblem = Subproblem2D(box=box, referent=box.nadir, nadir=box.nadir, ideal=box.ideal)
+        box = self.box_queue[-1]
+        subproblem = Subproblem(referent=box.nadir, nadir=box.nadir, ideal=box.ideal)
         return subproblem
 
     def update_excluded_volume(self):

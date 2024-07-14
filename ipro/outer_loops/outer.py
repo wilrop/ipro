@@ -4,7 +4,7 @@ import wandb
 import platform
 import numpy as np
 
-from typing import Optional
+from typing import Optional, Iterable, Any
 from ipro.outer_loops.typing import Subproblem, Subsolution, IPROCallback
 
 from pymoo.indicators.hv import Hypervolume
@@ -31,11 +31,11 @@ class OuterLoop:
             linear_solver: LinearSolver,
             method: str = "IPRO",
             direction: str = "maximize",  # "minimize" or "maximize
-            ref_point: np.ndarray = None,
+            ref_point: Optional[np.ndarray] = None,
             offset: float = 1,
             tolerance: float = 1e-1,
             max_iterations: Optional[int] = None,
-            known_pf: np.ndarray = None,
+            known_pf: Optional[np.ndarray] = None,
             track: bool = False,
             exp_name: Optional[str] = None,
             wandb_project_name: Optional[str] = None,
@@ -97,19 +97,6 @@ class OuterLoop:
         self.error = np.inf
         self.replay_triggered = 0
 
-    def finish(self, start_time: float, iteration: int):
-        """Finish the algorithm."""
-        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
-        self.log_iteration(iteration + 1)
-
-        end_str = f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | '
-        end_str += f'HV {self.hv:.2f} | PF size {len(self.pf)} |'
-        print(end_str)
-
-        self.close_wandb()
-
     def config(self) -> dict:
         """Get the config of the algorithm."""
         extra_config = self.extra_config if self.extra_config is not None else {}
@@ -167,6 +154,19 @@ class OuterLoop:
             self.run_id = wandb.run.id
 
         return time.time()
+
+    def finish(self, start_time: float, iteration: int):
+        """Finish the algorithm."""
+        self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
+        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.log_iteration(iteration + 1)
+
+        end_str = f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | '
+        end_str += f'HV {self.hv:.2f} | PF size {len(self.pf)} |'
+        print(end_str)
+
+        self.close_wandb()
 
     def close_wandb(self):
         """Close wandb."""
@@ -255,10 +255,81 @@ class OuterLoop:
         """Estimate the error of the algorithm."""
         raise NotImplementedError
 
-    def replay(self, vec: np.ndarray, iter_pairs: list[Subsolution]) -> list[Subsolution]:
+    def get_iterable_for_replay(self) -> Iterable[Any]:
         raise NotImplementedError
 
-    def solve(self, callback: Optional[IPROCallback] = None):
+    def maybe_add_solution(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: Any,
+    ) -> Subproblem | bool:
+        raise NotImplementedError
+
+    def maybe_add_completed(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: Any,
+    ) -> Subproblem | bool:
+        raise NotImplementedError
+
+    def replay(self, vec: np.ndarray, iter_pairs: list[Subsolution]) -> list[Subsolution]:
+        """Replay the algorithm while accounting for the non-optimal Pareto oracle.
+
+        Note:
+            This reexecutes the initialisation phase which may trigger expensive compute again. However, we always use
+            a given box in the experiments, so this makes no difference **in this specific case**.
+
+        Args:
+            vec (ndarray): The vector that causes the conflict.
+            ref_point_pairs (List): A list of (referent, point) tuples.
+
+        Returns:
+            An updated list of referent point tuples.
+        """
+        print('REPLAY TRIGGERED')
+        replay_triggered = self.replay_triggered
+        self.reset()
+        self.replay_triggered = replay_triggered + 1
+        self.init_phase()
+        idx = 0
+        new_subsolutions = []
+
+        for subproblem, point in iter_pairs:  # Replay the points that were added correctly
+            idx += 1
+            if strict_pareto_dominates(point, subproblem.referent):
+                if strict_pareto_dominates(vec, point):
+                    self.update_found(subproblem, vec)
+                    new_subsolutions.append((subproblem, vec))
+                    break
+                else:
+                    self.update_found(subproblem, point)
+                    new_subsolutions.append((subproblem, point))
+            else:
+                if strict_pareto_dominates(vec, subproblem.referent):
+                    self.update_found(subproblem, vec)
+                    new_subsolutions.append((subproblem, vec))
+                    break
+                else:
+                    self.update_not_found(subproblem, point)
+                    new_subsolutions.append((subproblem, point))
+
+        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
+            items = self.get_iterable_for_replay()
+            if strict_pareto_dominates(point, subproblem.referent):
+                maybe_add = self.maybe_add_solution
+            else:
+                maybe_add = self.maybe_add_completed
+            for item in items:
+                    res = maybe_add(subproblem, point, item)
+                    if res:
+                        new_subsolutions.append((res, point))
+                        break
+
+        return new_subsolutions
+
+    def solve(self, callback: Optional[IPROCallback] = None) -> np.ndarray:
         """Solve the problem."""
         start = self.setup()
         done = self.init_phase()
@@ -284,13 +355,16 @@ class OuterLoop:
 
             if strict_pareto_dominates(vec, subproblem.referent):
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
-                    iter_pairs = self.replay(vec, subsolutions)
+                    subsolutions = self.replay(vec, subsolutions)
                 else:
                     self.update_found(subproblem, vec)
                     subsolutions.append((subproblem, vec))
             else:
-                self.update_not_found(subproblem, vec)
-                subsolutions.append((subproblem, vec))
+                if np.any(batched_strict_pareto_dominates(vec, self.completed)):
+                    subsolutions = self.replay(vec, subsolutions)
+                else:
+                    self.update_not_found(subproblem, vec)
+                    subsolutions.append((subproblem, vec))
 
             self.update_excluded_volume()
             self.estimate_error()

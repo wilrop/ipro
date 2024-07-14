@@ -9,13 +9,13 @@ from ipro.utils.pareto import extreme_prune
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--iterations', type=int, default=100, help='The number of iterations.')
-    parser.add_argument('--objectives', type=int, default=5, help='The number of objectives.')
-    parser.add_argument('--vecs', type=int, default=100, help='The number of vectors.')
+    parser.add_argument('--iterations', type=int, default=10, help='The number of iterations.')
+    parser.add_argument('--objectives', type=int, default=2, help='The number of objectives.')
+    parser.add_argument('--vecs', type=int, default=10, help='The number of vectors.')
     parser.add_argument('--low', type=int, default=0, help='The lower bound for the random integers.')
     parser.add_argument('--high', type=int, default=10, help='The upper bound for the random integers.')
     parser.add_argument('--aug', type=float, default=1e-3, help='The augmentation parameter.')
-    parser.add_argument('--outer_loop', type=str, default='IPRO', help='The outer loop to use.')
+    parser.add_argument('--outer_loop', type=str, default='IPRO-2D', help='The outer loop to use.')
     parser.add_argument('--direction', type=str, default='maximize', help='The direction to optimize in.')
     parser.add_argument('--seed', type=int, default=1, help='The seed for the random number generator.')
     return parser.parse_args()
@@ -58,7 +58,6 @@ if __name__ == '__main__':
             oracle=oracle,
             linear_solver=linear_solver,
             seed=args.seed,
-            max_iterations=args.vecs,
             tolerance=0,
         )
 

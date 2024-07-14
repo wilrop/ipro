@@ -14,10 +14,5 @@ class Subproblem:
     ideal: np.ndarray
 
 
-@dataclass(kw_only=True)
-class Subproblem2D(Subproblem):
-    box: Box
-
-
 Subsolution: TypeAlias = tuple[Subproblem, np.ndarray]
 IPROCallback: TypeAlias = Callable[[int, float, float, float, float, float], Any]

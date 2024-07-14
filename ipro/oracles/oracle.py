@@ -7,8 +7,11 @@ class Oracle:
     def __init__(
             self,
             problem: Any,
+            seed: Optional[int] = None,
             **kwargs: Any):
         self.problem = problem
+        self.seed = seed
+
         self.nadir = None
         self.ideal = None
 

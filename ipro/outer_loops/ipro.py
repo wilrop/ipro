@@ -1,5 +1,9 @@
 import numpy as np
 
+from typing import Optional
+
+from ipro.oracles.oracle import Oracle
+from ipro.linear_solvers.linear_solver import LinearSolver
 from ipro.outer_loops.typing import Subproblem
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
@@ -9,26 +13,27 @@ from ipro.utils.pareto import strict_pareto_dominates, batched_strict_pareto_dom
 class IPRO(OuterLoop):
     """IPRO algorithm for solving multi-objective problems."""
 
-    def __init__(self,
-                 problem_id,
-                 dimensions,
-                 oracle,
-                 linear_solver,
-                 direction='maximize',
-                 ref_point=None,
-                 offset=1,
-                 tolerance=1e-1,
-                 max_iterations=None,
-                 update_freq=1,
-                 known_pf=None,
-                 track=False,
-                 exp_name=None,
-                 wandb_project_name=None,
-                 wandb_entity=None,
-                 rng=None,
-                 seed=None,
-                 extra_config=None,
-                 ):
+    def __init__(
+            self,
+            problem_id: str,
+            dimensions: int,
+            oracle: Oracle,
+            linear_solver: LinearSolver,
+            direction: str = 'maximize',
+            ref_point: Optional[np.ndarray] = None,
+            offset: float = 1,
+            tolerance: float = 1e-1,
+            max_iterations: Optional[int] = None,
+            update_freq: int = 1,
+            known_pf: Optional[np.ndarray] = None,
+            track: bool = False,
+            exp_name: Optional[str] = None,
+            wandb_project_name: Optional[str] = None,
+            wandb_entity: Optional[str] = None,
+            rng: Optional[np.random.Generator] = None,
+            seed: Optional[int] = None,
+            extra_config: Optional[dict] = None,
+    ):
         super().__init__(
             problem_id,
             dimensions,
@@ -60,7 +65,7 @@ class IPRO(OuterLoop):
         self.upper_points = []
         super().reset()
 
-    def init_phase(self):
+    def init_phase(self) -> bool:
         """Run the initialisation phase of the algorithm.
 
         This phase computes the bounding box of the Pareto front by solving the maximisation and minimisation problems
@@ -177,14 +182,6 @@ class IPRO(OuterLoop):
         new_lower_points = np.vstack((to_keep, shifted))
         self.lower_points = -extreme_prune(-new_lower_points)
 
-    def update_discarded_hv(self):
-        """Update the hypervolume of the dominating space."""
-        self.discarded_hv = self.compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)
-
-    def update_dominated_hv(self):
-        """Update the hypervolume of the dominated space."""
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-
     def select_referent(self, method='random'):
         """The method to select a new referent."""
         if method == 'random':
@@ -194,67 +191,34 @@ class IPRO(OuterLoop):
         else:
             raise ValueError(f'Unknown method {method}')
 
-    def replay_correct(self):
-        pass
+    def get_iterable_for_replay(self):
+        return np.copy(self.lower_points)
 
-    def replay(self, vec, iter_pairs):
-        """Replay the algorithm while accounting for the non-optimal Pareto oracle.
+    def maybe_add_solution(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            lower: np.ndarray,
+    ) -> Subproblem | bool:
+        if strict_pareto_dominates(point, lower):
+            new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
+            self.update_found(new_subproblem, point)
+            return new_subproblem
+        else:
+            return False
 
-        Note:
-            This reexecutes the initialisation phase which may trigger expensive compute again. However, we always use
-            a given box in the experiments, so this makes no difference **in this specific case**.
-
-        Args:
-            vec (ndarray): The vector that causes the conflict.
-            ref_point_pairs (List): A list of (referent, point) tuples.
-
-        Returns:
-            An updated list of referent point tuples.
-        """
-        replay_triggered = self.replay_triggered
-        self.reset()
-        self.replay_triggered = replay_triggered + 1
-        self.init_phase()
-        idx = 0
-        new_iter_pairs = []
-
-        for subproblem, point in iter_pairs:  # Replay the points that were added correctly
-            idx += 1
-            self.replay_correct()
-            if strict_pareto_dominates(point, subproblem.referent):
-                if strict_pareto_dominates(vec, point):
-                    self.update_found(subproblem, vec)
-                    new_iter_pairs.append((subproblem, vec))
-                    break
-                else:
-                    self.update_found(subproblem, point)
-                    new_iter_pairs.append((subproblem, point))
-            else:
-                if strict_pareto_dominates(vec, subproblem.referent):
-                    self.update_found(subproblem, vec)
-                    new_iter_pairs.append((subproblem, vec))
-                    break
-                else:
-                    self.update_not_found(subproblem, point)
-                    new_iter_pairs.append((subproblem, point))
-
-        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
-            lower_points = np.copy(self.lower_points)  # Avoids messing with lower points while iterating over them.
-            if strict_pareto_dominates(point, subproblem.referent):
-                for lower in lower_points:
-                    if strict_pareto_dominates(point, lower):
-                        new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
-                        self.update_found(new_subproblem, point)
-                        new_iter_pairs.append((new_subproblem, point))
-                        break
-            else:
-                for lower in lower_points:
-                    if pareto_dominates(lower, subproblem.referent):
-                        new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
-                        self.update_not_found(new_subproblem, point)
-                        new_iter_pairs.append((new_subproblem, point))
-
-        return new_iter_pairs
+    def maybe_add_completed(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            lower: np.ndarray,
+    ) -> Subproblem | bool:
+        if pareto_dominates(lower, subproblem.referent):
+            new_subproblem = Subproblem(referent=lower, nadir=self.nadir, ideal=self.ideal)
+            self.update_not_found(new_subproblem, point)
+            return new_subproblem
+        else:
+            return False
 
     def update_found(self, subproblem, vec):
         """The update to perform when the Pareto oracle found a new Pareto dominant vector."""
@@ -278,5 +242,5 @@ class IPRO(OuterLoop):
         return subproblem
 
     def update_excluded_volume(self):
-        self.update_dominated_hv()
-        self.update_discarded_hv()
+        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.discarded_hv = self.compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)

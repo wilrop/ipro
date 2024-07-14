@@ -22,4 +22,5 @@ class DebugOracle(Oracle):
             ideal: Optional[np.ndarray] = None
     ) -> np.ndarray:
         self.iter += 1
-        return np.array(self.problem[f'pareto_point_{self.iter}'])
+        res = self.problem.get(f'pareto_point_{self.iter}', referent)
+        return np.array(res)

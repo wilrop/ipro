@@ -15,29 +15,18 @@ class DRLOracle(ASFOracle):
             self,
             env,
             gamma=0.99,
-            aug=0.1,
-            scale=100,
             warm_start=False,
-            vary_nadir=False,
-            vary_ideal=False,
             eval_episodes=100,
             deterministic_eval=True,
             track=False,
-            seed=0,
-            alg_name=None
+            alg_name=None,
+            **kwargs,
     ):
-        super().__init__(
-            problem=env,
-            aug=aug,
-            scale=scale,
-            vary_nadir=vary_nadir,
-            vary_ideal=vary_ideal,
-        )
+        super().__init__(problem=env, **kwargs)
         self.env = env
-        self.seed = seed
-        self.np_rng = np.random.default_rng(seed=seed)
+        self.np_rng = np.random.default_rng(seed=self.seed)
         self.torch_rng = torch.Generator()
-        self.torch_rng.manual_seed(seed)
+        self.torch_rng.manual_seed(self.seed)
 
         try:
             self.num_actions = env.action_space.n
