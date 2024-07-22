@@ -49,4 +49,4 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 4e4 ]
+      values: [ 4.5e4, 5e4 ]
