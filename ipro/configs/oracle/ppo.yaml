@@ -18,7 +18,7 @@ max_grad_norm: 0.5
 target_kl: None
 normalize_advantage: false
 clip_coef: 0.2
-clip_range_vf: 0.2
+clip_range_vf: ${.clip_coef}
 gae_lambda: 0.95
 n_steps: 16
 pretrain_iters: 50

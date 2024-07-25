@@ -1,7 +1,7 @@
-name: dqn_no_pretrain_1
+name: dqn_no_pretrain
 method: bayes
 metric:
-  name: mean_hv
+  name: score
   goal: maximize
 parameters:
   num_seeds:
@@ -26,20 +26,22 @@ parameters:
     activation:
       values: [ tanh ]
     online_train_freq:
-      values: [ 1 ]
+      values: [ 1, 2 ]
     num_referents:
       values: [ 16 ]
     batch_size:
-      values: [ 64, 128, 256 ]
+      values: [ 32, 64, 128, 256 ]
     buffer_size:
       distribution: q_uniform
       min: 5000
       max: 30000
-      q: 5000
+      q: 2500
+    clear_buffer:
+      values: [ true, false ]
     online_exploration_frac:
       distribution: q_uniform
       min: 0.3
-      max: 1.0
+      max: 0.8
       q: 0.1
     tau:
       distribution: q_uniform
@@ -49,4 +51,7 @@ parameters:
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 4.5e4, 5e4 ]
+      distribution: q_uniform
+      min: 2e4
+      max: 4e4
+      q: 1e3

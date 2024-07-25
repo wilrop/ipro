@@ -41,10 +41,11 @@ def run_single_seed(config):
     return run_experiment(config)
 
 
-def run_multi_seed(config, max_hv=4255, hv_buffer=1000):
+def run_multi_seed(config, max_hv=4255, hv_buffer=500):
     results = []
     config.experiment.track_outer = False  # Necessary because we repeat the same config multiple times.
     config.experiment.track_oracle = False
+
     for seed in range(config.pop('num_seeds')):
         config.experiment.seed = seed
         hv = run_experiment(deepcopy(config))
@@ -53,6 +54,7 @@ def run_multi_seed(config, max_hv=4255, hv_buffer=1000):
         while True:
             try:
                 wandb.log({
+                    'score': np.sum(results),
                     'mean_hv': np.mean(results),
                     'n_runs': seed + 1,
                 })
