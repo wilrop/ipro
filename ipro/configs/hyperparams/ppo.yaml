@@ -1,5 +1,5 @@
 name: ppo_no_pretrain
-method: bayes
+method: grid
 metric:
   name: score
   goal: maximize
@@ -8,63 +8,42 @@ parameters:
     values: [ 5 ]
   oracle:
     aug:
-      distribution: q_uniform
-      min: 0.01
-      max: 0.5
-      q: 0.01
+      values: [ 0.1 ]
     scale:
-      values: [ 50, 100, 150 ]
+      values: [ 100, 200 ]
     lr_actor:
-      distribution: q_uniform
-      min: 0.0001
-      max: 0.001
-      q: 0.0001
+      values: [ 0.0002, 0.0003, 0.0004 ]
     lr_critic:
-      distribution: q_uniform
-      min: 0.0001
-      max: 0.001
-      q: 0.0001
+      values: [ 0.0006, 0.0007, 0.0008 ]
     hidden_size_actor:
-      values: [ 64, 128, 256 ]
+      values: [ 64, 128 ]
     hidden_size_critic:
-      values: [ 64, 128, 256 ]
+      values: [ 64, 128 ]
     num_hidden_layers_actor:
-      values: [ 1, 2, 3 ]
+      values: [ 1, 2 ]
     num_hidden_layers_critic:
-      values: [ 1, 2, 3 ]
+      values: [ 2, 3 ]
     actor_activation:
-      values: [ tanh, relu ]
+      values: [ tanh ]
     max_grad_norm:
-      values: [ 0.5, 1, 5, 10 ]
+      values: [ 5, 10 ]
     v_coef:
-      distribution: q_uniform
-      min: 0.1
-      max: 0.7
-      q: 0.1
+      values: [ 0.3, 0.4 ]
     e_coef:
-      distribution: q_uniform
-      min: 0.0001
-      max: 0.1
-      q: 0.0001
+      values: [ 0.05 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
       values: [ false ]
     clip_coef:
-      distribution: q_uniform
-      min: 0.1
-      max: 0.5
-      q: 0.05
+      values: [ 0.2, 0.25 ]
     gae_lambda:
-      values: [ 0.8, 0.85, 0.9, 0.95 ]
+      values: [ 0.95 ]
     num_minibatches:
-      values: [ 2, 4, 8 ]
+      values: [ 2, 4 ]
     update_epochs:
-      values: [ 2, 3, 4 ]
+      values: [ 2 ]
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      distribution: q_uniform
-      min: 2e4
-      max: 4e4
-      q: 1e3
+      values: [ 2.5e4, 3e4, 3.5e4 ]

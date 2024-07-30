@@ -2,6 +2,6 @@ seed: 1
 track_outer: True
 track_oracle: False
 oracle_log_freq: 1e4
-wandb_project_name: IPRO_dst_bayes_no_pretrain_6
+wandb_project_name: IPRO_dst_bayes_no_pretrain_7
 wandb_entity: null
 capture_video: False
