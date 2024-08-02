@@ -1,13 +1,15 @@
 import os
 import numpy as np
 import pandas as pd
+from ipro.environments.bounding_boxes import get_bounding_box
 from ipro.utility_function.generate_utility_fns import load_utility_fns
 from ipro.utility_function.utility_eval import (
     generalised_expected_utility,
     generalised_maximum_utility_loss,
     generalised_expected_utility_loss
 )
-
+from ipro.utils.hypervolume import compute_hypervolume
+from ipro.utils.pareto import extreme_prune
 
 DST_FRONT = np.array([
     [1.0, -1.0],
@@ -76,6 +78,17 @@ def compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds):
         eval_func = lambda x: generalised_expected_utility_loss(x, joint_pf, utility_fns)
         metric_min = 0
         metric_max = eval_func(begin_front)
+    elif metric == 'HV':
+        ref = get_bounding_box(env_id)[2]
+
+        def eval_func(x):
+            if env_id == 'mo-reacher-v4':
+                x = np.around(x, decimals=0)
+                x = extreme_prune(x)
+            return compute_hypervolume(-x, -ref)
+
+        metric_min = 0
+        metric_max = eval_func(joint_pf)
     else:
         raise ValueError(f'Unknown metric: {metric}')
 
@@ -106,7 +119,7 @@ def compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds):
 
 
 if __name__ == "__main__":
-    metrics = ['EU', 'MUL', 'EUL']
+    metrics = ['EU', 'MUL', 'EUL', 'HV']
     environments = ['deep-sea-treasure-concave-v0', 'minecart-v0', 'mo-reacher-v4', 'mo-reacher-concave-v0']
     algorithms = ['Envelope', 'GPI-LS', 'PCN', 'SN-MO-DQN', 'SN-MO-A2C', 'SN-MO-PPO']
     seeds = list(range(5))
