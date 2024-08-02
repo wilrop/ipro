@@ -3,6 +3,8 @@ aug: 0.01
 scale: 100
 lr_actor: 3e-4
 lr_critic: 3e-4
+actor_optim_name: adam
+critic_optim_name: ${.actor_optim_name}
 actor_hidden: [ 64, 64 ]
 critic_hidden: [ 64, 64 ]
 actor_activation: tanh
