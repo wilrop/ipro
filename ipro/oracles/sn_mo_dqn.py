@@ -51,6 +51,7 @@ class SNMODQN(SNDRLOracle):
                  aug=0.1,
                  scale=100,
                  lr=0.001,
+                 optim_name='adam',
                  hidden_layers=(64, 64),
                  activation='relu',
                  pre_train_freq=1,
@@ -92,6 +93,7 @@ class SNMODQN(SNDRLOracle):
                          seed=seed,
                          alg_name='SN-MO-DQN')
         self.dqn_lr = lr
+        self.optim_name = optim_name
         self.online_learning_start = online_learning_start  # The number of steps before learning starts online.
         self.online_epsilon_start = online_epsilon_start  # The starting epsilon for online learning.
         self.online_epsilon_end = online_epsilon_end  # The ending epsilon for online learning.
@@ -133,6 +135,7 @@ class SNMODQN(SNDRLOracle):
         config = super().config()
         config.update({
             'lr': self.dqn_lr,
+            'optim_name': self.optim_name,
             'hidden_layers': self.dqn_hidden_layers,
             'activation': self.activation,
             'pre_train_freq': self.pre_train_freq,
@@ -162,7 +165,7 @@ class SNMODQN(SNDRLOracle):
                                        self.dqn_hidden_layers,
                                        self.output_dim,
                                        activation=self.activation)
-        self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self.dqn_lr)
+        self.optimizer = self.init_optimizer(self.optim_name, self.q_network, lr=self.dqn_lr)
         self.q_network.apply(self.init_weights)
         self.target_network.apply(self.init_weights)
         if self.clear_buffer:

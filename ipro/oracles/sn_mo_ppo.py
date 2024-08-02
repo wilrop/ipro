@@ -58,6 +58,8 @@ class SNMOPPO(SNDRLOracle):
                  scale=100,
                  lr_actor=2.5e-4,
                  lr_critic=2.5e-4,
+                 actor_optim_name='adam',
+                 critic_optim_name='adam',
                  eps=1e-8,
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
@@ -102,6 +104,8 @@ class SNMOPPO(SNDRLOracle):
         self.envs = envs
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
+        self.actor_optim_name = actor_optim_name
+        self.critic_optim_name = critic_optim_name
         self.eps = eps
         self.s0 = None
 
@@ -153,6 +157,8 @@ class SNMOPPO(SNDRLOracle):
         config.update({
             'lr_actor': self.lr_actor,
             'lr_critic': self.lr_critic,
+            'actor_optim_name': self.actor_optim_name,
+            'critic_optim_name': self.critic_optim_name,
             'eps': self.eps,
             'actor_hidden': self.actor_hidden,
             'critic_hidden': self.critic_hidden,
@@ -194,8 +200,8 @@ class SNMOPPO(SNDRLOracle):
                              activation=self.critic_activation)
         self.critic.apply(self.init_weights)
         self.policy = Categorical()
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor, eps=self.eps)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic, eps=self.eps)
+        self.actor_optimizer = self.init_optimizer(self.actor_optim_name, self.actor, self.lr_actor, eps=self.eps)
+        self.critic_optimizer = self.init_optimizer(self.critic_optim_name, self.critic, self.lr_critic, eps=self.eps)
         self.rollout_buffer.reset()
 
     def save_model(self):

@@ -58,6 +58,8 @@ class SNMOA2C(SNDRLOracle):
                  scale=100,
                  lr_actor=0.001,
                  lr_critic=0.001,
+                 actor_optim_name='adam',
+                 critic_optim_name='adam',
                  actor_hidden=(64, 64),
                  critic_hidden=(64, 64),
                  actor_activation='tanh',
@@ -93,6 +95,8 @@ class SNMOA2C(SNDRLOracle):
 
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
+        self.actor_optim_name = actor_optim_name
+        self.critic_optim_name = critic_optim_name
         self.actor_hidden = actor_hidden
         self.critic_hidden = critic_hidden
         self.actor_activation = actor_activation
@@ -126,6 +130,8 @@ class SNMOA2C(SNDRLOracle):
         config.update({
             'lr_actor': self.lr_actor,
             'lr_critic': self.lr_critic,
+            'actor_optim_name': self.actor_optim_name,
+            'critic_optim_name': self.critic_optim_name,
             'actor_hidden': self.actor_hidden,
             'critic_hidden': self.critic_hidden,
             'actor_activation': self.actor_activation,
@@ -151,8 +157,8 @@ class SNMOA2C(SNDRLOracle):
                              self.output_dim_critic,
                              activation=self.critic_activation)
         self.policy = Categorical()
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr_actor)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr_critic)
+        self.actor_optimizer = self.init_optimizer(self.actor_optim_name, self.actor, lr=self.lr_actor)
+        self.critic_optimizer = self.init_optimizer(self.critic_optim_name, self.critic, lr=self.lr_critic)
         self.rollout_buffer.reset()
 
     def save_model(self):

@@ -91,6 +91,16 @@ class DRLOracle:
             torch.nn.init.xavier_uniform_(m.weight, gain=std)
             torch.nn.init.constant_(m.bias, bias_const)
 
+    @staticmethod
+    def init_optimizer(name, model, lr, eps=1e-8):
+        if name == 'adam':
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr, eps=eps)
+        elif name == 'adamw':
+            optimizer = torch.optim.AdamW(model.parameters(), lr=lr, eps=eps)
+        else:
+            raise ValueError(f"Optimizer {name} not supported.")
+        return optimizer
+
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""
         self.nadir = nadir
