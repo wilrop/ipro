@@ -7,27 +7,29 @@ from copy import deepcopy
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
 from ipro.utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
+from ipro.utils.hypervolume import compute_hypervolume
 
 
 class IPRO2D(OuterLoop):
     """IPRO algorithm for solving bi-objective multi-objective problems."""
 
-    def __init__(self,
-                 problem_id,
-                 oracle,
-                 linear_solver,
-                 ref_point=None,
-                 offset=1,
-                 tolerance=1e-6,
-                 max_iterations=None,
-                 known_pf=None,
-                 track=False,
-                 exp_name=None,
-                 wandb_project_name=None,
-                 wandb_entity=None,
-                 seed=None,
-                 extra_config=None,
-                 ):
+    def __init__(
+            self,
+            problem_id,
+            oracle,
+            linear_solver,
+            ref_point=None,
+            offset=1,
+            tolerance=1e-6,
+            max_iterations=None,
+            known_pf=None,
+            track=False,
+            exp_name=None,
+            wandb_project_name=None,
+            wandb_entity=None,
+            seed=None,
+            extra_config=None,
+    ):
         super().__init__(problem_id,
                          2,
                          oracle,
@@ -116,7 +118,7 @@ class IPRO2D(OuterLoop):
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.hv = compute_hypervolume(-self.pf, -self.ref_point)
         self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
 
     def get_next_box(self):
@@ -221,7 +223,7 @@ class IPRO2D(OuterLoop):
 
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
-            self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+            self.hv = compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
 

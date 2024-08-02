@@ -5,32 +5,30 @@ import wandb
 import platform
 import numpy as np
 
-from pymoo.indicators.hv import Hypervolume
-from pymoo.config import Config
-
-from ipro.utils.pareto import extreme_prune, batched_pareto_dominates
-
-Config.warnings['not_compiled'] = False
+from ipro.utils.pareto import extreme_prune
+from ipro.utils.hypervolume import compute_hypervolume
 
 
 class OuterLoop:
-    def __init__(self,
-                 problem_id,
-                 dimensions,
-                 oracle,
-                 linear_solver,
-                 method="IPRO",
-                 ref_point=None,
-                 offset=1,
-                 tolerance=1e-1,
-                 max_iterations=None,
-                 known_pf=None,
-                 track=False,
-                 exp_name=None,
-                 wandb_project_name=None,
-                 wandb_entity=None,
-                 seed=None,
-                 extra_config=None):
+    def __init__(
+            self,
+            problem_id,
+            dimensions,
+            oracle,
+            linear_solver,
+            method="IPRO",
+            ref_point=None,
+            offset=1,
+            tolerance=1e-1,
+            max_iterations=None,
+            known_pf=None,
+            track=False,
+            exp_name=None,
+            wandb_project_name=None,
+            wandb_entity=None,
+            seed=None,
+            extra_config=None
+    ):
         self.problem_id = problem_id
         self.dim = dimensions
         self.oracle = oracle
@@ -86,8 +84,8 @@ class OuterLoop:
     def finish(self, start_time, iteration):
         """Finish the algorithm."""
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.dominated_hv = compute_hypervolume(-self.pf, -self.nadir)
+        self.hv = compute_hypervolume(-self.pf, -self.ref_point)
         self.log_iteration(iteration + 1)
 
         end_str = f'Iterations {iteration + 1} | Time {time.time() - start_time:.2f} | '
@@ -188,22 +186,3 @@ class OuterLoop:
             wandb.run.summary['hypervolume'] = self.hv
             wandb.run.summary['PF_size'] = len(self.pf)
             wandb.run.summary['replay_triggered'] = self.replay_triggered
-
-    def compute_hypervolume(self, points, ref):
-        """Compute the hypervolume of a set of points.
-
-        Note:
-            This computes the hypervolume assuming all objectives are to be minimized.
-
-        Args:
-            points (array_like): List of points.
-            ref (np.array): Reference point.
-
-        Returns:
-            float: The computed hypervolume.
-        """
-        points = points[batched_pareto_dominates(ref, points)]
-        if points.size == 0:
-            return 0
-        ind = Hypervolume(ref_point=ref)
-        return ind(points)

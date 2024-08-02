@@ -3,29 +3,31 @@ import numpy as np
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
 from ipro.utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, extreme_prune, pareto_dominates
+from ipro.utils.hypervolume import compute_hypervolume
 
 
 class IPRO(OuterLoop):
     """IPRO algorithm for solving multi-objective problems."""
 
-    def __init__(self,
-                 problem_id,
-                 dimensions,
-                 oracle,
-                 linear_solver,
-                 ref_point=None,
-                 offset=1,
-                 tolerance=1e-1,
-                 max_iterations=None,
-                 known_pf=None,
-                 track=False,
-                 exp_name=None,
-                 wandb_project_name=None,
-                 wandb_entity=None,
-                 rng=None,
-                 seed=None,
-                 extra_config=None,
-                 ):
+    def __init__(
+            self,
+            problem_id,
+            dimensions,
+            oracle,
+            linear_solver,
+            ref_point=None,
+            offset=1,
+            tolerance=1e-1,
+            max_iterations=None,
+            known_pf=None,
+            track=False,
+            exp_name=None,
+            wandb_project_name=None,
+            wandb_entity=None,
+            rng=None,
+            seed=None,
+            extra_config=None,
+    ):
         super().__init__(problem_id,
                          dimensions,
                          oracle,
@@ -82,7 +84,7 @@ class IPRO(OuterLoop):
         self.nadir = np.copy(nadir)
         self.ideal = np.copy(ideal)
         self.ref_point = np.copy(nadir) if self.ref_point is None else np.array(self.ref_point)
-        self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+        self.hv = compute_hypervolume(-self.pf, -self.ref_point)
 
         if len(self.pf) == 1:  # If the Pareto front is the ideal.
             return True
@@ -114,7 +116,7 @@ class IPRO(OuterLoop):
         hvis = np.zeros(len(self.lower_points))
 
         for lower_id in self.rng.choice(len(self.lower_points), min(num, len(self.lower_points)), replace=False):
-            hv = self.compute_hypervolume(np.vstack((point_set, self.lower_points[lower_id])), self.ideal)
+            hv = compute_hypervolume(np.vstack((point_set, self.lower_points[lower_id])), self.ideal)
             hvis[lower_id] = hv  # We don't have to compute the difference as it is proportional to the hypervolume.
 
         sorted_args = np.argsort(hvis)[::-1]
@@ -173,11 +175,11 @@ class IPRO(OuterLoop):
 
     def update_discarded_hv(self):
         """Update the hypervolume of the dominating space."""
-        self.discarded_hv = self.compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)
+        self.discarded_hv = compute_hypervolume(np.vstack((self.pf, self.completed)), self.ideal)
 
     def update_dominated_hv(self):
         """Update the hypervolume of the dominated space."""
-        self.dominated_hv = self.compute_hypervolume(-self.pf, -self.nadir)
+        self.dominated_hv = compute_hypervolume(-self.pf, -self.nadir)
 
     def select_referent(self, method='random'):
         """The method to select a new referent."""
@@ -306,7 +308,7 @@ class IPRO(OuterLoop):
             self.update_discarded_hv()
             self.estimate_error()
             self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
-            self.hv = self.compute_hypervolume(-self.pf, -self.ref_point)
+            self.hv = compute_hypervolume(-self.pf, -self.ref_point)
 
             iteration += 1
             self.log_iteration(iteration, referent=referent, ideal=self.ideal, pareto_point=vec)
