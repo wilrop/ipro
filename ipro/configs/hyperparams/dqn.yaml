@@ -1,5 +1,5 @@
 name: dqn_no_pretrain
-method: bayes
+method: grid
 metric:
   name: score
   goal: maximize
@@ -11,8 +11,10 @@ parameters:
       values: [ 0.4 ]
     scale:
       values: [ 100 ]
+    optim_name:
+      values: [ adam, adamw ]
     lr:
-      values: [ 0.0001, 0.0002, 0.0003, 0.0004, 0.0005 ]
+      values: [ 0.0001, 0.00015, 0.0002, 0.00025, 0.0003, 0.00035, 0.0004 ]
     num_hidden_layers:
       values: [ 2, 3 ]
     hidden_size:
@@ -24,16 +26,16 @@ parameters:
     num_referents:
       values: [ 16 ]
     batch_size:
-      values: [ 256, 512 ]
+      values: [ 512, 1024 ]
     buffer_size:
       values: [ 15000, 20000, 25000 ]
     clear_buffer:
       values: [ true ]
     online_exploration_frac:
-      values: [ 0.6, 0.7 ]
+      values: [ 0.7, 0.75, 0.8 ]
     tau:
-      values: [ 0.3, 0.4, 0.5 ]
+      values: [ 0.2, 0.25, 0.3, 0.35 ]
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2.5e4, 3e4, 3.5e4 ]
+      values: [ 2.5e4 ]

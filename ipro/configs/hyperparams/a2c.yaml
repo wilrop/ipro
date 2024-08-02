@@ -8,36 +8,38 @@ parameters:
     values: [ 5 ]
   oracle:
     aug:
-      values: [ 0.1 ]
+      values: [ 0.1, 0.2, 0.3 ]
     scale:
-      values: [ 100, 150, 200 ]
+      values: [ 100, 200 ]
     lr_actor:
-      values: [ 0.0001, 0.0002, 0.0003, 0.0004, 0.0005 ]
+      values: [ 0.0001, 0.0002, 0.0003 ]
     lr_critic:
-      values: [ 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.003 ]
+      values: [ 0.0009, 0.001, 0.002 ]
+    actor_optim_name:
+      values: [ adam, adamw ]
     hidden_size_actor:
-      values: [ 64, 128 ]
+      values: [ 64 ]
     hidden_size_critic:
-      values: [ 128, 256 ]
+      values: [ 128 ]
     num_hidden_layers_actor:
-      values: [ 1, 2 ]
+      values: [ 2 ]
     num_hidden_layers_critic:
       values: [ 2, 3 ]
     actor_activation:
       values: [ tanh ]
     max_grad_norm:
-      values: [ 0.5, 1, 5, 10 ]
+      values: [ 5, 10 ]
     v_coef:
-      values: [ 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ]
+      values: [ 0.5, 0.6 ]
     e_coef:
-      values: [ 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08 ]
+      values: [ 0.0005, 0.001 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
       values: [ false ]
     gae_lambda:
-      values: [ 0.9, 0.95, 1. ]
+      values: [ 0.9, 0.95 ]
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 30000, 35000, 40000 ]
+      values: [ 3000, 35000, 40000 ]

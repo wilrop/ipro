@@ -10,40 +10,42 @@ parameters:
     aug:
       values: [ 0.1 ]
     scale:
-      values: [ 100, 200 ]
+      values: [ 100 ]
     lr_actor:
-      values: [ 0.0002, 0.0003, 0.0004 ]
+      values: [ 0.0002, 0.00025, 0.0003, 0.00035, 0.0004 ]
     lr_critic:
-      values: [ 0.0006, 0.0007, 0.0008 ]
+      values: [ 0.0006, 0.00065, 0.0007, 0.00075, 0.0008 ]
+    actor_optim_name:
+      values: [ adam, adamw ]
     hidden_size_actor:
       values: [ 64, 128 ]
     hidden_size_critic:
-      values: [ 64, 128 ]
+      values: [ 128 ]
     num_hidden_layers_actor:
-      values: [ 1, 2 ]
+      values: [ 2 ]
     num_hidden_layers_critic:
       values: [ 2, 3 ]
     actor_activation:
       values: [ tanh ]
     max_grad_norm:
-      values: [ 5, 10 ]
+      values: [ 5 ]
     v_coef:
-      values: [ 0.3, 0.4 ]
+      values: [ 0.3, 0.4, 0.5 ]
     e_coef:
-      values: [ 0.05 ]
+      values: [ 0.01, 0.05, 0.1 ]
     n_steps:
       values: [ 16 ]
     normalize_advantage:
       values: [ false ]
     clip_coef:
-      values: [ 0.2, 0.25 ]
+      values: [ 0.2 ]
     gae_lambda:
       values: [ 0.95 ]
     num_minibatches:
-      values: [ 2, 4 ]
+      values: [ 4, 6 ]
     update_epochs:
       values: [ 2 ]
     pretraining_steps:
       values: [ 0 ]
     online_steps:
-      values: [ 2.5e4, 3e4, 3.5e4 ]
+      values: [ 2.5e4, 3e4 ]

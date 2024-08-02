@@ -41,7 +41,7 @@ def run_single_seed(config):
     return run_experiment(config)
 
 
-def run_multi_seed(config, max_hv=4255, hv_buffer=500):
+def run_multi_seed(config, max_hv=4255, hv_buffer=100):
     results = []
     config.experiment.track_outer = False  # Necessary because we repeat the same config multiple times.
     config.experiment.track_oracle = False
