@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from ipro.environments.bounding_boxes import get_bounding_box
 from ipro.utility_function.generate_utility_fns import load_utility_fns
 from ipro.utility_function.utility_eval import (
     generalised_expected_utility,
@@ -10,6 +9,7 @@ from ipro.utility_function.utility_eval import (
 )
 from ipro.utils.hypervolume import compute_hypervolume
 from ipro.utils.pareto import extreme_prune
+
 
 DST_FRONT = np.array([
     [1.0, -1.0],
@@ -56,6 +56,35 @@ def scale(data, min_val, max_val):
     return (data - min_val) / (max_val - min_val)
 
 
+def get_eval_func(metric, utility_fns, begin_front, joint_pf, decimals=2):
+    if metric == 'EU':
+        metric_f = lambda x: generalised_expected_utility(x, utility_fns)
+        metric_min = 0
+        metric_max = metric_f(joint_pf)
+    elif metric == 'MUL':
+        metric_f = lambda x: generalised_maximum_utility_loss(x, joint_pf, utility_fns)
+        metric_min = 0
+        metric_max = metric_f(begin_front)
+    elif metric == 'EUL':
+        metric_f = lambda x: generalised_expected_utility_loss(x, joint_pf, utility_fns)
+        metric_min = 0
+        metric_max = metric_f(begin_front)
+    elif metric == 'HV':
+        ref = np.min(joint_pf, axis=0)
+        metric_f = lambda x: compute_hypervolume(-x, -ref)
+        metric_min = 0
+        metric_max = metric_f(joint_pf)
+    else:
+        raise ValueError(f'Unknown metric: {metric}')
+
+    def eval_func(x):
+        x = np.round(x, decimals=decimals)
+        x = extreme_prune(x)
+        return metric_f(x)
+
+    return eval_func, metric_min, metric_max
+
+
 def compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds):
     env_dir = os.path.join('fronts', env_id)
 
@@ -64,34 +93,8 @@ def compute_u_metrics(metric, utility_fns, env_id, algorithm, seeds):
     else:
         joint_pf = np.load(os.path.join(env_dir, 'joint_front.npy'))
 
-    begin_front = np.full(joint_pf.shape[1:], -1e14)
-
-    if metric == 'EU':
-        eval_func = lambda x: generalised_expected_utility(x, utility_fns)
-        metric_min = 0
-        metric_max = eval_func(joint_pf)
-    elif metric == 'MUL':
-        eval_func = lambda x: generalised_maximum_utility_loss(x, joint_pf, utility_fns)
-        metric_min = 0
-        metric_max = eval_func(begin_front)
-    elif metric == 'EUL':
-        eval_func = lambda x: generalised_expected_utility_loss(x, joint_pf, utility_fns)
-        metric_min = 0
-        metric_max = eval_func(begin_front)
-    elif metric == 'HV':
-        ref = get_bounding_box(env_id)[2]
-
-        def eval_func(x):
-            if env_id == 'mo-reacher-v4':
-                x = np.around(x, decimals=0)
-                x = extreme_prune(x)
-            return compute_hypervolume(-x, -ref)
-
-        metric_min = 0
-        metric_max = eval_func(joint_pf)
-    else:
-        raise ValueError(f'Unknown metric: {metric}')
-
+    begin_front = np.full((1, joint_pf.shape[1]), -1e14)
+    eval_func, metric_min, metric_max = get_eval_func(metric, utility_fns, begin_front, joint_pf)
     data = []
 
     for seed in seeds:
