@@ -20,6 +20,8 @@ The repository is structured as follows:
 - `utils/` contains miscellaneous utility functions.
 
 ## Running the code
+> [!NOTE]
+> To reproduce the exact results from the paper, please run IPRO from the `paper` branch.
 
 To run the code, you need to install the dependencies in `requirements.txt`. We recommend using a virtual environment to
 avoid conflicts with other packages. You can install the dependencies by running:
@@ -33,4 +35,22 @@ with the default configuration, run:
 
 ```
 python experiments/run_experiment.py
+```
+
+## Citation
+
+If you use this code or the results in your research, please use the following BibTeX entry:
+
+```
+@misc{ropke2023distributional,  
+  url = {TBD},
+  
+  author = {Röpke, Willem and Hayes, Conor F. and Mannion, Patrick and Howley, Enda and Nowé, Ann and Roijers, Diederik M.},
+  
+  title = {Distributional Multi-Objective Decision Making},
+  
+  year = {2023},
+  
+  note={Accepted at IJCAI 2023}
+}
 ```
