@@ -89,7 +89,7 @@ class IPRO(OuterLoop):
             ideal[i] = ideal_vec[i]
             nadir[i] = nadir_vec[i]
             pf.append(ideal_vec)
-            subsolutions.append(ideal_sol)
+            subsolutions.append((weight_vec, ideal_vec, ideal_sol))
 
         self.pf = extreme_prune(np.array(pf))
         nadir = nadir - self.offset  # Necessary to ensure every Pareto optimal point strictly dominates the nadir.
