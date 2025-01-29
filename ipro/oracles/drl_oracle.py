@@ -7,6 +7,8 @@ from collections import deque
 from ipro.oracles.asf_oracle import ASFOracle
 from ipro.oracles.vector_u import create_batched_aasf
 
+from typing import Any, Optional
+
 
 class DRLOracle(ASFOracle):
     """The base class for deep reinforcement learning oracles that execute independent learning."""
@@ -261,10 +263,9 @@ class DRLOracle(ASFOracle):
             critic = critic.state_dict()
         self.trained_models[tuple(referent)] = (actor, critic)
 
-    def solve(self, referent, nadir=None, ideal=None):
+    def run_inner_loop(self, referent, nadir=None, ideal=None):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
-
         referent, nadir, ideal = self.get_asf_params(referent, nadir, ideal, backend='torch')
         self.u_func = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale, backend='torch')
         self.train()

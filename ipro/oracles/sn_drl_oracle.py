@@ -204,7 +204,7 @@ class SNDRLOracle(DRLOracle):
         }
         self.log_wandb(log_dict)
 
-    def solve(self, referent, nadir=None, ideal=None, *args, **kwargs):
+    def run_inner_loop(self, referent, nadir=None, ideal=None, *args, **kwargs):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
         self.phase = f'online_{self.iteration}'

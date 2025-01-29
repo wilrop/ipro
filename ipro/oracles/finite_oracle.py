@@ -33,11 +33,11 @@ class FiniteOracle(ASFOracle):
             referent: np.ndarray,
             nadir: Optional[np.ndarray] = None,
             ideal: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, Any]:
         """The inner loop solver for the basic setting."""
         params = self.get_asf_params(referent, nadir, ideal)
         referent, nadir, ideal = [self.sign * param for param in params]
         u_f = create_batched_aasf(referent, nadir, ideal, aug=self.aug, scale=self.scale)
         utilities = u_f(self.sign * self.problem)
         best_point = np.argmax(utilities)
-        return self.problem[best_point]
+        return self.problem[best_point], None

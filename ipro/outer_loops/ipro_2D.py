@@ -3,7 +3,7 @@ import numpy as np
 from sortedcontainers import SortedKeyList
 from copy import deepcopy
 
-from ipro.outer_loops.typing import Subproblem
+from ipro.outer_loops.typing import Subproblem, Subsolution
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
 from ipro.utils.pareto import strict_pareto_dominates, extreme_prune, pareto_dominates
@@ -12,23 +12,24 @@ from ipro.utils.pareto import strict_pareto_dominates, extreme_prune, pareto_dom
 class IPRO2D(OuterLoop):
     """IPRO algorithm for solving bi-objective multi-objective problems."""
 
-    def __init__(self,
-                 problem_id,
-                 oracle,
-                 linear_solver,
-                 direction='maximize',
-                 ref_point=None,
-                 offset=1,
-                 tolerance=1e-6,
-                 max_iterations=None,
-                 known_pf=None,
-                 track=False,
-                 exp_name=None,
-                 wandb_project_name=None,
-                 wandb_entity=None,
-                 seed=None,
-                 extra_config=None,
-                 ):
+    def __init__(
+            self,
+            problem_id,
+            oracle,
+            linear_solver,
+            direction='maximize',
+            ref_point=None,
+            offset=1,
+            tolerance=1e-6,
+            max_iterations=None,
+            known_pf=None,
+            track=False,
+            exp_name=None,
+            wandb_project_name=None,
+            wandb_entity=None,
+            seed=None,
+            extra_config=None,
+    ):
         super().__init__(
             problem_id,
             2,
@@ -96,34 +97,30 @@ class IPRO2D(OuterLoop):
             if box.volume > self.tolerance and pareto_dominates(box.ideal, box.nadir):
                 self.box_queue.add(box)
 
-    def get_outer_points(self):
-        """Get the outer points of the problem.
-
-        Returns:
-            np.array: The outer points.
-        """
-        outer_points = []
-        for d in range(2):
-            weights = np.zeros(2)
-            weights[d] = 1
-            outer_point = self.sign * self.linear_solver.solve(weights)
-            outer_points.append(outer_point)
-        return np.array(outer_points)
-
-    def init_phase(self):
+    def init_phase(self) -> tuple[list[Subsolution], bool]:
         """The initial phase in solving the problem."""
-        outer_points = self.get_outer_points()
-        self.nadir = np.min(outer_points, axis=0) - self.offset
-        self.ideal = np.max(outer_points, axis=0) + self.offset
+        extrema = []
+        subsolutions = []
+
+        weight_vecs = np.eye(2)
+        for weight_vec in weight_vecs:
+            vec, sol = self.linear_solver.solve(weight_vec)
+            vec *= self.sign
+            extrema.append(vec)
+            subsolutions.append((weight_vec, vec, sol))
+        extrema = np.array(extrema)
+
+        self.nadir = np.min(extrema, axis=0) - self.offset
+        self.ideal = np.max(extrema, axis=0) + self.offset
         self.ref_point = np.copy(self.nadir) if self.ref_point is None else np.array(self.ref_point)
         self.bounding_box = Box(self.nadir, self.ideal)
-        self.pf = extreme_prune(np.array(outer_points))
+        self.pf = extreme_prune(np.array(extrema))
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
         self.hv = self.compute_hypervolume(-self.sign * self.pf, -self.sign * self.ref_point)
         self.oracle.init_oracle(nadir=self.sign * self.nadir, ideal=self.sign * self.ideal)  # Initialise the oracle.
-        return len(self.pf) == 1
+        return subsolutions, len(self.pf) == 1
 
     def is_done(self, step):
         """Check if the algorithm is done."""

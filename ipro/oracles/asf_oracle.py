@@ -53,11 +53,3 @@ class ASFOracle(Oracle):
             nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
             ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
         return referent, nadir, ideal
-
-    def solve(
-            self,
-            referent: np.ndarray,
-            nadir: Optional[np.ndarray] = None,
-            ideal: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
-        raise NotImplementedError

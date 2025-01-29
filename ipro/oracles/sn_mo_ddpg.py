@@ -388,13 +388,15 @@ class SNMODDPG(SNDRLOracle):
         """Solve for problem for the given referent."""
         self.reset()
         self.setup_ac_metrics()
-        pareto_point = super().solve(referent,
-                                     nadir=nadir,
-                                     ideal=ideal,
-                                     steps=self.online_steps,
-                                     train_freq=self.online_train_freq,
-                                     learning_start=self.online_learning_start,
-                                     epsilon_start=self.online_epsilon_start,
-                                     epsilon_end=self.online_epsilon_end,
-                                     exploration_frac=self.online_exploration_frac)
-        return pareto_point
+        pareto_point = super().run_inner_loop(
+            referent,
+            nadir=nadir,
+            ideal=ideal,
+            steps=self.online_steps,
+            train_freq=self.online_train_freq,
+            learning_start=self.online_learning_start,
+            epsilon_start=self.online_epsilon_start,
+            epsilon_end=self.online_epsilon_end,
+            exploration_frac=self.online_exploration_frac
+        )
+        return pareto_point, None

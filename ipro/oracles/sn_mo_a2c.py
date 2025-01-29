@@ -386,8 +386,10 @@ class SNMOA2C(SNDRLOracle):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
-        pareto_point = super().solve(referent,
-                                     nadir=nadir,
-                                     ideal=ideal,
-                                     steps=self.online_steps)
-        return pareto_point
+        pareto_point = super().run_inner_loop(
+            referent,
+            nadir=nadir,
+            ideal=ideal,
+            steps=self.online_steps
+        )
+        return pareto_point, None

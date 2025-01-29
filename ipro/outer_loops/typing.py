@@ -14,5 +14,5 @@ class Subproblem:
     ideal: np.ndarray
 
 
-Subsolution: TypeAlias = tuple[Subproblem, np.ndarray]
+Subsolution: TypeAlias = tuple[Subproblem, np.ndarray, Any]
 IPROCallback: TypeAlias = Callable[[int, float, float, float, float, float], Any]

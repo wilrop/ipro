@@ -155,6 +155,14 @@ class OuterLoop:
 
         return time.time()
 
+    def get_pareto_set(self, subsolutions: list[Subsolution]) -> list[tuple[np.ndarray, Any]]:
+        """Get the Pareto set from the subsolutions."""
+        pareto_set = []
+        for subsolution in subsolutions:
+            if np.any(np.all(subsolution[1] == self.pf, axis=1)):
+                pareto_set.append((subsolution[1], subsolution[2]))
+        return pareto_set
+
     def finish(self, start_time: float, iteration: int):
         """Finish the algorithm."""
         self.pf = extreme_prune(np.vstack((self.pf, self.robust_points)))
@@ -227,7 +235,7 @@ class OuterLoop:
         ind = Hypervolume(ref_point=ref)
         return ind(points)
 
-    def init_phase(self) -> bool:
+    def init_phase(self) -> tuple[list[Subsolution], bool]:
         """Initialize the outer loop."""
         raise NotImplementedError
 
@@ -261,7 +269,7 @@ class OuterLoop:
     def maybe_add_solution(
             self,
             subproblem: Subproblem,
-            point: np.ndarray,
+            vec: np.ndarray,
             item: Any,
     ) -> Subproblem | bool:
         raise NotImplementedError
@@ -269,12 +277,17 @@ class OuterLoop:
     def maybe_add_completed(
             self,
             subproblem: Subproblem,
-            point: np.ndarray,
+            vec: np.ndarray,
             item: Any,
     ) -> Subproblem | bool:
         raise NotImplementedError
 
-    def replay(self, vec: np.ndarray, iter_pairs: list[Subsolution]) -> list[Subsolution]:
+    def replay(
+            self,
+            vec: np.ndarray,
+            sol: Any,
+            iter_pairs: list[Subsolution]
+    ) -> tuple[list[Subsolution], list[Subsolution]]:
         """Replay the algorithm while accounting for the non-optimal Pareto oracle.
 
         Note:
@@ -283,7 +296,7 @@ class OuterLoop:
 
         Args:
             vec (ndarray): The vector that causes the conflict.
-            ref_point_pairs (List): A list of (referent, point) tuples.
+            iter_pairs (list[Subsolution]): A list of subsolutions.
 
         Returns:
             An updated list of referent point tuples.
@@ -292,52 +305,53 @@ class OuterLoop:
         replay_triggered = self.replay_triggered
         self.reset()
         self.replay_triggered = replay_triggered + 1
-        self.init_phase()
+        new_init_subsolutions, _ = self.init_phase()
         idx = 0
         new_subsolutions = []
 
-        for subproblem, point in iter_pairs:  # Replay the points that were added correctly
+        for old_subproblem, old_vec, old_sol in iter_pairs:  # Replay the points that were added correctly
             idx += 1
-            if strict_pareto_dominates(point, subproblem.referent):
-                if strict_pareto_dominates(vec, point):
-                    self.update_found(subproblem, vec)
-                    new_subsolutions.append((subproblem, vec))
+            if strict_pareto_dominates(old_vec, old_subproblem.referent):
+                if strict_pareto_dominates(vec, old_vec):
+                    self.update_found(old_subproblem, vec)
+                    new_subsolutions.append((old_subproblem, vec, sol))
                     break
                 else:
-                    self.update_found(subproblem, point)
-                    new_subsolutions.append((subproblem, point))
+                    self.update_found(old_subproblem, old_vec)
+                    new_subsolutions.append((old_subproblem, old_vec, old_sol))
             else:
-                if strict_pareto_dominates(vec, subproblem.referent):
-                    self.update_found(subproblem, vec)
-                    new_subsolutions.append((subproblem, vec))
+                if strict_pareto_dominates(vec, old_subproblem.referent):
+                    self.update_found(old_subproblem, vec)
+                    new_subsolutions.append((old_subproblem, vec, sol))
                     break
                 else:
-                    self.update_not_found(subproblem, point)
-                    new_subsolutions.append((subproblem, point))
+                    self.update_not_found(old_subproblem, old_vec)
+                    new_subsolutions.append((old_subproblem, old_vec, old_vec))
 
-        for subproblem, point in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
+        for old_subproblem, old_vec, old_sol in iter_pairs[idx:]:  # Process the remaining points to see if we can still add them.
             items = self.get_iterable_for_replay()
-            if strict_pareto_dominates(point, subproblem.referent):
+            if strict_pareto_dominates(old_vec, old_subproblem.referent):
                 maybe_add = self.maybe_add_solution
             else:
                 maybe_add = self.maybe_add_completed
             for item in items:
-                    res = maybe_add(subproblem, point, item)
-                    if res:
-                        new_subsolutions.append((res, point))
-                        break
+                res = maybe_add(old_subproblem, old_vec, item)
+                if res:
+                    new_subsolutions.append((res, old_vec, old_sol))
+                    break
 
-        return new_subsolutions
+        return new_init_subsolutions, new_subsolutions
 
-    def solve(self, callback: Optional[IPROCallback] = None) -> np.ndarray:
+    def solve(self, callback: Optional[IPROCallback] = None) -> list[tuple[np.ndarray, Any]]:
         """Solve the problem."""
         start = self.setup()
-        done = self.init_phase()
+        linear_subsolutions, done = self.init_phase()
         iteration = 0
 
         if done:
             print('The problem is solved in the initial phase.')
-            return self.sign * self.pf.copy()
+            pareto_set = self.get_pareto_set(linear_subsolutions)
+            return pareto_set
 
         self.log_iteration(iteration)
         subsolutions = []
@@ -347,24 +361,25 @@ class OuterLoop:
             print(f'Iter {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
 
             subproblem = self.decompose_problem(iteration)
-            vec = self.sign * self.oracle.solve(
+            vec, sol = self.oracle.solve(
                 self.sign * subproblem.referent,
                 nadir=self.sign * subproblem.nadir,
                 ideal=self.sign * subproblem.ideal
             )
+            vec *= self.sign
 
             if strict_pareto_dominates(vec, subproblem.referent):
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
-                    subsolutions = self.replay(vec, subsolutions)
+                    linear_subsolutions, subsolutions = self.replay(vec, sol, subsolutions)
                 else:
                     self.update_found(subproblem, vec)
-                    subsolutions.append((subproblem, vec))
+                    subsolutions.append((subproblem, vec, sol))
             else:
                 if np.any(batched_strict_pareto_dominates(vec, self.completed)):
-                    subsolutions = self.replay(vec, subsolutions)
+                    linear_subsolutions, subsolutions = self.replay(vec, sol, subsolutions)
                 else:
                     self.update_not_found(subproblem, vec)
-                    subsolutions.append((subproblem, vec))
+                    subsolutions.append((subproblem, vec, sol))
 
             self.update_excluded_volume()
             self.estimate_error()
@@ -382,4 +397,5 @@ class OuterLoop:
             print('---------------------')
 
         self.finish(start, iteration)
-        return self.sign * self.pf.copy()
+        pareto_set = self.get_pareto_set(linear_subsolutions + subsolutions)
+        return pareto_set

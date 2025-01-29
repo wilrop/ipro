@@ -4,7 +4,7 @@ from typing import Optional
 
 from ipro.oracles.oracle import Oracle
 from ipro.linear_solvers.linear_solver import LinearSolver
-from ipro.outer_loops.typing import Subproblem
+from ipro.outer_loops.typing import Subproblem, Subsolution
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
 from ipro.utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, extreme_prune, pareto_dominates
@@ -65,7 +65,7 @@ class IPRO(OuterLoop):
         self.upper_points = []
         super().reset()
 
-    def init_phase(self) -> bool:
+    def init_phase(self) -> tuple[list[Subsolution], bool]:
         """Run the initialisation phase of the algorithm.
 
         This phase computes the bounding box of the Pareto front by solving the maximisation and minimisation problems
@@ -78,14 +78,18 @@ class IPRO(OuterLoop):
         nadir = np.zeros(self.dim)
         ideal = np.zeros(self.dim)
         pf = []
+        subsolutions = []
         weight_vecs = np.eye(self.dim)
 
         for i, weight_vec in enumerate(weight_vecs):
-            ideal_i = self.sign * self.linear_solver.solve(weight_vec)
-            nadir_i = self.sign * self.linear_solver.solve(-1 * weight_vec)
-            nadir[i] = nadir_i[i]
-            ideal[i] = ideal_i[i]
-            pf.append(ideal_i)
+            ideal_vec, ideal_sol = self.linear_solver.solve(weight_vec)
+            nadir_vec, _ = self.linear_solver.solve(-1 * weight_vec)
+            ideal_vec *= self.sign
+            nadir_vec *= self.sign
+            ideal[i] = ideal_vec[i]
+            nadir[i] = nadir_vec[i]
+            pf.append(ideal_vec)
+            subsolutions.append(ideal_sol)
 
         self.pf = extreme_prune(np.array(pf))
         nadir = nadir - self.offset  # Necessary to ensure every Pareto optimal point strictly dominates the nadir.
@@ -96,7 +100,7 @@ class IPRO(OuterLoop):
         self.hv = self.compute_hypervolume(-self.sign * self.pf, -self.sign * self.ref_point)
 
         if len(self.pf) == 1:  # If the Pareto front is the ideal.
-            return True
+            return subsolutions, True
 
         self.bounding_box = Box(nadir, ideal)
         self.total_hv = self.bounding_box.volume
@@ -109,7 +113,7 @@ class IPRO(OuterLoop):
         self.error = max(ideal - nadir)
         self.compute_hvis()
         self.oracle.init_oracle(nadir=self.sign * self.nadir, ideal=self.sign * self.ideal)  # Initialise the oracle.
-        return False
+        return subsolutions, False
 
     def compute_hvis(self, num=50):
         """Compute the hypervolume improvements of the lower points.

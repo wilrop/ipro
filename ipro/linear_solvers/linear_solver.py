@@ -19,5 +19,5 @@ class LinearSolver:
             'direction': self.direction
         }
 
-    def solve(self, weight: np.ndarray) -> np.ndarray:
+    def solve(self, weight: np.ndarray) -> tuple[np.ndarray, Any]:
         raise NotImplementedError

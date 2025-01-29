@@ -8,7 +8,7 @@ from ipro.oracles.oracle import Oracle
 class DebugOracle(Oracle):
     """An oracle meant for debugging.
 
-     It takes as input a dictionary of the Pareto point found in each iteration and replays the same sequence.
+     Takes as input a dictionary of the vector and solution found at each iteration and replays the sequence.
      """
 
     def __init__(self, problem: dict, **kwargs: Any):
@@ -19,8 +19,8 @@ class DebugOracle(Oracle):
             self,
             referent: np.ndarray,
             nadir: Optional[np.ndarray] = None,
-            ideal: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+            ideal: Optional[np.ndarray] = None,
+    ) -> tuple[np.ndarray, Any]:
         self.iter += 1
-        res = self.problem.get(f'pareto_point_{self.iter}', referent)
-        return np.array(res)
+        vec, sol = self.problem.get(f'pareto_point_{self.iter}', referent)
+        return vec, sol

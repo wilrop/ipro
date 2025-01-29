@@ -275,6 +275,7 @@ class MOA2C(DRLOracle):
                 self.actor.load_state_dict(actor_net)
             if critic_net is not None:
                 self.critic.load_state_dict(critic_net)
-        pareto_point = super().solve(referent, nadir=nadir, ideal=ideal)
+
+        pareto_point = super().run_inner_loop(referent, nadir=nadir, ideal=ideal)
         self.save_models(referent, actor=self.actor, critic=self.critic)
-        return pareto_point
+        return pareto_point, (self.actor, self.critic)

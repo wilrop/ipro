@@ -1,6 +1,7 @@
 import numpy as np
 
 from ipro.linear_solvers.linear_solver import LinearSolver
+from typing import Any
 
 
 class Finite(LinearSolver):
@@ -12,7 +13,7 @@ class Finite(LinearSolver):
         super().__init__(problem, direction=direction)
         self.optimizer = np.argmax if direction == 'maximize' else np.argmin
 
-    def solve(self, weights):
+    def solve(self, weights: np.ndarray) -> tuple[np.ndarray, Any]:
         """Find the points that optimise the score function."""
         best_score = self.optimizer(np.dot(self.problem, weights))
-        return self.problem[best_score]
+        return self.problem[best_score], None

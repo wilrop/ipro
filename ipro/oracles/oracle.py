@@ -8,7 +8,8 @@ class Oracle:
             self,
             problem: Any,
             seed: Optional[int] = None,
-            **kwargs: Any):
+            **kwargs: Any
+    ):
         self.problem = problem
         self.seed = seed
 
@@ -27,5 +28,5 @@ class Oracle:
             referent: np.ndarray,
             nadir: Optional[np.ndarray] = None,
             ideal: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, Any]:
         raise NotImplementedError
