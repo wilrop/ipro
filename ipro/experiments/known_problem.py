@@ -61,11 +61,15 @@ if __name__ == '__main__':
             tolerance=0,
         )
 
-        pf = outer_loop.solve()
+        ps = outer_loop.solve()
+        pf = outer_loop.pf
         correct_set = sign * extreme_prune(sign * problem)
         if {tuple(vec) for vec in pf} != {tuple(vec) for vec in correct_set}:
             print(f'Problem: {problem}')
             print(f'Correct set: {correct_set}')
-            print(f'Obtained set: {pf}')
+            print(f'Obtained set: {ps}')
             print(f'Bounding box: {outer_loop.bounding_box}')
             break
+        else:
+            print(f'Verified!')
+        print('-' * 40)
