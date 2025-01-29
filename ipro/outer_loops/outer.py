@@ -159,7 +159,7 @@ class OuterLoop:
         """Get the Pareto set from the subsolutions."""
         pareto_set = []
         for subsolution in subsolutions:
-            if np.any(np.all(subsolution[1] == self.pf, axis=1)):
+            if np.any(np.all(np.isclose(subsolution[1], self.pf), axis=1)):
                 pareto_set.append((subsolution[1], subsolution[2]))
         return pareto_set
 
