@@ -160,8 +160,11 @@ class OuterLoop:
         pareto_set = []
         for subsolution in subsolutions:
             if np.any(np.all(np.isclose(subsolution[1], self.pf), axis=1)):
-                pareto_set.append((subsolution[1], subsolution[2]))
+                pareto_set.append((self.sign * subsolution[1], subsolution[2]))
         return pareto_set
+
+    def get_pareto_front(self) -> np.ndarray:
+        return self.pf * self.sign
 
     def finish(self, start_time: float, iteration: int):
         """Finish the algorithm."""
