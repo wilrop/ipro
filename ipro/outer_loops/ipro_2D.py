@@ -1,13 +1,12 @@
-import time
-
 import numpy as np
 
 from sortedcontainers import SortedKeyList
 from copy import deepcopy
+
+from ipro.outer_loops.typing import Subproblem, Subsolution
 from ipro.outer_loops.outer import OuterLoop
 from ipro.outer_loops.box import Box
-from ipro.utils.pareto import strict_pareto_dominates, batched_strict_pareto_dominates, pareto_dominates
-from ipro.utils.hypervolume import compute_hypervolume
+from ipro.utils.pareto import strict_pareto_dominates, extreme_prune, pareto_dominates
 
 
 class IPRO2D(OuterLoop):
@@ -18,6 +17,7 @@ class IPRO2D(OuterLoop):
             problem_id,
             oracle,
             linear_solver,
+            direction='maximize',
             ref_point=None,
             offset=1,
             tolerance=1e-6,
@@ -30,22 +30,25 @@ class IPRO2D(OuterLoop):
             seed=None,
             extra_config=None,
     ):
-        super().__init__(problem_id,
-                         2,
-                         oracle,
-                         linear_solver,
-                         method="IPRO-2D",
-                         ref_point=ref_point,
-                         offset=offset,
-                         tolerance=tolerance,
-                         max_iterations=max_iterations,
-                         known_pf=known_pf,
-                         track=track,
-                         exp_name=exp_name,
-                         wandb_project_name=wandb_project_name,
-                         wandb_entity=wandb_entity,
-                         seed=seed,
-                         extra_config=extra_config)
+        super().__init__(
+            problem_id,
+            2,
+            oracle,
+            linear_solver,
+            method="IPRO-2D",
+            direction=direction,
+            ref_point=ref_point,
+            offset=offset,
+            tolerance=tolerance,
+            max_iterations=max_iterations,
+            known_pf=known_pf,
+            track=track,
+            exp_name=exp_name,
+            wandb_project_name=wandb_project_name,
+            wandb_entity=wandb_entity,
+            seed=seed,
+            extra_config=extra_config
+        )
 
         self.box_queue = SortedKeyList([], key=lambda x: x.volume)
 
@@ -94,144 +97,85 @@ class IPRO2D(OuterLoop):
             if box.volume > self.tolerance and pareto_dominates(box.ideal, box.nadir):
                 self.box_queue.add(box)
 
-    def get_outer_points(self):
-        """Get the outer points of the problem.
-
-        Returns:
-            np.array: The outer points.
-        """
-        outer_points = []
-        for d in range(2):
-            weights = np.zeros(2)
-            weights[d] = 1
-            outer_points.append(self.linear_solver.solve(weights))
-        return np.array(outer_points)
-
-    def init_phase(self):
+    def init_phase(self) -> tuple[list[Subsolution], bool]:
         """The initial phase in solving the problem."""
-        outer_points = self.get_outer_points()
-        self.nadir = np.min(outer_points, axis=0) - self.offset
-        self.ideal = np.max(outer_points, axis=0) + self.offset
+        extrema = []
+        subsolutions = []
+
+        weight_vecs = np.eye(2)
+        for weight_vec in weight_vecs:
+            vec, sol = self.linear_solver.solve(weight_vec)
+            vec *= self.sign
+            extrema.append(vec)
+            subsolutions.append((weight_vec, vec, sol))
+        extrema = np.array(extrema)
+
+        self.nadir = np.min(extrema, axis=0) - self.offset
+        self.ideal = np.max(extrema, axis=0) + self.offset
         self.ref_point = np.copy(self.nadir) if self.ref_point is None else np.array(self.ref_point)
         self.bounding_box = Box(self.nadir, self.ideal)
-        self.pf = np.vstack((self.pf, outer_points))
+        self.pf = extreme_prune(np.array(extrema))
         self.box_queue.add(self.bounding_box)
         self.estimate_error()
         self.total_hv = self.bounding_box.volume
-        self.hv = compute_hypervolume(-self.pf, -self.ref_point)
-        self.oracle.init_oracle(nadir=self.nadir, ideal=self.ideal)  # Initialise the oracle.
-
-    def get_next_box(self):
-        """Get the next box to search."""
-        if self.box_queue:
-            return self.box_queue.pop(-1)
-        else:
-            raise Exception('No more boxes to split.')
+        self.hv = self.compute_hypervolume(-self.sign * self.pf, -self.sign * self.ref_point)
+        self.oracle.init_oracle(nadir=self.sign * self.nadir, ideal=self.sign * self.ideal)  # Initialise the oracle.
+        return subsolutions, len(self.pf) == 1
 
     def is_done(self, step):
         """Check if the algorithm is done."""
-        return not self.box_queue or 1 - self.coverage <= self.tolerance or step >= self.max_iterations
+        return not self.box_queue or super().is_done(step)
 
-    def replay(self, vec, box_point_pairs):
-        replay_triggered = self.replay_triggered
-        self.reset()
-        self.replay_triggered = replay_triggered + 1
-        self.init_phase()
-        idx = 0
-        new_box_point_pairs = []
+    def get_iterable_for_replay(self):
+        box_queue = deepcopy(self.box_queue)
+        return reversed(list(enumerate(box_queue)))
 
-        for box, point in box_point_pairs:  # Replay the points that were added correctly
-            self.box_queue.pop(-1)  # Remove the box.
-            idx += 1
-            if strict_pareto_dominates(point, box.nadir):
-                if strict_pareto_dominates(vec, point):
-                    self.update_found(box, vec)
-                    new_box_point_pairs.append((box, vec))
-                    break
-                else:
-                    self.update_found(box, point)
-                    new_box_point_pairs.append((box, point))
-            else:
-                if strict_pareto_dominates(vec, box.nadir):
-                    self.update_found(box, vec)
-                    new_box_point_pairs.append((box, vec))
-                    break
-                else:
-                    self.update_not_found(box, point)
-                    new_box_point_pairs.append((box, point))
+    def maybe_add_solution(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: tuple[Box, int],
+    ) -> Subproblem | bool:
+        open_box, open_box_idx = item
+        if strict_pareto_dominates(point, open_box.nadir):
+            new_subproblem = Subproblem(referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+            self.update_found(new_subproblem, point, box_idx=open_box_idx)
+            return new_subproblem
+        else:
+            return False
 
-        for box, point in box_point_pairs[idx:]:  # Process the remaining points to see if we can still add them.
-            box_queue = deepcopy(self.box_queue)  # Avoid messing with the box_queue during processing.
-            if strict_pareto_dominates(point, box.nadir):
-                for box_id, open_box in reversed(list(enumerate(box_queue))):
-                    if strict_pareto_dominates(point, open_box.nadir):
-                        self.box_queue.pop(box_id)  # This is okay because we are working backwards.
-                        self.update_found(open_box, point)
-                        new_box_point_pairs.append((open_box, point))
-                        break
-            else:
-                for box_id, open_box in reversed(list(enumerate(box_queue))):
-                    if pareto_dominates(open_box.nadir, box.nadir):
-                        self.box_queue.pop(box_id)
-                        self.update_not_found(open_box, point)
-                        new_box_point_pairs.append((open_box, point))
+    def maybe_add_completed(
+            self,
+            subproblem: Subproblem,
+            point: np.ndarray,
+            item: tuple[Box, int],
+    ) -> Subproblem | bool:
+        open_box, open_box_idx = item
+        if pareto_dominates(open_box.nadir, subproblem.referent):
+            new_subproblem = Subproblem(referent=open_box.nadir, nadir=open_box.nadir, ideal=open_box.ideal)
+            self.update_not_found(new_subproblem, point, box_idx=open_box_idx)
+            return new_subproblem
+        else:
+            return False
 
-        return new_box_point_pairs
-
-    def update_found(self, box, vec):
+    def update_found(self, subproblem, vec, box_idx=-1):
         """The update to perform when the Pareto oracle found a new Pareto dominant vector."""
-        self.update_box_queue(box, vec)
+        self.update_box_queue(self.box_queue.pop(box_idx), vec)
         self.pf = np.vstack((self.pf, vec))
 
-    def update_not_found(self, box, vec):
+    def update_not_found(self, subproblem, vec, box_idx=-1):
         """The update to perform when the Pareto oracle did not find a new Pareto dominant vector."""
+        box = self.box_queue.pop(box_idx)
         self.discarded_hv += box.volume
-        self.completed = np.vstack((self.completed, np.copy(box.nadir)))
+        self.completed = np.vstack((self.completed, np.copy(subproblem.referent)))
         if strict_pareto_dominates(vec, self.nadir):
             self.robust_points = np.vstack((self.robust_points, vec))
 
-    def solve(self, callback=None):
-        """Solve the problem.
+    def decompose_problem(self, iteration, method='first'):
+        box = self.box_queue[-1]
+        subproblem = Subproblem(referent=box.nadir, nadir=box.nadir, ideal=box.ideal)
+        return subproblem
 
-        Returns:
-            ndarray: The Pareto front.
-        """
-        start = self.setup()
-        self.init_phase()
-        iteration = 0
-        self.log_iteration(iteration)
-        box_point_pairs = []
-
-        while not self.is_done(iteration):
-            begin_loop = time.time()
-            print(f'Step {iteration} - Covered {self.coverage:.5f}% - Error {self.error:.5f}')
-
-            box = self.get_next_box()
-            referent = np.copy(box.nadir)
-            ideal = np.copy(box.ideal)
-            vec = self.oracle.solve(referent, nadir=np.copy(box.nadir), ideal=ideal)
-
-            if strict_pareto_dominates(vec, referent):  # Check that new point is valid.
-                if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
-                    box_point_pairs = self.replay(vec, box_point_pairs)
-                else:
-                    self.update_found(box, vec)
-                    box_point_pairs.append((box, vec))
-            else:
-                self.update_not_found(box, vec)
-                box_point_pairs.append((box, vec))
-
-            self.estimate_error()
-            self.coverage = (self.dominated_hv + self.discarded_hv) / self.total_hv
-            self.hv = compute_hypervolume(-self.pf, -self.ref_point)
-
-            iteration += 1
-
-            self.log_iteration(iteration, referent=referent, ideal=ideal, pareto_point=vec)
-            if callback is not None:
-                callback(iteration, self.hv, self.dominated_hv, self.discarded_hv, self.coverage, self.error)
-            print(f'Ref {referent} - Found {vec} - Time {time.time() - begin_loop:.2f}s')
-            print('---------------------')
-
-        self.finish(start, iteration)
-        return self.pf.copy()
+    def update_excluded_volume(self):
+        """This is already handled when splitting the boxes."""
+        pass

@@ -48,10 +48,10 @@ def run_experiment(config, callback=None, extra_config=None):
             run_name=run_name
         )
 
+    linear_problem = np.concatenate((config.environment.minimals, config.environment.maximals), axis=0)
     linear_solver = init_linear_solver(
-        'known_box',
-        minimals=config.environment.minimals,
-        maximals=config.environment.maximals
+        'finite',
+        problem=linear_problem,
     )
     oracle = init_oracle(
         algorithm,

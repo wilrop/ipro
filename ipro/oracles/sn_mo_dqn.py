@@ -264,19 +264,23 @@ class SNMODQN(SNDRLOracle):
         """Pretrain the algorithm."""
         self.reset()
         self.setup_dqn_metrics()
-        referents = self.sample_referents(self.pretrain_iters, self.nadir, self.ideal)
+        nadir = torch.tensor(self.nadir, dtype=torch.float32, requires_grad=False)
+        ideal = torch.tensor(self.ideal, dtype=torch.float32, requires_grad=False)
+        referents = self.sample_referents(self.pretrain_iters, nadir, ideal)
         for idx, referent in enumerate(referents):
             print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
-            self.train(referent,
-                       self.nadir,
-                       self.ideal,
-                       steps=self.pretraining_steps,
-                       train_freq=self.pre_train_freq,
-                       learning_start=self.pre_learning_start if idx == 0 else 0,  # Only fill buffer first iteration.
-                       epsilon_start=self.pre_epsilon_start,
-                       epsilon_end=self.pre_epsilon_end,
-                       exploration_frac=self.pre_exploration_frac,
-                       num_referents=self.num_referents)
+            self.train(
+                referent,
+                nadir,
+                ideal,
+                steps=self.pretraining_steps,
+                train_freq=self.pre_train_freq,
+                learning_start=self.pre_learning_start if idx == 0 else 0,  # Only fill buffer first iteration.
+                epsilon_start=self.pre_epsilon_start,
+                epsilon_end=self.pre_epsilon_end,
+                exploration_frac=self.pre_exploration_frac,
+                num_referents=self.num_referents
+            )
 
         self.save_model()
 
@@ -345,13 +349,15 @@ class SNMODQN(SNDRLOracle):
         """Solve for problem for the given referent."""
         self.reset()
         self.setup_dqn_metrics()
-        pareto_point = super().solve(referent,
-                                     nadir=nadir,
-                                     ideal=ideal,
-                                     steps=self.online_steps,
-                                     train_freq=self.online_train_freq,
-                                     learning_start=self.online_learning_start,
-                                     epsilon_start=self.online_epsilon_start,
-                                     epsilon_end=self.online_epsilon_end,
-                                     exploration_frac=self.online_exploration_frac)
-        return pareto_point
+        pareto_point = super().run_inner_loop(
+            referent,
+            nadir=nadir,
+            ideal=ideal,
+            steps=self.online_steps,
+            train_freq=self.online_train_freq,
+            learning_start=self.online_learning_start,
+            epsilon_start=self.online_epsilon_start,
+            epsilon_end=self.online_epsilon_end,
+            exploration_frac=self.online_exploration_frac
+        )
+        return pareto_point, None

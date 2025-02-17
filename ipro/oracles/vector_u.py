@@ -44,7 +44,7 @@ def create_aasf(referent, nadir, ideal, aug=0., scale=1000, backend='numpy'):
     return lambda vec: aasf(vec, referent, nadir, ideal, aug=aug, scale=scale, backend=backend)
 
 
-def create_batched_aasf(referent, nadir, ideal, aug=0., scale=1000, backend='numpy'):
+def create_batched_aasf(referent, nadir, ideal, aug=0., scale=100, backend='numpy'):
     """Create a batched augmented achievement scalarizing function.
 
     Args:

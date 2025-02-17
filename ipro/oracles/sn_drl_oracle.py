@@ -133,8 +133,7 @@ class SNDRLOracle(DRLOracle):
 
     def init_oracle(self, nadir=None, ideal=None):
         """Initialise the oracle."""
-        self.nadir = torch.tensor(nadir, dtype=torch.float32, requires_grad=False)
-        self.ideal = torch.tensor(ideal, dtype=torch.float32, requires_grad=False)
+        super().init_oracle(nadir, ideal)
         self.pretrain()
 
     def setup_chart_metrics(self):
@@ -205,23 +204,27 @@ class SNDRLOracle(DRLOracle):
         }
         self.log_wandb(log_dict)
 
-    def solve(self, referent, nadir=None, ideal=None, *args, **kwargs):
+    def run_inner_loop(self, referent, nadir=None, ideal=None, *args, **kwargs):
         """Run the inner loop of the outer loop."""
         self.reset_stats()
         self.phase = f'online_{self.iteration}'
 
-        referent, nadir, ideal = self.u_params(referent, nadir, ideal)
+        referent, nadir, ideal = self.get_asf_params(referent, nadir, ideal, backend='torch')
         self.load_model(None)  # We always load the pretrained model.
-        self.train(referent,
-                   nadir,
-                   ideal,
-                   num_referents=1,  # Only train on the given referent.
-                   *args,
-                   **kwargs)
-        pareto_point = self.evaluate(eval_episodes=self.eval_episodes,
-                                     deterministic=self.deterministic_eval,
-                                     referent=referent,
-                                     nadir=nadir,
-                                     ideal=ideal)
+        self.train(
+            referent,
+            nadir,
+            ideal,
+            num_referents=1,  # Only train on the given referent.
+            *args,
+            **kwargs
+        )
+        pareto_point = self.evaluate(
+            eval_episodes=self.eval_episodes,
+            deterministic=self.deterministic_eval,
+            referent=referent,
+            nadir=nadir,
+            ideal=ideal
+        )
         self.iteration += 1
         return pareto_point

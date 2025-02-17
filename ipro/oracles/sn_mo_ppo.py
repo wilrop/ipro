@@ -385,15 +385,19 @@ class SNMOPPO(SNDRLOracle):
         """Pretrain the algorithm."""
         self.reset()
         self.setup_ac_metrics()
-        referents = self.sample_referents(self.pretrain_iters, self.nadir, self.ideal)
+        nadir = torch.tensor(self.nadir, dtype=torch.float32, requires_grad=False)
+        ideal = torch.tensor(self.ideal, dtype=torch.float32, requires_grad=False)
+        referents = self.sample_referents(self.pretrain_iters, nadir, ideal)
         for idx, referent in enumerate(referents):
             print(f"Pretraining on referent {idx + 1} of {self.pretrain_iters}")
-            self.train(referent,
-                       self.nadir,
-                       self.ideal,
-                       steps=self.pretraining_steps,
-                       num_referents=self.num_referents,
-                       num_updates=self.num_pretrain_updates)
+            self.train(
+                referent,
+                nadir,
+                ideal,
+                steps=self.pretraining_steps,
+                num_referents=self.num_referents,
+                num_updates=self.num_pretrain_updates
+            )
 
         self.save_model()
 
@@ -456,9 +460,11 @@ class SNMOPPO(SNDRLOracle):
         """Train the algorithm on the given environment."""
         self.reset()
         self.setup_ac_metrics()
-        pareto_point = super().solve(referent,
-                                     nadir=nadir,
-                                     ideal=ideal,
-                                     steps=self.online_steps,
-                                     num_updates=self.num_online_updates)
-        return pareto_point
+        pareto_point = super().run_inner_loop(
+            referent,
+            nadir=nadir,
+            ideal=ideal,
+            steps=self.online_steps,
+            num_updates=self.num_online_updates
+        )
+        return pareto_point, None
