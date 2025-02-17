@@ -2,7 +2,8 @@
 
 Iterated Pareto Referent Optimisation (IPRO) is an algorithm that decomposes learning the Pareto front into a sequence
 of single-objective problems, each of which is solved by an oracle and leads to a non-dominated solution. IPRO is
-guaranteed to converge and comes with an upper bound on the distance to the Pareto front at each iteration.
+guaranteed to converge and comes with an upper bound on the distance to the Pareto front at each iteration. You can 
+checkout the paper [here](https://arxiv.org/abs/2202.10794).
 
 ## Structure
 
@@ -42,15 +43,10 @@ python experiments/run_experiment.py
 If you use this code or the results in your research, please use the following BibTeX entry:
 
 ```
-@misc{ropke2023distributional,  
-  url = {TBD},
-  
-  author = {Röpke, Willem and Hayes, Conor F. and Mannion, Patrick and Howley, Enda and Nowé, Ann and Roijers, Diederik M.},
-  
-  title = {Distributional Multi-Objective Decision Making},
-  
-  year = {2023},
-  
-  note={Accepted at IJCAI 2023}
+@misc{ropke2025divide,
+    title={Divide and Conquer: Provably Unveiling the Pareto Front with Multi-Objective Reinforcement Learning}, 
+    author={Willem Röpke and Mathieu Reymond and Patrick Mannion and Diederik M. Roijers and Ann Nowé and Roxana Rădulescu},
+    year={2025},
+    url={https://arxiv.org/abs/2402.07182},
 }
 ```
